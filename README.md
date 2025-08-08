@@ -1,68 +1,69 @@
-📌 Taskify – Gerenciador de Tarefas Pessoais e Colaborativas
-Organize seu dia, seus projetos e seus objetivos de forma simples, produtiva e bonita.
 
-📝 Visão Geral
-O Taskify é uma aplicação web para gestão de tarefas pessoais e colaborativas, permitindo:
+📌 Taskify – Personal & Collaborative Task Manager
+Organize your day, projects, and goals in a simple, productive, and beautiful way.
 
-Criação de workspaces (privados ou compartilhados)
+📝 Overview
+Taskify is a web application for personal and collaborative task management, allowing you to:
 
-Organização por categorias e datas
+Create workspaces (private or shared)
 
-Editor de notas rico associado a cada tarefa
+Organize by categories and due dates
 
-Colaboração com diferentes níveis de permissão (Owner, Editor, Viewer)
+Use a rich text editor for detailed task notes
 
-Interface clean e responsiva para desktop e mobile
+Collaborate with different permission levels (Owner, Editor, Viewer)
 
-Este projeto foi pensado para produtividade e experiência do usuário, além de servir como um portfólio profissional.
+Enjoy a clean and responsive interface for desktop and mobile
 
-🚀 Funcionalidades (MVP)
-Autenticação de usuários com JWT
+Designed with productivity and user experience in mind, Taskify also serves as a professional portfolio project.
 
-CRUD de tarefas com título, descrição, status e data de vencimento
+🚀 Features (MVP)
+User authentication with JWT
 
-Workspaces privados e compartilhados
+CRUD operations for tasks (title, description, status, due date)
 
-Categorias personalizadas
+Private and shared workspaces
 
-Editor de notas para cada tarefa
+Custom categories
 
-Filtros e busca por status, categoria ou data
+Rich notes editor for each task
 
-Notificações e alertas de deadlines
+Filters and search by status, category, or date
 
-🗄️ Modelagem do Banco de Dados
-O Taskify segue uma arquitetura relacional com as seguintes entidades principais:
+Notifications and deadline alerts
 
-users – Usuários com autenticação segura (BCrypt)
+🗄️ Database Model
+Taskify follows a relational database structure with these main entities:
 
-workspaces – Ambientes de organização de tarefas
+users – Users with secure authentication (BCrypt)
 
-usuario_workspace – Relação usuário-workspace com papéis
+workspaces – Task organization environments
 
-categories – Categorias criadas pelos usuários
+usuario_workspace – User-workspace relationship with roles
 
-tasks – Tarefas com status e prazos
+categories – User-created categories
 
-task_notes – Notas ricas para cada tarefa
+tasks – Tasks with status and deadlines
 
-Principais relacionamentos:
+task_notes – Rich notes for each task
 
-1 usuário → N workspaces (owner)
+Main relationships:
 
-N usuários ↔ N workspaces (compartilhamento)
+1 user → N workspaces (owner)
 
-1 workspace → N tarefas
+N users ↔ N workspaces (sharing)
 
-1 categoria → N tarefas
+1 workspace → N tasks
 
-1 tarefa → 1 nota
+1 category → N tasks
 
-Migrations controladas via Flyway e uso de índices para otimizar consultas.
+1 task → 1 note
 
-🛠️ Tecnologias Utilizadas
+Schema migrations are managed with Flyway and indexes are used for performance optimization.
+
+🛠️ Tech Stack
 Backend
-Java 17+
+Java 21
 
 Spring Boot
 
@@ -70,7 +71,7 @@ Spring Security (JWT)
 
 Spring Data JPA
 
-PostgreSQL (produção) / H2 (desenvolvimento)
+PostgreSQL (production) / H2 (development)
 
 Flyway (migrations)
 
@@ -79,70 +80,11 @@ React (Vite)
 
 Tailwind CSS
 
-Axios para chamadas à API
+Axios for API calls
 
-DevOps e Ferramentas
+DevOps & Tools
 Docker / Docker Compose
 
 Git + GitHub
 
-Postman / Insomnia
-
-DBeaver
-
-📂 Estrutura de Pastas
-bash
-Copiar
-Editar
-taskify/
-├─ backend/    # Java Spring Boot
-│   ├─ controller
-│   ├─ service
-│   ├─ repository
-│   ├─ model
-│   ├─ dto
-│   └─ config
-└─ frontend/   # React + Vite + Tailwind
-    ├─ components
-    ├─ pages
-    ├─ services
-    ├─ hooks
-    ├─ utils
-    └─ assets
-⚙️ Como Rodar o Projeto
-1️⃣ Clonar o repositório
-bash
-Copiar
-Editar
-git clone https://github.com/seu-usuario/taskify.git
-cd taskify
-2️⃣ Backend (Spring Boot)
-bash
-Copiar
-Editar
-cd backend
-./mvnw spring-boot:run
-3️⃣ Frontend (React + Vite)
-bash
-Copiar
-Editar
-cd frontend
-npm install
-npm run dev
-O frontend estará disponível em http://localhost:5173 e o backend em http://localhost:8080.
-
-📌 Roadmap
- Autenticação de usuários
-
- CRUD de tarefas
-
- Organização por categorias
-
- Compartilhamento via workspaces
-
- Sistema de notificações
-
- Integração com calendário
-
- Tema dark/light
-
+Insomnia
