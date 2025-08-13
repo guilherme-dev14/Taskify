@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "workspaces")
@@ -26,9 +28,15 @@ public class Workspace {
     @Column(nullable = false)
     private OffsetDateTime updatedAt;
 
+    @OneToMany(mappedBy = "workspace", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<WorkspaceMember> members = new ArrayList<>();
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "owner_id", nullable = false)
     private User owner;
+
+    @Column(name = "invite_code", length = 50, unique = true)
+    private String inviteCode; // Para convites por link
 
     @PrePersist
     protected void onCreate() {
@@ -39,4 +47,16 @@ public class Workspace {
         updatedAt = OffsetDateTime.now();
     }
 
+    public boolean isMember(User user) {
+        return members.stream()
+                .anyMatch(member -> member.getUser().equals(user) && member.getIsActive());
+    }
+
+    public RoleEnum getUserRole(User user) {
+        return members.stream()
+                .filter(member -> member.getUser().equals(user) && member.getIsActive())
+                .map(WorkspaceMember::getRole)
+                .findFirst()
+                .orElse(null);
+    }
 }

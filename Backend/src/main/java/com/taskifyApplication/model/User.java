@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "Users")
@@ -25,11 +27,24 @@ public class User{
     @Column(nullable = false, length = 50, unique = true)
     private String username;
 
+    private String firstName;
+    private String lastName;
+
     @Column(nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 
     @Column(nullable = false)
     private OffsetDateTime updatedAt;
+
+    @OneToMany(mappedBy = "assignedTo", fetch = FetchType.LAZY)
+    private List<Task> assignedTasks = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    private List<WorkspaceMember> workspaceMemberships = new ArrayList<>();
+
+    @OneToMany(mappedBy = "author", fetch = FetchType.LAZY)
+    private List<TaskComment> comments = new ArrayList<>();
+
 
     @PrePersist
     protected void onCreate() {
