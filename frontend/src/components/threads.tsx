@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useCallback } from "react";
 import { Renderer, Program, Mesh, Triangle, Color } from "ogl";
 
 interface ThreadsProps {
@@ -8,18 +8,9 @@ interface ThreadsProps {
   enableMouseInteraction?: boolean;
 }
 
-const vertexShader = `
-attribute vec2 position;
-attribute vec2 uv;
-varying vec2 vUv;
-void main() {
-  vUv = uv;
-  gl_Position = vec4(position, 0.0, 1.0);
-}
-`;
-
-const fragmentShader = `
-precision highp float;
+// Shader otimizado com menos linhas
+const fragmentShaderOptimized = `
+precision mediump float; // Mudou de highp para mediump
 
 uniform float iTime;
 uniform vec3 iResolution;
@@ -30,9 +21,9 @@ uniform vec2 uMouse;
 
 #define PI 3.1415926538
 
-const int u_line_count = 40;
+const int u_line_count = 30;
 const float u_line_width = 7.0;
-const float u_line_blur = 10.0;
+const float u_line_blur = 5.0; 
 
 float Perlin2D(vec2 P) {
     vec2 Pi = floor(P);
@@ -64,20 +55,20 @@ float lineFn(vec2 st, float width, float perc, float offset, vec2 mouse, float t
     float split_point = 0.1 + split_offset;
 
     float amplitude_normal = smoothstep(split_point, 0.7, st.x);
-    float amplitude_strength = 0.5;
+    float amplitude_strength = 0.3; // Reduzido de 0.5
     float finalAmplitude = amplitude_normal * amplitude_strength
-                           * amplitude * (1.0 + (mouse.y - 0.5) * 0.2);
+                           * amplitude * (1.0 + (mouse.y - 0.5) * 0.15); 
 
-    float time_scaled = time / 10.0 + (mouse.x - 0.5) * 1.0;
+    float time_scaled = time / 15.0 + (mouse.x - 0.5) * 0.5; // Animação mais lenta
     float blur = smoothstep(split_point, split_point + 0.05, st.x) * perc;
 
     float xnoise = mix(
-        Perlin2D(vec2(time_scaled, st.x + perc) * 2.5),
-        Perlin2D(vec2(time_scaled, st.x + time_scaled) * 3.5) / 1.5,
-        st.x * 0.3
+        Perlin2D(vec2(time_scaled, st.x + perc) * 3.0), 
+        Perlin2D(vec2(time_scaled, st.x + time_scaled) * 2.5) / 3.0, 
+        st.x * 0.25 
     );
 
-    float y = 0.5 + (perc - 0.5) * distance + xnoise / 2.0 * finalAmplitude;
+    float y = 0.5 + (perc - 0.5) * distance + xnoise / 2.0 * finalAmplitude; 
 
     float line_start = smoothstep(
         y + (width / 2.0) + (u_line_blur * pixel(1.0, iResolution.xy) * blur),
@@ -92,7 +83,7 @@ float lineFn(vec2 st, float width, float perc, float offset, vec2 mouse, float t
     );
 
     return clamp(
-        (line_start - line_end) * (1.0 - smoothstep(0.0, 1.0, pow(perc, 0.3))),
+        (line_start - line_end) * (1.0 - smoothstep(0.0, 1.0, pow(perc, 0.5))), // Suavizado
         0.0,
         1.0
     );
@@ -106,9 +97,9 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
         float p = float(i) / float(u_line_count);
         line_strength *= (1.0 - lineFn(
             uv,
-            u_line_width * pixel(1.0, iResolution.xy) * (1.0 - p),
+            u_line_width * pixel(1.0, iResolution.xy) * (1.0 - p * 0.5), 
             p,
-            (PI * 1.0) * p,
+            PI * p, 
             uMouse,
             iTime,
             uAmplitude,
@@ -117,11 +108,21 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     }
 
     float colorVal = 1.0 - line_strength;
-    fragColor = vec4(uColor * colorVal, colorVal);
+    fragColor = vec4(uColor * colorVal, colorVal * 0.8); 
 }
 
 void main() {
     mainImage(gl_FragColor, gl_FragCoord.xy);
+}
+`;
+
+const vertexShader = `
+attribute vec2 position;
+attribute vec2 uv;
+varying vec2 vUv;
+void main() {
+  vUv = uv;
+  gl_Position = vec4(position, 0.0, 1.0);
 }
 `;
 
@@ -133,14 +134,61 @@ const Threads: React.FC<ThreadsProps> = ({
   ...rest
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const animationFrameId = useRef<number>(1);
+  const animationFrameId = useRef<number>(0);
+  const lastFrameTime = useRef<number>(0);
+  const mousePosition = useRef<[number, number]>([0.5, 0.5]);
+  const targetMouse = useRef<[number, number]>([0.5, 0.5]);
+
+  const throttledMouseMove = useCallback(
+    (() => {
+      let timeout: NodeJS.Timeout | null = null;
+      return (e: MouseEvent) => {
+        if (timeout) return;
+        timeout = setTimeout(() => {
+          if (!containerRef.current) return;
+          const rect = containerRef.current.getBoundingClientRect();
+          const x = (e.clientX - rect.left) / rect.width;
+          const y = 1.0 - (e.clientY - rect.top) / rect.height;
+          targetMouse.current = [
+            Math.max(0, Math.min(1, x)),
+            Math.max(0, Math.min(1, y)),
+          ];
+          timeout = null;
+        }, 16);
+      };
+    })(),
+    []
+  );
+
+  const debouncedResize = useCallback(
+    (() => {
+      let timeout: NodeJS.Timeout;
+      return (resizeFn: () => void) => {
+        clearTimeout(timeout);
+        timeout = setTimeout(resizeFn, 100);
+      };
+    })(),
+    []
+  );
 
   useEffect(() => {
     if (!containerRef.current) return;
     const container = containerRef.current;
 
-    const renderer = new Renderer({ alpha: true });
+    const renderer = new Renderer({
+      alpha: true,
+      antialias: false,
+      powerPreference: "high-performance",
+    });
     const gl = renderer.gl;
+
+    if (!gl) {
+      console.warn("WebGL não suportado, usando fallback");
+      container.innerHTML =
+        '<div class="w-full h-full bg-gradient-to-br from-gray-900 to-gray-800"></div>';
+      return;
+    }
+
     gl.clearColor(0, 0, 0, 0);
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
@@ -149,7 +197,7 @@ const Threads: React.FC<ThreadsProps> = ({
     const geometry = new Triangle(gl);
     const program = new Program(gl, {
       vertex: vertexShader,
-      fragment: fragmentShader,
+      fragment: fragmentShaderOptimized,
       uniforms: {
         iTime: { value: 0 },
         iResolution: {
@@ -175,60 +223,85 @@ const Threads: React.FC<ThreadsProps> = ({
       program.uniforms.iResolution.value.g = clientHeight;
       program.uniforms.iResolution.value.b = clientWidth / clientHeight;
     }
-    window.addEventListener("resize", resize);
+
+    const handleResize = () => debouncedResize(resize);
+    window.addEventListener("resize", handleResize);
     resize();
 
-    const currentMouse = [0.5, 0.5];
-    let targetMouse = [0.5, 0.5];
-
-    function handleMouseMove(e: MouseEvent) {
-      const rect = container.getBoundingClientRect();
-      const x = (e.clientX - rect.left) / rect.width;
-      const y = 1.0 - (e.clientY - rect.top) / rect.height;
-      targetMouse = [x, y];
-    }
     function handleMouseLeave() {
-      targetMouse = [0.5, 0.5];
+      targetMouse.current = [0.5, 0.5];
     }
+
     if (enableMouseInteraction) {
-      container.addEventListener("mousemove", handleMouseMove);
+      container.addEventListener("mousemove", throttledMouseMove);
       container.addEventListener("mouseleave", handleMouseLeave);
     }
 
-    function update(t: number) {
+    function update(currentTime: number) {
+      const deltaTime = currentTime - lastFrameTime.current;
+
+      if (deltaTime < 33.33) {
+        animationFrameId.current = requestAnimationFrame(update);
+        return;
+      }
+
+      lastFrameTime.current = currentTime;
+
       if (enableMouseInteraction) {
-        const smoothing = 0.05;
-        currentMouse[0] += smoothing * (targetMouse[0] - currentMouse[0]);
-        currentMouse[1] += smoothing * (targetMouse[1] - currentMouse[1]);
-        program.uniforms.uMouse.value[0] = currentMouse[0];
-        program.uniforms.uMouse.value[1] = currentMouse[1];
+        const smoothing = 0.03;
+        mousePosition.current[0] +=
+          smoothing * (targetMouse.current[0] - mousePosition.current[0]);
+        mousePosition.current[1] +=
+          smoothing * (targetMouse.current[1] - mousePosition.current[1]);
+        program.uniforms.uMouse.value[0] = mousePosition.current[0];
+        program.uniforms.uMouse.value[1] = mousePosition.current[1];
       } else {
         program.uniforms.uMouse.value[0] = 0.5;
         program.uniforms.uMouse.value[1] = 0.5;
       }
-      program.uniforms.iTime.value = t * 0.001;
+
+      program.uniforms.iTime.value = currentTime * 0.0008;
 
       renderer.render({ scene: mesh });
       animationFrameId.current = requestAnimationFrame(update);
     }
+
     animationFrameId.current = requestAnimationFrame(update);
 
     return () => {
-      if (animationFrameId.current)
+      if (animationFrameId.current) {
         cancelAnimationFrame(animationFrameId.current);
-      window.removeEventListener("resize", resize);
+      }
+      window.removeEventListener("resize", handleResize);
 
       if (enableMouseInteraction) {
-        container.removeEventListener("mousemove", handleMouseMove);
+        container.removeEventListener("mousemove", throttledMouseMove);
         container.removeEventListener("mouseleave", handleMouseLeave);
       }
-      if (container.contains(gl.canvas)) container.removeChild(gl.canvas);
+      if (container.contains(gl.canvas)) {
+        container.removeChild(gl.canvas);
+      }
       gl.getExtension("WEBGL_lose_context")?.loseContext();
     };
-  }, [color, amplitude, distance, enableMouseInteraction]);
+  }, [
+    color,
+    amplitude,
+    distance,
+    enableMouseInteraction,
+    throttledMouseMove,
+    debouncedResize,
+  ]);
 
   return (
-    <div ref={containerRef} className="w-full h-full relative" {...rest} />
+    <div
+      ref={containerRef}
+      className="w-full h-full relative"
+      style={{
+        willChange: "transform",
+        backfaceVisibility: "hidden",
+      }}
+      {...rest}
+    />
   );
 };
 
