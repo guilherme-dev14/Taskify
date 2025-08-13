@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { useForm } from "react-hook-form";
+import { useForm, type SubmitHandler } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import Stepper, { Step } from "../../../components/Stepper";
 import { Link } from "react-router-dom";
@@ -11,19 +11,23 @@ interface IRegisterUser {
   email: string;
   username: string;
   password: string;
+  firstName: string;
+  lastName?: string;
 }
 
-const validationSchema = yup.object({
+const validationSchema: yup.ObjectSchema<IRegisterUser> = yup.object().shape({
   email: yup.string().email("Invalid Email").required("Email is required"),
   username: yup
     .string()
-    .min(3, "Username need at least three caracters")
-    .max(30, "Username must be maximum 30 caracters")
+    .min(3, "Username need at least three characters")
+    .max(30, "Username must be maximum 30 characters")
     .required("Username is required"),
   password: yup
     .string()
-    .min(6, "Password need at least 6 caracters")
+    .min(6, "Password need at least 6 characters")
     .required("Password is required"),
+  firstName: yup.string().required("First name is required"),
+  lastName: yup.string().optional(),
 });
 
 export const Register = () => {
@@ -40,13 +44,25 @@ export const Register = () => {
     clearErrors,
   } = useForm<IRegisterUser>({
     resolver: yupResolver(validationSchema),
+    mode: "onChange",
   });
 
   const handleBeforeStepChange = useCallback(
     async (currentStep: number, nextStep: number): Promise<boolean> => {
       if (currentStep === 2 && nextStep > currentStep) {
         setHasTriedToAdvance(true);
+        const isValid = await trigger(["firstName", "lastName"]);
 
+        if (!isValid) {
+          setShowErrors(true);
+          return false;
+        } else {
+          setShowErrors(false);
+        }
+      }
+
+      if (currentStep === 3 && nextStep > currentStep) {
+        setHasTriedToAdvance(true);
         const isValid = await trigger(["email", "username", "password"]);
 
         if (!isValid) {
@@ -67,10 +83,12 @@ export const Register = () => {
     [trigger]
   );
 
-  const onSubmit = useCallback((data: IRegisterUser) => {
+  const onSubmit: SubmitHandler<IRegisterUser> = useCallback((data) => {
     console.log("Dados do formulário:", data);
     alert(
-      `Account created successfully!\nEmail: ${data.email}\nUsername: ${data.username}`
+      `Account created successfully!\nName: ${data.firstName} ${
+        data.lastName || ""
+      }\nEmail: ${data.email}\nUsername: ${data.username}`
     );
   }, []);
 
@@ -108,7 +126,9 @@ export const Register = () => {
               initialStep={1}
               onStepChange={setCurrentStep}
               onBeforeStepChange={handleBeforeStepChange}
-              onFinalStepCompleted={handleSubmit(onSubmit)}
+              onFinalStepCompleted={() => {
+                handleSubmit(onSubmit)();
+              }}
               backButtonText="Previous"
               nextButtonText="Next"
               stepCircleContainerClassName="bg-gray-800/50 backdrop-blur-sm border-gray-700"
@@ -142,10 +162,75 @@ export const Register = () => {
                 <div className="space-y-6 py-8">
                   <div className="text-center mb-8">
                     <h3 className="text-2xl font-bold text-white mb-2">
-                      Create Account
+                      Personal Information
                     </h3>
                     <p className="text-gray-400">
-                      Fill in your information to continue
+                      Tell us a little about yourself
+                    </p>
+                  </div>
+
+                  <div className="space-y-6">
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-gray-300">
+                        First Name *
+                      </label>
+                      <input
+                        {...register("firstName")}
+                        onChange={(e) => {
+                          register("firstName").onChange(e);
+                          handleInputChange("firstName")(e);
+                        }}
+                        type="text"
+                        placeholder="Enter your first name"
+                        className={`w-full px-4 py-3 bg-gray-800 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 transition-colors ${
+                          showErrors && errors.firstName
+                            ? "border-red-500 focus:ring-red-500"
+                            : "border-gray-600 focus:ring-blue-500 focus:border-blue-500"
+                        }`}
+                      />
+                      {showErrors && errors.firstName && (
+                        <p className="text-red-400 text-sm flex items-center gap-1 animate-in slide-in-from-top-2 duration-200">
+                          {errors.firstName.message}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-gray-300">
+                        Last Name
+                      </label>
+                      <input
+                        {...register("lastName")}
+                        onChange={(e) => {
+                          register("lastName").onChange(e);
+                          handleInputChange("lastName")(e);
+                        }}
+                        type="text"
+                        placeholder="Enter your last name (optional)"
+                        className={`w-full px-4 py-3 bg-gray-800 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 transition-colors ${
+                          showErrors && errors.lastName
+                            ? "border-red-500 focus:ring-red-500"
+                            : "border-gray-600 focus:ring-blue-500 focus:border-blue-500"
+                        }`}
+                      />
+                      {showErrors && errors.lastName && (
+                        <p className="text-red-400 text-sm flex items-center gap-1 animate-in slide-in-from-top-2 duration-200">
+                          {errors.lastName.message}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </Step>
+
+              <Step>
+                <div className="space-y-6 py-8">
+                  <div className="text-center mb-8">
+                    <h3 className="text-2xl font-bold text-white mb-2">
+                      Account Details
+                    </h3>
+                    <p className="text-gray-400">
+                      Set up your login credentials
                     </p>
                   </div>
 
@@ -161,6 +246,7 @@ export const Register = () => {
                           handleInputChange("email")(e);
                         }}
                         type="email"
+                        placeholder="Enter your email"
                         className={`w-full px-4 py-3 bg-gray-800 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 transition-colors ${
                           showErrors && errors.email
                             ? "border-red-500 focus:ring-red-500"
@@ -185,6 +271,7 @@ export const Register = () => {
                           handleInputChange("username")(e);
                         }}
                         type="text"
+                        placeholder="Choose a username"
                         className={`w-full px-4 py-3 bg-gray-800 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 transition-colors ${
                           showErrors && errors.username
                             ? "border-red-500 focus:ring-red-500"
@@ -209,6 +296,7 @@ export const Register = () => {
                           handleInputChange("password")(e);
                         }}
                         type="password"
+                        placeholder="Create a strong password"
                         className={`w-full px-4 py-3 bg-gray-800 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 transition-colors ${
                           showErrors && errors.password
                             ? "border-red-500 focus:ring-red-500"
@@ -242,6 +330,12 @@ export const Register = () => {
                       Account Summary:
                     </h4>
                     <div className="space-y-3 text-left">
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-400">Name:</span>
+                        <span className="text-white font-medium">
+                          {getValues("firstName")} {getValues("lastName") || ""}
+                        </span>
+                      </div>
                       <div className="flex items-center justify-between">
                         <span className="text-gray-400">Email:</span>
                         <span className="text-blue-400 font-medium">

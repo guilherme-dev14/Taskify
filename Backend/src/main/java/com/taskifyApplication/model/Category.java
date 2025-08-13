@@ -31,10 +31,11 @@ public class Category {
     @Column(nullable = false)
     private OffsetDateTime updatedAt;
 
-
+    @PrePersist
     protected void onCreate() {
         createdAt = updatedAt = OffsetDateTime.now();
     }
+    @PreUpdate
     protected void onUpdate() {
         this.updatedAt = OffsetDateTime.now();
     }

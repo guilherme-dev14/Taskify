@@ -63,6 +63,7 @@ public class Task {
                         workspace.getUserRole(user) == RoleEnum.ADMIN ||
                         workspace.getUserRole(user) == RoleEnum.OWNER);
     }
+    @PrePersist
     protected void onCreate(){
         this.createdAt = OffsetDateTime.now();
     }
