@@ -1,5 +1,4 @@
-import ThemeToggle from "../../components/ThemeToggle";
-import Threads from "../../components/threads";
+import Threads from "../../components/Background/threads";
 import { Link } from "react-router-dom";
 import TextType from "../../components/TextType";
 

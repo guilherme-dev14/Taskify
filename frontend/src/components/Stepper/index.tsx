@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, {
   useState,
   Children,
@@ -12,6 +13,10 @@ interface StepperProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
   initialStep?: number;
   onStepChange?: (step: number) => void;
+  onBeforeStepChange?: (
+    currentStep: number,
+    nextStep: number
+  ) => Promise<boolean> | boolean; // Nova prop
   onFinalStepCompleted?: () => void;
   stepCircleContainerClassName?: string;
   stepContainerClassName?: string;
@@ -22,6 +27,7 @@ interface StepperProps extends HTMLAttributes<HTMLDivElement> {
   backButtonText?: string;
   nextButtonText?: string;
   disableStepIndicators?: boolean;
+  leftButtonContent?: ReactNode;
   renderStepIndicator?: (props: {
     step: number;
     currentStep: number;
@@ -33,6 +39,7 @@ export default function Stepper({
   children,
   initialStep = 1,
   onStepChange = () => {},
+  onBeforeStepChange, // Nova prop
   onFinalStepCompleted = () => {},
   stepCircleContainerClassName = "",
   stepContainerClassName = "",
@@ -41,19 +48,37 @@ export default function Stepper({
   backButtonProps = {},
   nextButtonProps = {},
   backButtonText = "Back",
-  nextButtonText = "Continue",
+  nextButtonText = "Next",
   disableStepIndicators = false,
   renderStepIndicator,
+  leftButtonContent,
   ...rest
 }: StepperProps) {
   const [currentStep, setCurrentStep] = useState<number>(initialStep);
   const [direction, setDirection] = useState<number>(0);
+  const [isValidating, setIsValidating] = useState(false); // Novo estado
   const stepsArray = Children.toArray(children);
   const totalSteps = stepsArray.length;
   const isCompleted = currentStep > totalSteps;
   const isLastStep = currentStep === totalSteps;
 
-  const updateStep = (newStep: number) => {
+  const updateStep = async (newStep: number) => {
+    // Verificar se há validação antes de mudar o step
+    if (onBeforeStepChange && newStep > currentStep) {
+      setIsValidating(true);
+      try {
+        const canProceed = await onBeforeStepChange(currentStep, newStep);
+        setIsValidating(false);
+
+        if (!canProceed) {
+          return;
+        }
+      } catch (e) {
+        setIsValidating(false);
+        return;
+      }
+    }
+
     setCurrentStep(newStep);
     if (newStep > totalSteps) {
       onFinalStepCompleted();
@@ -69,16 +94,18 @@ export default function Stepper({
     }
   };
 
-  const handleNext = () => {
-    if (!isLastStep) {
+  const handleNext = async () => {
+    if (!isLastStep && !isValidating) {
       setDirection(1);
-      updateStep(currentStep + 1);
+      await updateStep(currentStep + 1);
     }
   };
 
-  const handleComplete = () => {
-    setDirection(1);
-    updateStep(totalSteps + 1);
+  const handleComplete = async () => {
+    if (!isValidating) {
+      setDirection(1);
+      await updateStep(totalSteps + 1);
+    }
   };
 
   return (
@@ -102,19 +129,25 @@ export default function Stepper({
                   renderStepIndicator({
                     step: stepNumber,
                     currentStep,
-                    onStepClick: (clicked) => {
-                      setDirection(clicked > currentStep ? 1 : -1);
-                      updateStep(clicked);
+                    onStepClick: async (clicked) => {
+                      if (!isValidating) {
+                        setDirection(clicked > currentStep ? 1 : -1);
+                        await updateStep(clicked);
+                      }
                     },
                   })
                 ) : (
                   <StepIndicator
                     step={stepNumber}
-                    disableStepIndicators={disableStepIndicators}
+                    disableStepIndicators={
+                      disableStepIndicators || isValidating
+                    }
                     currentStep={currentStep}
-                    onClickStep={(clicked) => {
-                      setDirection(clicked > currentStep ? 1 : -1);
-                      updateStep(clicked);
+                    onClickStep={async (clicked) => {
+                      if (!isValidating) {
+                        setDirection(clicked > currentStep ? 1 : -1);
+                        await updateStep(clicked);
+                      }
                     }}
                   />
                 )}
@@ -137,16 +170,13 @@ export default function Stepper({
 
         {!isCompleted && (
           <div className={`px-8 pb-8 ${footerClassName}`}>
-            <div
-              className={`mt-10 flex ${
-                currentStep !== 1 ? "justify-between" : "justify-end"
-              }`}
-            >
-              {currentStep !== 1 && (
+            <div className={`mt-5 flex justify-between`}>
+              {currentStep !== 1 ? (
                 <button
                   onClick={handleBack}
+                  disabled={isValidating}
                   className={`duration-350 rounded px-2 py-1 transition ${
-                    currentStep === 1
+                    currentStep === 1 || isValidating
                       ? "pointer-events-none opacity-50 text-neutral-400"
                       : "text-neutral-400 hover:text-neutral-700"
                   }`}
@@ -154,13 +184,29 @@ export default function Stepper({
                 >
                   {backButtonText}
                 </button>
-              )}
+              ) : leftButtonContent ? (
+                leftButtonContent
+              ) : null}
               <button
                 onClick={isLastStep ? handleComplete : handleNext}
-                className="duration-350 flex items-center justify-center rounded-full bg-green-500 py-1.5 px-3.5 font-medium tracking-tight text-white transition hover:bg-green-600 active:bg-green-700"
+                disabled={isValidating}
+                className={`duration-350 flex items-center justify-center rounded-full py-1.5 px-3.5 font-medium tracking-tight text-white transition ${
+                  isValidating
+                    ? "bg-gray-500 cursor-not-allowed"
+                    : "bg-primary hover:bg-blue-600 active:bg-blue-700"
+                }`}
                 {...nextButtonProps}
               >
-                {isLastStep ? "Complete" : nextButtonText}
+                {isValidating ? (
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Validando...
+                  </div>
+                ) : isLastStep ? (
+                  "Complete"
+                ) : (
+                  nextButtonText
+                )}
               </button>
             </div>
           </div>

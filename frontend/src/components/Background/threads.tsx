@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect, useRef, useCallback } from "react";
 import { Renderer, Program, Mesh, Triangle, Color } from "ogl";
 
@@ -141,7 +142,7 @@ const Threads: React.FC<ThreadsProps> = ({
 
   const throttledMouseMove = useCallback(
     (() => {
-      let timeout: NodeJS.Timeout | null = null;
+      let timeout: number | null = null;
       return (e: MouseEvent) => {
         if (timeout) return;
         timeout = setTimeout(() => {
@@ -162,7 +163,7 @@ const Threads: React.FC<ThreadsProps> = ({
 
   const debouncedResize = useCallback(
     (() => {
-      let timeout: NodeJS.Timeout;
+      let timeout: number;
       return (resizeFn: () => void) => {
         clearTimeout(timeout);
         timeout = setTimeout(resizeFn, 100);
