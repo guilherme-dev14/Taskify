@@ -4,7 +4,7 @@ import jakarta.persistence.Entity;
 import lombok.Getter;
 
 
-@Getter
+
 public enum PriorityEnum {
     LOW("Low"),
     MEDIUM("Medium"),

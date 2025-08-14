@@ -4,9 +4,14 @@ import TextType from "../../components/TextType";
 
 export const Home = () => {
   return (
-    <main className="relative min-h-screen overflow-hidden bg-gray-900 text-white">
+    <main className="relative min-h-screen overflow-hidden bg-gray-700 text-white">
       <div className="fixed inset-0 z-0">
-        <Threads amplitude={1} distance={0} enableMouseInteraction={true} />
+        <Threads
+          color={[0, 0, 0]}
+          amplitude={1}
+          distance={0}
+          enableMouseInteraction={true}
+        />
       </div>
 
       <section className="relative z-10 grid place-items-center min-h-screen p-6">
@@ -18,7 +23,7 @@ export const Home = () => {
               typingSpeed={75}
               pauseDuration={1500}
               cursorCharacter="|"
-              className="text-4xl pt-14 font-bold text-white "
+              className="text-4xl pt-8 font-bold text-white "
             />
           </div>
 
