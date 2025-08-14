@@ -29,11 +29,11 @@ public class Task {
     private OffsetDateTime createdAt;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 30)
+    @Column(length = 30, columnDefinition = "NEW")
     private StatusTaskEnum status;
 
     @Enumerated(EnumType.STRING)
-    @Column(length = 20)
+    @Column(length = 20, columnDefinition = "LOW")
     private PriorityEnum priority;
     private LocalDateTime dueDate;
 

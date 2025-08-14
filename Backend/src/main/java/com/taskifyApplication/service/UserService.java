@@ -2,7 +2,6 @@ package com.taskifyApplication.service;
 
 
 
-import com.taskifyApplication.dto.*;
 import com.taskifyApplication.dto.UserDto.UpdateProfileDTO;
 import com.taskifyApplication.dto.UserDto.UserDTO;
 import com.taskifyApplication.model.User;
@@ -35,6 +34,7 @@ public class UserService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
+
         if (!user.getUsername().equals(updateDTO.getUsername()) &&
                 userRepository.existsByUsername(updateDTO.getUsername())) {
             throw new IllegalArgumentException("Username already exists");
@@ -43,6 +43,7 @@ public class UserService {
         user.setUsername(updateDTO.getUsername());
         user.setFirstName(updateDTO.getFirstName());
         user.setLastName(updateDTO.getLastName());
+
         user = userRepository.save(user);
         return convertToProfileDTO(user);
     }
@@ -58,4 +59,3 @@ public class UserService {
         return dto;
     }
 }
-

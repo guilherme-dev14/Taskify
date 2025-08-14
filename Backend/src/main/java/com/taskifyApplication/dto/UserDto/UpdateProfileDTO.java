@@ -18,6 +18,4 @@ public class UpdateProfileDTO {
     @Size(max = 100, message = "Last name must not exceed 100 characters")
     private String lastName;
 
-    @Size(max = 500, message = "Profile picture URL must not exceed 500 characters")
-    private String profilePictureUrl;
 }

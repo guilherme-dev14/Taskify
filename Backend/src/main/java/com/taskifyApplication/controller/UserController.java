@@ -3,6 +3,7 @@ package com.taskifyApplication.controller;
 import com.taskifyApplication.dto.*;
 import com.taskifyApplication.dto.UserDto.UpdateProfileDTO;
 import com.taskifyApplication.dto.UserDto.UserDTO;
+import com.taskifyApplication.model.User;
 import com.taskifyApplication.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -27,7 +28,7 @@ public class UserController {
         }
     }
 
-    @PutMapping("/me")
+    @PutMapping("/mes")
     public ResponseEntity<UserDTO> updateCurrentUser(@Valid @RequestBody UpdateProfileDTO updateDTO) {
         try {
             UserDTO user = userService.updateCurrentUserProfile(updateDTO);
