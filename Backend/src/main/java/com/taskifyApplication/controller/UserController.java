@@ -1,6 +1,5 @@
 package com.taskifyApplication.controller;
 
-import com.taskifyApplication.dto.*;
 import com.taskifyApplication.dto.UserDto.UpdateProfileDTO;
 import com.taskifyApplication.dto.UserDto.UserDTO;
 import com.taskifyApplication.model.User;

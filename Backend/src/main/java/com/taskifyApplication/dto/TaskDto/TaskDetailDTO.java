@@ -6,9 +6,10 @@ import com.taskifyApplication.model.StatusTaskEnum;
 import lombok.Data;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.util.List;
 
 @Data
-public class TaskResponseDTO {
+public class TaskDetailDTO {
     private Long id;
     private String title;
     private String description;
@@ -16,13 +17,19 @@ public class TaskResponseDTO {
     private PriorityEnum priority;
     private LocalDateTime dueDate;
     private OffsetDateTime createdAt;
+    private OffsetDateTime updatedAt;
 
-    private WorkspaceSummaryDTO workspace;
-    private CategorySummaryDTO category;
-    private UserSummaryDTO assignedTo;
-    private UserSummaryDTO createdBy;
+    private WorkspaceResponseDTO workspace;
+    private CategoryResponseDTO category;
+    private UserProfileDTO assignedTo;
+    private UserProfileDTO createdBy;
+
+    private List<CommentResponseDTO> comments;
+    private List<TaskHistoryDTO> history;
 
     private Integer commentsCount;
     private Boolean isOverdue;
     private Integer daysUntilDue;
+    private Integer estimatedHours;
+    private Integer actualHours;
 }
