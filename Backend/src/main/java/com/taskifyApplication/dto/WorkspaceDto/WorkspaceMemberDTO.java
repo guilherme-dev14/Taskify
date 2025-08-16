@@ -1,5 +1,6 @@
 package com.taskifyApplication.dto.WorkspaceDto;
 
+import com.taskifyApplication.dto.UserDto.UserSummaryDTO;
 import com.taskifyApplication.model.RoleEnum;
 import lombok.Data;
 import java.time.OffsetDateTime;

@@ -1,6 +1,9 @@
 package com.taskifyApplication.dto.TaskDto;
 
 
+import com.taskifyApplication.dto.CategoryDto.CategorySummaryDTO;
+import com.taskifyApplication.dto.UserDto.UserSummaryDTO;
+import com.taskifyApplication.dto.WorkspaceDto.WorkspaceSummaryDTO;
 import com.taskifyApplication.model.PriorityEnum;
 import com.taskifyApplication.model.StatusTaskEnum;
 import lombok.Data;

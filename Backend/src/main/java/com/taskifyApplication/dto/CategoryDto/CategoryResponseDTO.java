@@ -1,6 +1,7 @@
 package com.taskifyApplication.dto.CategoryDto;
 
 
+import com.taskifyApplication.dto.UserDto.UserSummaryDTO;
 import com.taskifyApplication.dto.WorkspaceDto.WorkspaceSummaryDTO;
 import lombok.Data;
 import java.time.OffsetDateTime;

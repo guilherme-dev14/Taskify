@@ -1,6 +1,7 @@
 package com.taskifyApplication.dto.WorkspaceDto;
 
 
+import com.taskifyApplication.dto.CategoryDto.CategoryStatsDTO;
 import com.taskifyApplication.dto.TaskDto.TaskStatsDTO;
 import lombok.Data;
 

@@ -1,6 +1,10 @@
 package com.taskifyApplication.dto.TaskDto;
 
 
+import com.taskifyApplication.dto.CategoryDto.CategoryResponseDTO;
+import com.taskifyApplication.dto.CommentDto.CommentResponseDTO;
+import com.taskifyApplication.dto.UserDto.UserDTO;
+import com.taskifyApplication.dto.WorkspaceDto.WorkspaceResponseDTO;
 import com.taskifyApplication.model.PriorityEnum;
 import com.taskifyApplication.model.StatusTaskEnum;
 import lombok.Data;
@@ -21,8 +25,8 @@ public class TaskDetailDTO {
 
     private WorkspaceResponseDTO workspace;
     private CategoryResponseDTO category;
-    private UserProfileDTO assignedTo;
-    private UserProfileDTO createdBy;
+    private UserDTO assignedTo;
+    private UserDTO createdBy;
 
     private List<CommentResponseDTO> comments;
     private List<TaskHistoryDTO> history;

@@ -2,6 +2,7 @@ package com.taskifyApplication.dto.CommentDto;
 
 
 import com.taskifyApplication.dto.TaskDto.TaskSummaryDTO;
+import com.taskifyApplication.dto.UserDto.UserSummaryDTO;
 import lombok.Data;
 import java.time.OffsetDateTime;
 
