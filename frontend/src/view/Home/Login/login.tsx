@@ -6,17 +6,10 @@ import { Link } from "react-router-dom";
 import { useState, useCallback } from "react";
 import * as yup from "yup";
 import LightRays from "../../../components/Background/lightRays";
-
-interface ILoginUser {
-  username: string;
-  password: string;
-  rememberMe?: boolean;
-}
-
-const validationSchema: yup.ObjectSchema<ILoginUser> = yup.object().shape({
-  username: yup.string().required("Username is required"),
+import type { ILoginRequest } from "../../../types/auth.types";
+const validationSchema: yup.ObjectSchema<ILoginRequest> = yup.object().shape({
+  email: yup.string().required("Username is required"),
   password: yup.string().required("Password is required"),
-  rememberMe: yup.boolean().optional(),
 });
 
 export const Login = () => {
@@ -31,17 +24,16 @@ export const Login = () => {
     trigger,
     getValues,
     clearErrors,
-  } = useForm<ILoginUser>({
+  } = useForm<ILoginRequest>({
     resolver: yupResolver(validationSchema),
     mode: "onChange",
   });
 
   const handleBeforeStepChange = useCallback(
     async (currentStep: number, nextStep: number): Promise<boolean> => {
-      // Validação ocorre quando sai do step 2 (formulário de login)
       if (currentStep === 2 && nextStep > currentStep) {
         setHasTriedToAdvance(true);
-        const isValid = await trigger(["username", "password"]);
+        const isValid = await trigger(["email", "password"]);
 
         if (!isValid) {
           setShowErrors(true);
@@ -61,12 +53,10 @@ export const Login = () => {
     [trigger]
   );
 
-  const onSubmit: SubmitHandler<ILoginUser> = useCallback((data) => {
-    console.log("Dados do formulário:", data);
-    alert(
-      `Login successful!\nUsername: ${data.username}\nRemember me: ${
-        data.rememberMe ? "Yes" : "No"
-      }`
+  const onSubmit: SubmitHandler<ILoginRequest> = useCallback((data) => {
+    try{
+      await login
+    }
     );
     // Aqui você redirecionaria para o dashboard ou home
     // navigate('/dashboard');
