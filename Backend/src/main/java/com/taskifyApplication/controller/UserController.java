@@ -4,6 +4,7 @@ import com.taskifyApplication.dto.UserDto.UpdateProfileDTO;
 import com.taskifyApplication.dto.UserDto.UserDTO;
 import com.taskifyApplication.model.User;
 import com.taskifyApplication.service.UserService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -12,12 +13,13 @@ import jakarta.validation.Valid;
 @RestController
 @RequestMapping("/api/users")
 @CrossOrigin(origins = "http://localhost:5173")
+@SecurityRequirement(name = "bearerAuth")
 public class UserController {
 
     @Autowired
     private UserService userService;
 
-    @GetMapping("/me")
+    @GetMapping("/profile")
     public ResponseEntity<UserDTO> getCurrentUser() {
         try {
             UserDTO user = userService.getCurrentUserProfile();
@@ -27,7 +29,7 @@ public class UserController {
         }
     }
 
-    @PutMapping("/mes")
+    @PutMapping("/updateUser")
     public ResponseEntity<UserDTO> updateCurrentUser(@Valid @RequestBody UpdateProfileDTO updateDTO) {
         try {
             UserDTO user = userService.updateCurrentUserProfile(updateDTO);
@@ -35,5 +37,15 @@ public class UserController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         }
+    }
+
+    @DeleteMapping("/deleteProfile")
+    public ResponseEntity deleteCurrentUser() {
+        try {
+            userService.deleteCurrentUserProfile();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+        return null;
     }
 }

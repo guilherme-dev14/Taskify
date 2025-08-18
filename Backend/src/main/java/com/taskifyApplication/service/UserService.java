@@ -26,7 +26,13 @@ public class UserService {
 
         return convertToProfileDTO(user);
     }
-
+    public void deleteCurrentUserProfile(){
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        userRepository.delete(user);
+    }
     public UserDTO updateCurrentUserProfile(UpdateProfileDTO updateDTO) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String email = authentication.getName();
@@ -49,13 +55,17 @@ public class UserService {
     }
 
     private UserDTO convertToProfileDTO(User user) {
+        return getUserDTO(user);
+    }
+
+    static UserDTO getUserDTO(User user) {
         UserDTO dto = new UserDTO();
         dto.setId(user.getId());
         dto.setEmail(user.getEmail());
         dto.setUsername(user.getUsername());
         dto.setFirstName(user.getFirstName());
         dto.setLastName(user.getLastName());
-        dto.setCreatedAt(user.getCreatedAt());
+        dto.setCreatedAt(user.getCreatedAt().toOffsetDateTime());
         return dto;
     }
 }
