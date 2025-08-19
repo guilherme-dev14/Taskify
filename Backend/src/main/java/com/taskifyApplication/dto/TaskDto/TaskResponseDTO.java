@@ -6,11 +6,18 @@ import com.taskifyApplication.dto.UserDto.UserSummaryDTO;
 import com.taskifyApplication.dto.WorkspaceDto.WorkspaceSummaryDTO;
 import com.taskifyApplication.model.PriorityEnum;
 import com.taskifyApplication.model.StatusTaskEnum;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class TaskResponseDTO {
     private Long id;
     private String title;

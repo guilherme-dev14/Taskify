@@ -15,5 +15,4 @@ public class TaskSummaryDTO {
     private LocalDateTime dueDate;
     private String assignedToName;
     private String categoryName;
-    private Boolean isOverdue;
 }

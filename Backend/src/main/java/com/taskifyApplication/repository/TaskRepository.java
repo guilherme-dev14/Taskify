@@ -12,8 +12,13 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     List<Task> findByWorkspace(Workspace workspace);
     List<Task> findByStatus(StatusTaskEnum status);
     List<Task> findByWorkspaceAndStatus(Workspace workspace, StatusTaskEnum status);
-    List<Task> findByPriorityAndStatus(PriorityEnum priority, StatusTaskEnum status);
-    List<Task> findByUser(Long userId);
+
+    List<Task> findByAssignedTo(User assignedTo);
+
+    boolean existsByTitleAndWorkspace(String title, Workspace workspace);
+
     @Query("SELECT t FROM Task t WHERE t.dueDate BETWEEN :start AND :end")
     List<Task> findTasksDueBetween(LocalDateTime start, LocalDateTime end);
+
+
 }

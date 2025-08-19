@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.List;
 import lombok.*;
 import jakarta.persistence.*;
-import org.hibernate.annotations.Fetch;
 
 @Entity
 @Table(name = "Tasks")
@@ -19,7 +18,7 @@ public class Task {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false,length = 150)
+    @Column(nullable = false, length = 150)
     private String title;
 
     @Column(columnDefinition = "TEXT")
@@ -29,12 +28,15 @@ public class Task {
     private OffsetDateTime createdAt;
 
     @Enumerated(EnumType.STRING)
-    @Column(length = 30, columnDefinition = "NEW")
-    private StatusTaskEnum status;
+    @Column(length = 30)
+    @Builder.Default
+    private StatusTaskEnum status = StatusTaskEnum.NEW;
 
     @Enumerated(EnumType.STRING)
-    @Column(length = 20, columnDefinition = "LOW")
-    private PriorityEnum priority;
+    @Column(length = 20)
+    @Builder.Default
+    private PriorityEnum priority = PriorityEnum.LOW;
+
     private LocalDateTime dueDate;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -46,6 +48,7 @@ public class Task {
     private Double completionPercentage;
 
     @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
     private List<TaskComment> comments = new ArrayList<>();
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -53,9 +56,8 @@ public class Task {
     private Workspace workspace;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_id",  nullable = false)
+    @JoinColumn(name = "category_id", nullable = false)
     private Category category;
-
 
     public boolean canEdit(User user) {
         return workspace.getUserRole(user) != null &&
@@ -63,8 +65,15 @@ public class Task {
                         workspace.getUserRole(user) == RoleEnum.ADMIN ||
                         workspace.getUserRole(user) == RoleEnum.OWNER);
     }
+
     @PrePersist
     protected void onCreate(){
         this.createdAt = OffsetDateTime.now();
+        if (this.status == null) {
+            this.status = StatusTaskEnum.NEW;
+        }
+        if (this.priority == null) {
+            this.priority = PriorityEnum.LOW;
+        }
     }
 }
