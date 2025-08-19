@@ -1,21 +1,20 @@
 import api from "./api";
 import type {
-  LoginRequest,
-  RegisterRequest,
-  AuthResponse,
+  ILoginRequest,
+  IRegisterRequest,
+  IAuthResponse,
 } from "../types/auth.types";
 import { setToken, removeToken } from "../utils/token.utils";
 
 class AuthService {
-  async login(data: LoginRequest): Promise<AuthResponse> {
-    const response = await api.post<AuthResponse>("/auth/login", data);
+  async login(data: ILoginRequest): Promise<IAuthResponse> {
+    const response = await api.post<IAuthResponse>("/auth/login", data);
     setToken(response.data.token);
     return response.data;
   }
 
-  async register(data: RegisterRequest): Promise<AuthResponse> {
-    const response = await api.post<AuthResponse>("/auth/register", data);
-    setToken(response.data.token);
+  async register(data: IRegisterRequest): Promise<IAuthResponse> {
+    const response = await api.post<IAuthResponse>("/auth/register", data);
     return response.data;
   }
 

@@ -1,14 +1,14 @@
 import api from "./api";
-import type { User, UpdateProfileRequest } from "../types/auth.types";
+import type { IUser, IUpdateProfileRequest } from "../types/auth.types";
 
 class UserService {
-  async getCurrentUser(): Promise<User> {
-    const response = await api.get<User>("/users/profile");
+  async getCurrentUser(): Promise<IUser> {
+    const response = await api.get<IUser>("/users/profile");
     return response.data;
   }
 
-  async updateProfile(data: UpdateProfileRequest): Promise<User> {
-    const response = await api.put<User>("/users/updateUser", data);
+  async updateProfile(data: IUpdateProfileRequest): Promise<IUser> {
+    const response = await api.put<IUser>("/users/updateUser", data);
     return response.data;
   }
 }

@@ -1,19 +1,23 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { create } from "zustand";
-import type { User, RegisterRequest, LoginRequest } from "../types/auth.types";
+import type {
+  IUser,
+  IRegisterRequest,
+  ILoginRequest,
+} from "../types/auth.types";
 import authService from "../services/auth.service";
 import userService from "../services/user.service";
 import { getToken } from "../utils/token.utils";
 
 interface AuthState {
-  user: User | null;
+  user: IUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
 
   // Actions
-  login: (data: LoginRequest) => Promise<void>;
-  register: (data: RegisterRequest) => Promise<void>;
+  login: (data: ILoginRequest) => Promise<void>;
+  signup: (data: IRegisterRequest) => Promise<void>;
   logout: () => void;
   checkAuth: () => Promise<void>;
   clearError: () => void;
@@ -43,13 +47,12 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 
-  register: async (data) => {
+  signup: async (data) => {
     set({ isLoading: true, error: null });
     try {
       const response = await authService.register(data);
       set({
         user: response.user,
-        isAuthenticated: true,
         isLoading: false,
       });
     } catch (error: any) {

@@ -1,21 +1,29 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import Stepper, { Step } from "../../../components/Stepper";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useState, useCallback } from "react";
 import * as yup from "yup";
 import LightRays from "../../../components/Background/lightRays";
 import type { ILoginRequest } from "../../../types/auth.types";
+import { useAuthStore } from "../../../services/auth.store";
+
 const validationSchema: yup.ObjectSchema<ILoginRequest> = yup.object().shape({
   email: yup.string().required("Username is required"),
   password: yup.string().required("Password is required"),
 });
 
 export const Login = () => {
-  const [, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(1);
   const [showErrors, setShowErrors] = useState(false);
   const [, setHasTriedToAdvance] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [, setIsLoginSuccessful] = useState(false);
+
+  const navigate = useNavigate();
+  const { login, isLoading } = useAuthStore();
 
   const {
     register,
@@ -29,49 +37,92 @@ export const Login = () => {
     mode: "onChange",
   });
 
+  const performLogin = useCallback(async (): Promise<boolean> => {
+    try {
+      setLoginError(null);
+      const data = getValues();
+      await login(data);
+      setIsLoginSuccessful(true);
+      return true;
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.message ||
+        "Invalid email or password. Please try again.";
+      setLoginError(errorMessage);
+      setShowErrors(true);
+      setIsLoginSuccessful(false);
+      return false;
+    }
+  }, [getValues, login]);
+
   const handleBeforeStepChange = useCallback(
     async (currentStep: number, nextStep: number): Promise<boolean> => {
-      if (currentStep === 2 && nextStep > currentStep) {
+      // Indo do passo 2 para o 3 (do formulário para o sucesso)
+      if (currentStep === 2 && nextStep === 3) {
         setHasTriedToAdvance(true);
+
+        // Primeiro valida os campos
         const isValid = await trigger(["email", "password"]);
 
         if (!isValid) {
           setShowErrors(true);
           return false;
-        } else {
-          setShowErrors(false);
         }
+
+        // Se os campos são válidos, tenta fazer login
+        setShowErrors(false);
+        const loginSuccess = await performLogin();
+
+        if (!loginSuccess) {
+          // Se o login falhou, não avança para o próximo passo
+          return false;
+        }
+
+        // Login bem-sucedido, pode avançar
+        return true;
       }
 
+      // Voltando de um passo posterior para anterior
       if (nextStep < currentStep) {
         setShowErrors(false);
         setHasTriedToAdvance(false);
+        setLoginError(null);
+
+        if (currentStep === 3) {
+          setIsLoginSuccessful(false);
+        }
       }
 
       return true;
     },
-    [trigger]
+    [trigger, performLogin]
   );
 
-  const onSubmit: SubmitHandler<ILoginRequest> = useCallback((data) => {
-    try{
-      await login
-    }
-    );
-    // Aqui você redirecionaria para o dashboard ou home
-    // navigate('/dashboard');
-  }, []);
+  const onSubmit: SubmitHandler<ILoginRequest> = async () => {
+    await performLogin();
+  };
 
   const handleInputChange = useCallback(
-    (fieldName: keyof ILoginUser) => {
+    (fieldName: keyof ILoginRequest) => {
       return (_e: React.ChangeEvent<HTMLInputElement>) => {
         if (showErrors && errors[fieldName]) {
           clearErrors(fieldName);
         }
+        if (loginError) {
+          setLoginError(null);
+        }
       };
     },
-    [showErrors, errors, clearErrors]
+    [showErrors, errors, clearErrors, loginError]
   );
+
+  const handleDashboardRedirect = () => {
+    navigate("/dashboard");
+  };
+
+  const handleProfileRedirect = () => {
+    navigate("/profile");
+  };
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-gray-900 text-white">
@@ -96,20 +147,22 @@ export const Login = () => {
               initialStep={1}
               onStepChange={setCurrentStep}
               onBeforeStepChange={handleBeforeStepChange}
-              onFinalStepCompleted={() => {
-                handleSubmit(onSubmit)();
-              }}
               backButtonText="Previous"
               nextButtonText="Next"
               stepCircleContainerClassName="bg-gray-800/50 backdrop-blur-sm border-gray-700"
               contentClassName="min-h-[400px]"
+              nextButtonProps={{
+                style: { display: currentStep === 3 ? "none" : "flex" },
+              }}
               leftButtonContent={
-                <Link
-                  to="/register"
-                  className="px-6 py-3 bg-none border border-blue-500/30 text-blue-400 hover:bg-blue-500/20 rounded-lg hover:text-white font-semibold transition-all duration-300 hover:scale-105 shadow-2xl backdrop-blur-sm"
-                >
-                  Don't have an account? Sign up
-                </Link>
+                currentStep !== 3 && (
+                  <Link
+                    to="/register"
+                    className="px-6 py-3 bg-none border border-blue-500/30 text-blue-400 hover:bg-blue-500/20 rounded-lg hover:text-white font-semibold transition-all duration-300 hover:scale-105 shadow-2xl backdrop-blur-sm"
+                  >
+                    Don't have an account? Sign up
+                  </Link>
+                )
               }
             >
               <Step>
@@ -139,28 +192,64 @@ export const Login = () => {
                     </p>
                   </div>
 
+                  {/* Mensagem de erro de login */}
+                  {loginError && (
+                    <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-4 mb-6">
+                      <div className="flex items-center gap-2">
+                        <svg
+                          className="w-5 h-5 text-red-500"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                        <p className="text-red-400 text-sm">{loginError}</p>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="space-y-6">
                     <div className="space-y-2">
                       <label className="block text-sm font-medium text-gray-300">
-                        Username *
+                        Email *
                       </label>
                       <input
-                        {...register("username")}
+                        {...register("email")}
                         onChange={(e) => {
-                          register("username").onChange(e);
-                          handleInputChange("username")(e);
+                          register("email").onChange(e);
+                          handleInputChange("email")(e);
                         }}
-                        type="text"
-                        placeholder="Enter your username"
-                        className={`w-full px-4 py-3 bg-gray-800 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 transition-colors ${
-                          showErrors && errors.username
+                        type="email"
+                        placeholder="Enter your email"
+                        disabled={isLoading}
+                        className={`w-full px-4 py-3 bg-gray-800 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 transition-colors disabled:opacity-50 ${
+                          showErrors && errors.email
                             ? "border-red-500 focus:ring-red-500"
                             : "border-gray-600 focus:ring-blue-500 focus:border-blue-500"
                         }`}
                       />
-                      {showErrors && errors.username && (
+                      {showErrors && errors.email && (
                         <p className="text-red-400 text-sm flex items-center gap-1 animate-in slide-in-from-top-2 duration-200">
-                          {errors.username.message}
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                          </svg>
+                          {errors.email.message}
                         </p>
                       )}
                     </div>
@@ -177,7 +266,8 @@ export const Login = () => {
                         }}
                         type="password"
                         placeholder="Enter your password"
-                        className={`w-full px-4 py-3 bg-gray-800 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 transition-colors ${
+                        disabled={isLoading}
+                        className={`w-full px-4 py-3 bg-gray-800 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 transition-colors disabled:opacity-50 ${
                           showErrors && errors.password
                             ? "border-red-500 focus:ring-red-500"
                             : "border-gray-600 focus:ring-blue-500 focus:border-blue-500"
@@ -185,27 +275,25 @@ export const Login = () => {
                       />
                       {showErrors && errors.password && (
                         <p className="text-red-400 text-sm flex items-center gap-1 animate-in slide-in-from-top-2 duration-200">
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                          </svg>
                           {errors.password.message}
                         </p>
                       )}
                     </div>
 
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <input
-                          {...register("rememberMe")}
-                          type="checkbox"
-                          id="rememberMe"
-                          className="w-4 h-4 bg-gray-800 border border-gray-600 rounded focus:ring-2 focus:ring-blue-500 text-blue-600"
-                        />
-                        <label
-                          htmlFor="rememberMe"
-                          className="text-sm text-gray-300"
-                        >
-                          Remember me
-                        </label>
-                      </div>
-
                       <Link
                         to="/forgot-password"
                         className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
@@ -214,6 +302,35 @@ export const Login = () => {
                       </Link>
                     </div>
                   </div>
+
+                  {/* Indicador de carregamento */}
+                  {isLoading && (
+                    <div className="flex items-center justify-center pt-4">
+                      <div className="flex items-center gap-2 text-blue-400">
+                        <svg
+                          className="animate-spin h-5 w-5"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          ></circle>
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          ></path>
+                        </svg>
+                        <span>Validating credentials...</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </Step>
 
@@ -235,40 +352,57 @@ export const Login = () => {
                     </h4>
                     <div className="space-y-3 text-left">
                       <div className="flex items-center justify-between">
-                        <span className="text-gray-400">Username:</span>
+                        <span className="text-gray-400">Email:</span>
                         <span className="text-blue-400 font-medium">
-                          {getValues("username")}
+                          {getValues("email")}
                         </span>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-400">Remember me:</span>
-                        <span className="text-green-400 font-medium">
-                          {getValues("rememberMe") ? "Yes" : "No"}
-                        </span>
-                      </div>
+
                       <div className="flex items-center justify-between">
                         <span className="text-gray-400">Login time:</span>
                         <span className="text-white font-medium">
                           {new Date().toLocaleTimeString()}
                         </span>
                       </div>
+
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-400">Status:</span>
+                        <span className="text-green-400 font-medium flex items-center gap-1">
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                          </svg>
+                          Authenticated
+                        </span>
+                      </div>
                     </div>
                   </div>
 
                   <div className="pt-4 space-y-3">
-                    <Link
-                      to="/dashboard"
-                      className="inline-block w-full px-8 py-3 bg-primary text-white rounded-lg font-semibold transition-all duration-300 hover:scale-105 shadow-xl text-center"
+                    <button
+                      type="button"
+                      onClick={handleDashboardRedirect}
+                      className="w-full px-8 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg font-semibold transition-all duration-300 hover:scale-105 shadow-xl text-center"
                     >
                       Go to Dashboard
-                    </Link>
+                    </button>
 
-                    <Link
-                      to="/profile"
-                      className="inline-block w-full px-8 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-semibold transition-all duration-300 text-center"
+                    <button
+                      type="button"
+                      onClick={handleProfileRedirect}
+                      className="w-full px-8 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-semibold transition-all duration-300 text-center"
                     >
                       View Profile
-                    </Link>
+                    </button>
                   </div>
                 </div>
               </Step>
