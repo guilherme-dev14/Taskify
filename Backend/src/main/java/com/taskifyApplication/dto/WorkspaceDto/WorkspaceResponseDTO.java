@@ -1,7 +1,7 @@
 package com.taskifyApplication.dto.WorkspaceDto;
 
 
-import com.taskifyApplication.dto.CategoryDto.CategorySummaryDTO;
+import com.taskifyApplication.dto.CategoryDto.CategoryResponseDTO;
 import com.taskifyApplication.dto.TaskDto.TaskStatsDTO;
 import com.taskifyApplication.dto.UserDto.UserSummaryDTO;
 import lombok.Data;
@@ -21,7 +21,7 @@ public class WorkspaceResponseDTO {
     // Relacionamentos
     private UserSummaryDTO owner;
     private List<WorkspaceMemberDTO> members;
-    private List<CategorySummaryDTO> categories;
+    private List<CategoryResponseDTO> categories;
 
     // Estatísticas
     private Integer memberCount;

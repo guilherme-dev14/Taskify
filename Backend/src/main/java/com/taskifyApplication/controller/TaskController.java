@@ -1,12 +1,10 @@
 package com.taskifyApplication.controller;
 
-import com.taskifyApplication.dto.TaskDto.CreateTaskDTO;
-import com.taskifyApplication.dto.TaskDto.TaskDetailDTO;
-import com.taskifyApplication.dto.TaskDto.TaskResponseDTO;
-import com.taskifyApplication.dto.TaskDto.TaskSummaryDTO;
+import com.taskifyApplication.dto.TaskDto.*;
 import com.taskifyApplication.model.Task;
 import com.taskifyApplication.service.TaskService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -33,8 +31,8 @@ public class TaskController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-    @GetMapping
-    public ResponseEntity<TaskDetailDTO> getTaskById(Long id) {
+    @GetMapping("/{id}")
+    public ResponseEntity<TaskDetailDTO> getTaskById(@PathVariable Long id) {
         try {
             TaskDetailDTO task = taskService.getTaskById(id);
             return ResponseEntity.ok(task);
@@ -52,8 +50,8 @@ public class TaskController {
         }
     }
 
-    @DeleteMapping
-    public ResponseEntity deleteCurrentTask(Long id) {
+    @DeleteMapping("/{id}")
+    public ResponseEntity deleteCurrentTask(@PathVariable Long id) {
         try {
             taskService.deleteTask(id);
             return ResponseEntity.ok().build();
@@ -62,4 +60,19 @@ public class TaskController {
         }
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<TaskResponseDTO> updateTask(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateTaskDTO updateTaskDTO) {
+        try {
+            TaskResponseDTO task = taskService.updateTask(id, updateTaskDTO);
+            return ResponseEntity.ok(task);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
 }

@@ -5,7 +5,7 @@ import lombok.Data;
 
 @Data
 public class CategoryUsageDTO {
-    private CategorySummaryDTO category;
+    private CategoryResponseDTO category;
     private Integer taskCount;
     private Integer completedTasks;
     private Integer overdueTasks;

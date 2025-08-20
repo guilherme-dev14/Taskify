@@ -1,7 +1,6 @@
 package com.taskifyApplication.service;
 
 import com.taskifyApplication.dto.CategoryDto.CategoryResponseDTO;
-import com.taskifyApplication.dto.CategoryDto.CategorySummaryDTO;
 import com.taskifyApplication.dto.TaskDto.*;
 import com.taskifyApplication.dto.UserDto.UserDTO;
 import com.taskifyApplication.dto.UserDto.UserSummaryDTO;
@@ -12,7 +11,6 @@ import com.taskifyApplication.repository.CategoryRepository;
 import com.taskifyApplication.repository.TaskRepository;
 import com.taskifyApplication.repository.UserRepository;
 import com.taskifyApplication.repository.WorkspaceRepository;
-import jakarta.persistence.*;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
@@ -27,7 +25,7 @@ import java.util.stream.Collectors;
 @Service
 @Transactional
 public class TaskService {
-
+    // region REPOSITORIES
     @Autowired
     private TaskRepository taskRepository;
     @Autowired
@@ -36,7 +34,9 @@ public class TaskService {
     private CategoryRepository categoryRepository;
     @Autowired
     private UserRepository userRepository;
+    // endregion
 
+    // region PUBLIC FUNCTIONS SERVICE
     public List<TaskSummaryDTO> getAllTasksFromUser() {
         User currentUser = getCurrentUser();
         List<Task> tasks = taskRepository.findByAssignedTo(currentUser);
@@ -91,14 +91,67 @@ public class TaskService {
         taskRepository.delete(task);
     }
 
+    public TaskResponseDTO updateTask(Long taskId, UpdateTaskDTO updateTaskDTO) {
+        User currentUser = getCurrentUser();
+
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new IllegalArgumentException("Task not found with id: " + taskId));
+
+        if (!task.canEdit(currentUser)) {
+            throw new IllegalArgumentException("You don't have permission to edit this task");
+        }
+
+        if (updateTaskDTO.getTitle() != null) {
+            if (!task.getTitle().equals(updateTaskDTO.getTitle()) &&
+                    taskRepository.existsByTitleAndWorkspace(updateTaskDTO.getTitle(), task.getWorkspace())) {
+                throw new IllegalStateException("Task with this title already exists in the workspace!");
+            }
+            task.setTitle(updateTaskDTO.getTitle());
+        }
+
+        if (updateTaskDTO.getDescription() != null) {
+            task.setDescription(updateTaskDTO.getDescription());
+        }
+
+        if (updateTaskDTO.getStatus() != null) {
+            task.setStatus(updateTaskDTO.getStatus());
+        }
+
+        if (updateTaskDTO.getPriority() != null) {
+            task.setPriority(updateTaskDTO.getPriority());
+        }
+
+        if (updateTaskDTO.getDueDate() != null) {
+            task.setDueDate(updateTaskDTO.getDueDate());
+        }
+
+        if (updateTaskDTO.getCategoryId() != null) {
+            Category category = categoryRepository.findById(updateTaskDTO.getCategoryId())
+                    .orElseThrow(() -> new IllegalArgumentException("Category not found with id: " + updateTaskDTO.getCategoryId()));
+            task.setCategory(category);
+        }
+
+        if (updateTaskDTO.getAssignedToId() != null) {
+            User assignedUser = userRepository.findById(updateTaskDTO.getAssignedToId())
+                    .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + updateTaskDTO.getAssignedToId()));
+            task.setAssignedTo(assignedUser);
+        }
+        task = taskRepository.save(task);
+
+        return convertToTaskResponseDto(task);
+    }
+
+    //endregion
+
+    // region PRIVATE AUXILIAR FUNCTIONS
+
     private User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName(); // In your app, this returns email
+        String email = authentication.getName();
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
     }
 
-    // Conversion methods
     private TaskSummaryDTO convertToTaskSummaryDto(Task task) {
         TaskSummaryDTO dto = new TaskSummaryDTO();
         dto.setId(task.getId());
@@ -107,12 +160,10 @@ public class TaskService {
         dto.setPriority(task.getPriority());
         dto.setDueDate(task.getDueDate());
 
-        // Null-safe assignment for assignedTo
         if (task.getAssignedTo() != null) {
             dto.setAssignedToName(task.getAssignedTo().getFirstName());
         }
 
-        // Null-safe assignment for category
         if (task.getCategory() != null) {
             dto.setCategoryName(task.getCategory().getName());
         }
@@ -132,7 +183,6 @@ public class TaskService {
         dto.setEstimatedHours(task.getEstimatedHours());
         dto.setActualHours(task.getActualHours());
 
-        // Convert workspace to WorkspaceResponseDTO
         if (task.getWorkspace() != null) {
             WorkspaceResponseDTO workspaceDto = new WorkspaceResponseDTO();
             workspaceDto.setId(task.getWorkspace().getId());
@@ -144,18 +194,14 @@ public class TaskService {
             dto.setWorkspace(workspaceDto);
         }
 
-        // Convert category to CategoryResponseDTO
         if (task.getCategory() != null) {
             CategoryResponseDTO categoryDto = new CategoryResponseDTO();
             categoryDto.setId(task.getCategory().getId());
             categoryDto.setName(task.getCategory().getName());
             categoryDto.setDescription(task.getCategory().getDescription());
-            categoryDto.setCreatedAt(task.getCategory().getCreatedAt());
-            categoryDto.setUpdatedAt(task.getCategory().getUpdatedAt());
             dto.setCategory(categoryDto);
         }
 
-        // Convert assigned user to UserDTO
         if (task.getAssignedTo() != null) {
             UserDTO userDto = new UserDTO();
             userDto.setId(task.getAssignedTo().getId());
@@ -167,7 +213,6 @@ public class TaskService {
             dto.setAssignedTo(userDto);
         }
 
-        // Calculate additional fields
         if (task.getDueDate() != null) {
             dto.setIsOverdue(task.getDueDate().isBefore(LocalDateTime.now())
                     && task.getStatus() != StatusTaskEnum.COMPLETED);
@@ -191,7 +236,6 @@ public class TaskService {
         dto.setDueDate(task.getDueDate());
         dto.setCreatedAt(task.getCreatedAt());
 
-        // Convert workspace to summary
         if (task.getWorkspace() != null) {
             WorkspaceSummaryDTO workspaceDto = new WorkspaceSummaryDTO();
             workspaceDto.setId(task.getWorkspace().getId());
@@ -199,15 +243,13 @@ public class TaskService {
             dto.setWorkspace(workspaceDto);
         }
 
-        // Convert category to summary
         if (task.getCategory() != null) {
-            CategorySummaryDTO categoryDto = new CategorySummaryDTO();
+            CategoryResponseDTO categoryDto = new CategoryResponseDTO();
             categoryDto.setId(task.getCategory().getId());
             categoryDto.setName(task.getCategory().getName());
             dto.setCategory(categoryDto);
         }
 
-        // Convert assigned user to summary
         if (task.getAssignedTo() != null) {
             UserSummaryDTO userDto = new UserSummaryDTO();
             userDto.setId(task.getAssignedTo().getId());
@@ -217,7 +259,6 @@ public class TaskService {
             dto.setAssignedTo(userDto);
         }
 
-        // Calculate additional fields
         if (task.getDueDate() != null) {
             dto.setIsOverdue(task.getDueDate().isBefore(LocalDateTime.now())
                     && task.getStatus() != StatusTaskEnum.COMPLETED);
@@ -230,4 +271,5 @@ public class TaskService {
 
         return dto;
     }
+    // endregion
 }

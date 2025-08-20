@@ -1,7 +1,7 @@
 package com.taskifyApplication.dto.TaskDto;
 
 
-import com.taskifyApplication.dto.CategoryDto.CategorySummaryDTO;
+import com.taskifyApplication.dto.CategoryDto.CategoryResponseDTO;
 import com.taskifyApplication.dto.UserDto.UserSummaryDTO;
 import com.taskifyApplication.dto.WorkspaceDto.WorkspaceSummaryDTO;
 import com.taskifyApplication.model.PriorityEnum;
@@ -28,7 +28,7 @@ public class TaskResponseDTO {
     private OffsetDateTime createdAt;
 
     private WorkspaceSummaryDTO workspace;
-    private CategorySummaryDTO category;
+    private CategoryResponseDTO category;
     private UserSummaryDTO assignedTo;
     private UserSummaryDTO createdBy;
 

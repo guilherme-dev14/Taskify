@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 
 @Data
 public class UpdateTaskDTO {
+    private Long id;
     @Size(max = 150, message = "Title must not exceed 150 characters")
     private String title;
 
@@ -19,4 +20,5 @@ public class UpdateTaskDTO {
     private PriorityEnum priority;
     private StatusTaskEnum status;
     private LocalDateTime dueDate;
+
 }
