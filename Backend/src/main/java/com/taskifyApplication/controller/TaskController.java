@@ -51,13 +51,8 @@ public class TaskController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity deleteCurrentTask(@PathVariable Long id) {
-        try {
+    public void deleteCurrentTask(@PathVariable Long id) {
             taskService.deleteTask(id);
-            return ResponseEntity.ok().build();
-        } catch(Exception e){
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
     }
 
     @PutMapping("/{id}")

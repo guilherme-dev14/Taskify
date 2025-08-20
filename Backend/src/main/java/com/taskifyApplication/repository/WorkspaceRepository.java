@@ -1,5 +1,6 @@
 package com.taskifyApplication.repository;
 
+import com.taskifyApplication.dto.WorkspaceDto.WorkspaceNameDTO;
 import com.taskifyApplication.model.Workspace;
 import com.taskifyApplication.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -23,7 +24,7 @@ public interface WorkspaceRepository extends JpaRepository<Workspace, Long> {
             "LEFT JOIN WorkspaceMember wm ON w.id = wm.workspace.id " +
             "WHERE w.owner = :user OR (wm.user = :user AND wm.isActive = true) " +
             "ORDER BY w.updatedAt DESC")
-    List<Workspace> findAllAccessibleByUser(@Param("user") User user);
+    List<WorkspaceNameDTO> findAllAccessibleByUser(@Param("user") User user);
 
     @Query("SELECT CASE WHEN w.owner = :user THEN 'OWNER' " +
             "ELSE wm.role END " +

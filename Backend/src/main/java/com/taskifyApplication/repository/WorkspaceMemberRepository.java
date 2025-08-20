@@ -24,6 +24,9 @@ public interface WorkspaceMemberRepository extends JpaRepository<WorkspaceMember
             "WHERE w.id = :workspaceId AND " +
             "(w.owner = :user OR (wm.user = :user AND wm.role IN ('ADMIN', 'OWNER') AND wm.isActive = true))")
     boolean canUserManage(@Param("workspaceId") Long workspaceId, @Param("user") User user);
+
+    @Modifying
+    @Query("UPDATE WorkspaceMember wm SET wm.isActive = false WHERE wm.workspace = :workspace AND wm.user = :user")
     int deactivateMember(@Param("workspace") Workspace workspace, @Param("user") User user);
 
     @Modifying

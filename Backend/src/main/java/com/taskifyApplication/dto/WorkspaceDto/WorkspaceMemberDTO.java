@@ -11,10 +11,6 @@ public class WorkspaceMemberDTO {
     private UserSummaryDTO user;
     private RoleEnum role;
     private OffsetDateTime joinedAt;
-    private Boolean isActive;
 
-    // Estatísticas do membro
-    private Integer assignedTasks;
-    private Integer completedTasks;
-    private Double completionRate;
+
 }

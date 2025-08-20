@@ -18,14 +18,10 @@ public class WorkspaceResponseDTO {
     private OffsetDateTime createdAt;
     private OffsetDateTime updatedAt;
 
-    // Relacionamentos
     private UserSummaryDTO owner;
     private List<WorkspaceMemberDTO> members;
     private List<CategoryResponseDTO> categories;
 
-    // Estatísticas
     private Integer memberCount;
     private Integer taskCount;
-    private Integer activeTaskCount;
-    private TaskStatsDTO taskStats;
 }

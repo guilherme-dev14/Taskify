@@ -40,12 +40,7 @@ public class UserController {
     }
 
     @DeleteMapping("/deleteProfile")
-    public ResponseEntity deleteCurrentUser() {
-        try {
+    public void deleteCurrentUser() {
             userService.deleteCurrentUserProfile();
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
-        }
-        return null;
-    }
+            }
 }

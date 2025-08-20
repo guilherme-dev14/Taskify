@@ -1,14 +1,17 @@
 package com.taskifyApplication.service;
 
+import com.taskifyApplication.dto.WorkspaceDto.WorkspaceNameDTO;
 import com.taskifyApplication.model.RoleEnum;
 import com.taskifyApplication.model.User;
 import com.taskifyApplication.model.Workspace;
 import com.taskifyApplication.model.WorkspaceMember;
+import com.taskifyApplication.repository.UserRepository;
 import com.taskifyApplication.repository.WorkspaceMemberRepository;
 import com.taskifyApplication.repository.WorkspaceRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -24,11 +27,15 @@ public class WorkspaceService {
     private WorkspaceRepository workspaceRepository;
     @Autowired
     private WorkspaceMemberRepository workspaceMemberRepository;
+    @Autowired
+    private UserRepository userRepository;
+
     // endregion
 
     // region CRUD
-    public List<Workspace> getUserWorkspaces(User user) {
-        return workspaceRepository.findAllAccessibleByUser(user);
+    public List<WorkspaceNameDTO> getUserWorkspaces() {
+        User currentUser = getCurrentUser();
+        return workspaceRepository.findAllAccessibleByUser(currentUser);
     }
 
     public Workspace getWorkspaceById(Long workspaceId) {
@@ -65,10 +72,11 @@ public class WorkspaceService {
         return workspace;
     }
 
-    public void deleteWorkspace(Long workspaceId, User requestingUser) {
+    public void deleteWorkspace(Long workspaceId) {
         Workspace workspace = workspaceRepository.getReferenceById(workspaceId);
+        User user = getCurrentUser();
 
-        if (workspace.getOwner().equals(requestingUser)) {
+        if (workspace.getOwner().equals(user)) {
             throw new IllegalArgumentException("Cannot delete workspace if you are not the OWNER");
         }
         workspaceRepository.delete(workspace);
@@ -166,6 +174,13 @@ public class WorkspaceService {
                 .orElse(null);
     }
     // endregion
+
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+    }
 
     // region InviteCode
 
