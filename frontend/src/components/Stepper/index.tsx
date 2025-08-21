@@ -108,9 +108,22 @@ export default function Stepper({
     }
   };
 
+  const handleKeyDown = (event: React.KeyboardEvent) => {
+    if (event.key === "Enter" && !isValidating) {
+      event.preventDefault();
+      if (isLastStep) {
+        handleComplete();
+      } else {
+        handleNext();
+      }
+    }
+  };
+
   return (
     <div
       className="flex min-h-full flex-1 flex-col items-center justify-center p-4 sm:aspect-[4/3] md:aspect-[2/1]"
+      onKeyDown={handleKeyDown}
+      tabIndex={0}
       {...rest}
     >
       <div

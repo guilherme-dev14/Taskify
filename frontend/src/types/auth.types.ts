@@ -1,4 +1,5 @@
 export interface ILoginRequest {
+  preventDefault(): unknown;
   email: string;
   password: string;
 }

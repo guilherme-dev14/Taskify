@@ -79,6 +79,9 @@ export const Login = () => {
         }
 
         // Login bem-sucedido, pode avançar
+        setTimeout(() => {
+          navigate("/dashboard");
+        }, 2000); // Redireciona após 2 segundos para o usuário ver a mensagem de sucesso
         return true;
       }
 
@@ -98,8 +101,8 @@ export const Login = () => {
     [trigger, performLogin]
   );
 
-  const onSubmit: SubmitHandler<ILoginRequest> = async () => {
-    await performLogin();
+  const onSubmit: SubmitHandler<ILoginRequest> = async (e) => {
+    e?.preventDefault();
   };
 
   const handleInputChange = useCallback(
@@ -120,10 +123,6 @@ export const Login = () => {
     navigate("/dashboard");
   };
 
-  const handleProfileRedirect = () => {
-    navigate("/profile");
-  };
-
   return (
     <main className="relative min-h-screen overflow-hidden bg-gray-900 text-white">
       <div className="fixed inset-0 z-0">
@@ -142,7 +141,7 @@ export const Login = () => {
 
       <section className="relative z-10 grid place-items-center min-h-screen p-6">
         <div className="w-full max-w-2xl">
-          <form onSubmit={handleSubmit(onSubmit)}>
+          <form onSubmit={(e) => e.preventDefault()}>
             <Stepper
               initialStep={1}
               onStepChange={setCurrentStep}
@@ -394,14 +393,6 @@ export const Login = () => {
                       className="w-full px-8 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg font-semibold transition-all duration-300 hover:scale-105 shadow-xl text-center"
                     >
                       Go to Dashboard
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={handleProfileRedirect}
-                      className="w-full px-8 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-semibold transition-all duration-300 text-center"
-                    >
-                      View Profile
                     </button>
                   </div>
                 </div>

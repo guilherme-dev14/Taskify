@@ -4,8 +4,8 @@ const TOKEN_KEY = "jwt_token";
 
 export const setToken = (token: string): void => {
   Cookies.set(TOKEN_KEY, token, {
-    expires: 1, // 1 dia
-    secure: true,
+    expires: 7, // 7 dias
+    secure: window.location.protocol === 'https:', // só usa secure em HTTPS
     sameSite: "strict",
   });
 };

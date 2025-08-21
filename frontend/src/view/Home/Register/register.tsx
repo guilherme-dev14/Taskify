@@ -122,8 +122,9 @@ export const Register = () => {
     [trigger, performRegistration]
   );
 
-  const onSubmit: SubmitHandler<IRegisterRequest> = async () => {
-    await performRegistration();
+  const onSubmit: SubmitHandler<IRegisterRequest> = async (e) => {
+    e?.preventDefault();
+    // Previne o submit do form, deixa o stepper controlar a navegação
   };
 
   const handleInputChange = useCallback(
@@ -162,7 +163,7 @@ export const Register = () => {
 
       <section className="relative z-10 grid place-items-center min-h-screen p-6">
         <div className="w-full max-w-2xl">
-          <form onSubmit={handleSubmit(onSubmit)}>
+          <form onSubmit={(e) => e.preventDefault()}>
             <Stepper
               initialStep={1}
               onStepChange={setCurrentStep}
