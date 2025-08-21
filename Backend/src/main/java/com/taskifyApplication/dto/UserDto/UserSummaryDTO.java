@@ -10,8 +10,6 @@ public class UserSummaryDTO {
     private String firstName;
     private String lastName;
     private String email;
-    private String profilePictureUrl;
-    private Boolean isActive;
 
     public String getFullName() {
         return firstName + " " + lastName;

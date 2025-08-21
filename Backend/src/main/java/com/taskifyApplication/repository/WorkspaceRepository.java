@@ -20,10 +20,9 @@ public interface WorkspaceRepository extends JpaRepository<Workspace, Long> {
             "WHERE wm.user = :user")
     List<Workspace> findWorkspacesByMember(User user);
 
-    @Query("SELECT DISTINCT w FROM Workspace w " +
+    @Query("SELECT DISTINCT new com.taskifyApplication.dto.WorkspaceDto.WorkspaceNameDTO(w.id, w.name ) FROM Workspace w " +
             "LEFT JOIN WorkspaceMember wm ON w.id = wm.workspace.id " +
-            "WHERE w.owner = :user OR (wm.user = :user) " +
-            "ORDER BY w.updatedAt DESC")
+            "WHERE w.owner = :user OR (wm.user = :user)")
     List<WorkspaceNameDTO> findAllAccessibleByUser(@Param("user") User user);
 
     @Query("SELECT CASE WHEN w.owner = :user THEN 'OWNER' " +
@@ -35,5 +34,9 @@ public interface WorkspaceRepository extends JpaRepository<Workspace, Long> {
 
     boolean existsByInviteCode(String inviteCode);
 
-    boolean accessibleForUser(User user, long workspaceId);
+    @Query("SELECT CASE WHEN COUNT(w) > 0 THEN true ELSE false END " +
+           "FROM Workspace w " +
+           "LEFT JOIN WorkspaceMember wm ON w.id = wm.workspace.id " +
+           "WHERE w.id = :workspaceId AND (w.owner = :user OR wm.user = :user)")
+    boolean accessibleForUser(@Param("user") User user, @Param("workspaceId") long workspaceId);
 }

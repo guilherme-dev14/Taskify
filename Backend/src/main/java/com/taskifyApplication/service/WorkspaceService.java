@@ -1,13 +1,11 @@
 package com.taskifyApplication.service;
 
-import com.taskifyApplication.dto.WorkspaceDto.CreateWorkspaceDTO;
-import com.taskifyApplication.dto.WorkspaceDto.UpdateWorkspaceDTO;
-import com.taskifyApplication.dto.WorkspaceDto.WorkspaceNameDTO;
-import com.taskifyApplication.dto.WorkspaceDto.WorkspaceResponseDTO;
+import com.taskifyApplication.dto.WorkspaceDto.*;
 import com.taskifyApplication.model.RoleEnum;
 import com.taskifyApplication.model.User;
 import com.taskifyApplication.model.Workspace;
 import com.taskifyApplication.model.WorkspaceMember;
+import com.taskifyApplication.repository.TaskRepository;
 import com.taskifyApplication.repository.UserRepository;
 import com.taskifyApplication.repository.WorkspaceMemberRepository;
 import com.taskifyApplication.repository.WorkspaceRepository;
@@ -18,6 +16,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.method.support.CompositeUriComponentsContributor;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -34,7 +33,7 @@ public class WorkspaceService {
     @Autowired
     private UserRepository userRepository;
     @Autowired
-    private CompositeUriComponentsContributor compositeUriComponentsContributor;
+    private TaskRepository taskRepository;
 
     // endregion
 
@@ -42,6 +41,17 @@ public class WorkspaceService {
     public List<WorkspaceNameDTO> getUserWorkspaces() {
         User currentUser = getCurrentUser();
         return workspaceRepository.findAllAccessibleByUser(currentUser);
+    }
+    public WorkspaceSummaryDTO getWorkspaceSummary(Long id) {
+        User currentUser = getCurrentUser();
+        if(workspaceRepository.existsById(id)
+                && workspaceRepository.accessibleForUser(currentUser, id))
+        {
+            return convertToWorkspaceSummaryDTO(workspaceRepository.getReferenceById(id));
+        }
+        else {
+            throw new IllegalStateException("Workspace not found or you dont have access");
+        }
     }
 
     public Workspace getWorkspaceById(Long workspaceId) {
@@ -90,7 +100,7 @@ public class WorkspaceService {
         Workspace workspace = workspaceRepository.getReferenceById(workspaceId);
         User user = getCurrentUser();
 
-        if (workspace.getOwner().equals(user)) {
+        if (!workspace.getOwner().equals(user)) {
             throw new IllegalArgumentException("Cannot delete workspace if you are not the OWNER");
         }
         workspaceRepository.delete(workspace);
@@ -101,7 +111,7 @@ public class WorkspaceService {
         Workspace workspace = workspaceRepository.findById(updateWorkspaceDTO.getId())
                 .orElseThrow(() -> new IllegalArgumentException("Workspace not found"));
         User user = getCurrentUser();
-        if (workspace.getOwner().equals(user)) {
+        if (!workspace.getOwner().equals(user)) {
             throw new IllegalArgumentException("Cannot update workspace if you are not the OWNER");
         }
         workspace.setName(updateWorkspaceDTO.getName());
@@ -245,6 +255,17 @@ public class WorkspaceService {
         workspaceResponseDTO.setCreatedAt(workspace.getCreatedAt());
         workspaceResponseDTO.setUpdatedAt(workspace.getUpdatedAt());
         return workspaceResponseDTO;
+    }
+
+    private WorkspaceSummaryDTO convertToWorkspaceSummaryDTO(Workspace workspace) {
+        WorkspaceSummaryDTO workspaceSummaryDTO = new WorkspaceSummaryDTO();
+        workspaceSummaryDTO.setName(workspace.getName());
+        workspaceSummaryDTO.setDescription(workspace.getDescription());
+        workspaceSummaryDTO.setCreatedAt(workspace.getCreatedAt());
+        workspaceSummaryDTO.setOwnerName(workspace.getOwner().getFirstName() + " " + workspace.getOwner().getLastName());
+        workspaceSummaryDTO.setMemberCount(workspace.getMembers().size());
+        workspaceSummaryDTO.setTaskCount(taskRepository.findByWorkspace(workspace).size());
+        return workspaceSummaryDTO;
     }
 
     private User getCurrentUser() {

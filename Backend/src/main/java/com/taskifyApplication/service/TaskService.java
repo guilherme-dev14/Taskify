@@ -4,6 +4,7 @@ import com.taskifyApplication.dto.CategoryDto.CategoryResponseDTO;
 import com.taskifyApplication.dto.TaskDto.*;
 import com.taskifyApplication.dto.UserDto.UserDTO;
 import com.taskifyApplication.dto.UserDto.UserSummaryDTO;
+import com.taskifyApplication.dto.WorkspaceDto.WorkspaceNameDTO;
 import com.taskifyApplication.dto.WorkspaceDto.WorkspaceResponseDTO;
 import com.taskifyApplication.dto.WorkspaceDto.WorkspaceSummaryDTO;
 import com.taskifyApplication.model.*;
@@ -236,7 +237,7 @@ public class TaskService {
         dto.setCreatedAt(task.getCreatedAt());
 
         if (task.getWorkspace() != null) {
-            WorkspaceSummaryDTO workspaceDto = new WorkspaceSummaryDTO();
+            WorkspaceNameDTO workspaceDto = new WorkspaceNameDTO();
             workspaceDto.setId(task.getWorkspace().getId());
             workspaceDto.setName(task.getWorkspace().getName());
             dto.setWorkspace(workspaceDto);

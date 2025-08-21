@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Size;
 
 @Data
 public class UpdateCategoryDTO {
+    private Long id;
     @Size(max = 100, message = "Name must not exceed 100 characters")
     private String name;
 

@@ -3,6 +3,8 @@ package com.taskifyApplication.dto.TaskDto;
 
 import com.taskifyApplication.dto.CategoryDto.CategoryResponseDTO;
 import com.taskifyApplication.dto.UserDto.UserSummaryDTO;
+import com.taskifyApplication.dto.WorkspaceDto.WorkspaceNameDTO;
+import com.taskifyApplication.dto.WorkspaceDto.WorkspaceResponseDTO;
 import com.taskifyApplication.dto.WorkspaceDto.WorkspaceSummaryDTO;
 import com.taskifyApplication.model.PriorityEnum;
 import com.taskifyApplication.model.StatusTaskEnum;
@@ -27,7 +29,7 @@ public class TaskResponseDTO {
     private LocalDateTime dueDate;
     private OffsetDateTime createdAt;
 
-    private WorkspaceSummaryDTO workspace;
+    private WorkspaceNameDTO workspace;
     private CategoryResponseDTO category;
     private UserSummaryDTO assignedTo;
     private UserSummaryDTO createdBy;

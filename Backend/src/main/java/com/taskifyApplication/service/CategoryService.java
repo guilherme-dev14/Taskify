@@ -4,7 +4,6 @@ import com.taskifyApplication.dto.CategoryDto.CategoryResponseDTO;
 import com.taskifyApplication.dto.CategoryDto.CreateCategoryDTO;
 import com.taskifyApplication.dto.CategoryDto.UpdateCategoryDTO;
 import com.taskifyApplication.model.Category;
-import com.taskifyApplication.model.Task;
 import com.taskifyApplication.model.User;
 import com.taskifyApplication.model.Workspace;
 import com.taskifyApplication.repository.CategoryRepository;
@@ -16,10 +15,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -39,17 +34,34 @@ public class CategoryService {
     private TaskRepository taskRepository;
     // endregion
 
-    // region PUBLIC FUNCTIONS
+    // region CRUD
     public CategoryResponseDTO getCategoryById(Long categoryId) {
+        User currentUser = getCurrentUser();
         Category category = categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new IllegalArgumentException("Task not found with id: " + categoryId));
+                .orElseThrow(() -> new IllegalArgumentException("Category not found with id: " + categoryId));
+        
+        // Check if user has access to the workspace containing this category
+        if (!workspaceRepository.accessibleForUser(currentUser, category.getWorkspace().getId())) {
+            throw new IllegalArgumentException("You don't have access to this category");
+        }
 
         return convertToCategoryResponseDTO(category);
     }
 
     public CategoryResponseDTO createCategory(CreateCategoryDTO createCategoryDTO) {
+        User currentUser = getCurrentUser();
         Workspace workspace = workspaceRepository.findById(createCategoryDTO.getWorkspaceId())
                 .orElseThrow(() -> new IllegalArgumentException("Workspace not found"));
+        
+        // Check if user has access to the workspace
+        if (!workspaceRepository.accessibleForUser(currentUser, workspace.getId())) {
+            throw new IllegalArgumentException("You don't have access to this workspace");
+        }
+        
+        // Check if category name already exists in workspace
+        if (categoryRepository.existsInWorkspace(workspace.getId(), createCategoryDTO.getName())) {
+            throw new IllegalArgumentException("Category with this name already exists in the workspace");
+        }
 
         Category category = Category.builder()
                 .name(createCategoryDTO.getName())
@@ -57,48 +69,62 @@ public class CategoryService {
                 .workspace(workspace)
                 .build();
 
-        category =  categoryRepository.save(category);
+        category = categoryRepository.save(category);
         return convertToCategoryResponseDTO(category);
-
     }
 
-    public void deleteCategory( Long CategoryId) {
-        Category category = categoryRepository.findById((CategoryId))
-                .orElseThrow(() -> new IllegalArgumentException("Category not found with id: " + CategoryId));
-        categoryRepository.deleteById(CategoryId);
+    public void deleteCategory(Long categoryId) {
+        User currentUser = getCurrentUser();
+        Category category = categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new IllegalArgumentException("Category not found with id: " + categoryId));
+        
+        // Check if user has access to the workspace
+        if (!workspaceRepository.accessibleForUser(currentUser, category.getWorkspace().getId())) {
+            throw new IllegalArgumentException("You don't have access to this category");
+        }
+        
+        categoryRepository.delete(category);
     }
 
     public List<CategoryResponseDTO> getAllCategoriesFromWorkspace(Long workspaceId) {
+        User currentUser = getCurrentUser();
+        
+        // Check if user has access to the workspace
+        if (!workspaceRepository.accessibleForUser(currentUser, workspaceId)) {
+            throw new IllegalArgumentException("You don't have access to this workspace");
+        }
 
-        List<Category> category = categoryRepository.getAllCategoriesFromWorkspace(workspaceId);
+        List<Category> categories = categoryRepository.getAllCategoriesFromWorkspace(workspaceId);
 
-        return category.stream()
+        return categories.stream()
                 .map(this::convertToCategoryResponseDTO)
                 .collect(Collectors.toList());
     }
 
-    public CategoryResponseDTO getCategoryByName(String categoryName) {
-        Category category = categoryRepository.findByName(categoryName);
-        return convertToCategoryResponseDTO(category);
-    }
+    public CategoryResponseDTO updateCategory(UpdateCategoryDTO updateCategoryDTO) {
+        User currentUser = getCurrentUser();
+        Category category = categoryRepository.findById(updateCategoryDTO.getId())
+                .orElseThrow(() -> new IllegalArgumentException("Category not found with id: " + updateCategoryDTO.getId()));
+        
+        // Check if user has access to the workspace
+        if (!workspaceRepository.accessibleForUser(currentUser, category.getWorkspace().getId())) {
+            throw new IllegalArgumentException("You don't have access to this category");
+        }
 
-    public CategoryResponseDTO updateCategory(Long categoryId, UpdateCategoryDTO updateCategoryDTO) {
-        Category category = categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new IllegalArgumentException("Task not found with id: " + categoryId));
-
-        if (updateCategoryDTO.getName() != null) {
+        if (updateCategoryDTO.getName() != null && !updateCategoryDTO.getName().trim().isEmpty()) {
+            // Check if new name already exists in workspace (excluding current category)
             if (!category.getName().equals(updateCategoryDTO.getName()) &&
                     categoryRepository.existsInWorkspace(category.getWorkspace().getId(), updateCategoryDTO.getName())) {
-                throw new IllegalStateException("Task with this title already exists in the workspace!");
+                throw new IllegalArgumentException("Category with this name already exists in the workspace");
             }
-            category.setName(updateCategoryDTO.getName());
+            category.setName(updateCategoryDTO.getName().trim());
         }
 
         if (updateCategoryDTO.getDescription() != null) {
-            category.setDescription(updateCategoryDTO.getDescription());
+            category.setDescription(updateCategoryDTO.getDescription().trim());
         }
+        
         category = categoryRepository.save(category);
-
         return convertToCategoryResponseDTO(category);
     }
 

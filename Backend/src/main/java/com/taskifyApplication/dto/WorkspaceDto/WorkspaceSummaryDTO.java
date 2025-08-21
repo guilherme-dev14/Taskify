@@ -5,10 +5,8 @@ import java.time.OffsetDateTime;
 
 @Data
 public class WorkspaceSummaryDTO {
-    private Long id;
     private String name;
     private String description;
-    private Boolean isPublic;
     private OffsetDateTime createdAt;
     private String ownerName;
     private Integer memberCount;
