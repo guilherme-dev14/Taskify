@@ -1,6 +1,8 @@
 package com.taskifyApplication.repository;
 
 import com.taskifyApplication.model.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -17,6 +19,8 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     List<Task> findByWorkspaceAndStatus(Workspace workspace, StatusTaskEnum status);
 
     List<Task> findByAssignedTo(User assignedTo);
+    
+    Page<Task> findByAssignedTo(User assignedTo, Pageable pageable);
 
     boolean existsByTitleAndWorkspace(String title, Workspace workspace);
 

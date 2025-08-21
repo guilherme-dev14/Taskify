@@ -6,7 +6,7 @@ import com.taskifyApplication.dto.UserDto.UserDTO;
 import com.taskifyApplication.dto.UserDto.UserSummaryDTO;
 import com.taskifyApplication.dto.WorkspaceDto.WorkspaceNameDTO;
 import com.taskifyApplication.dto.WorkspaceDto.WorkspaceResponseDTO;
-import com.taskifyApplication.dto.WorkspaceDto.WorkspaceSummaryDTO;
+import com.taskifyApplication.dto.common.PageResponse;
 import com.taskifyApplication.model.*;
 import com.taskifyApplication.repository.CategoryRepository;
 import com.taskifyApplication.repository.TaskRepository;
@@ -14,6 +14,8 @@ import com.taskifyApplication.repository.UserRepository;
 import com.taskifyApplication.repository.WorkspaceRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -38,12 +40,24 @@ public class TaskService {
     // endregion
 
     // region PUBLIC FUNCTIONS SERVICE
-    public List<TaskSummaryDTO> getAllTasksFromUser() {
+    public PageResponse<TaskSummaryDTO> getAllTasksFromUser(Pageable pageable) {
         User currentUser = getCurrentUser();
-        List<Task> tasks = taskRepository.findByAssignedTo(currentUser);
-        return tasks.stream()
+        Page<Task> taskPage = taskRepository.findByAssignedTo(currentUser, pageable);
+        
+        List<TaskSummaryDTO> taskSummaries = taskPage.getContent().stream()
                 .map(this::convertToTaskSummaryDto)
                 .collect(Collectors.toList());
+                
+        return PageResponse.<TaskSummaryDTO>builder()
+                .content(taskSummaries)
+                .page(taskPage.getNumber())
+                .size(taskPage.getSize())
+                .totalElements(taskPage.getTotalElements())
+                .totalPages(taskPage.getTotalPages())
+                .first(taskPage.isFirst())
+                .last(taskPage.isLast())
+                .empty(taskPage.isEmpty())
+                .build();
     }
 
     public TaskDetailDTO getTaskById(Long taskId) {
@@ -55,7 +69,21 @@ public class TaskService {
             throw new IllegalArgumentException("You don't have permission to view this task");
         }
 
-        return convertToTaskDetailDto(task);
+        TaskDetailDTO dto = convertToTaskDetailDto(task);
+        
+        // Calcular campos adicionais manualmente
+        if (task.getAssignedTo() != null) {
+            dto.getAssignedTo().setCreatedAt(task.getAssignedTo().getCreatedAt().toOffsetDateTime());
+        }
+        dto.setCommentsCount(task.getComments() != null ? task.getComments().size() : 0);
+        dto.setIsOverdue(task.getDueDate() != null && 
+                        task.getDueDate().isBefore(LocalDateTime.now()) && 
+                        task.getStatus() != StatusTaskEnum.COMPLETED);
+        if (task.getDueDate() != null) {
+            dto.setDaysUntilDue((int) ChronoUnit.DAYS.between(LocalDateTime.now(), task.getDueDate()));
+        }
+        
+        return dto;
     }
 
     public TaskResponseDTO createTask(CreateTaskDTO createTaskDTO) {
@@ -64,8 +92,11 @@ public class TaskService {
         Workspace workspace = workspaceRepository.findById(createTaskDTO.getWorkspaceId())
                 .orElseThrow(() -> new IllegalArgumentException("Workspace not found"));
 
-        Category category = categoryRepository.findById(createTaskDTO.getCategoryId())
-                .orElseThrow(() -> new IllegalArgumentException("Category not found"));
+        Category category = null;
+        if (createTaskDTO.getCategoryId() != null) {
+            category = categoryRepository.findById(createTaskDTO.getCategoryId())
+                    .orElseThrow(() -> new IllegalArgumentException("Category not found"));
+        }
 
         if (taskRepository.existsByTitleAndWorkspace(createTaskDTO.getTitle(), workspace)) {
             throw new IllegalStateException("Task with this title already exists in the workspace!");
@@ -75,7 +106,7 @@ public class TaskService {
                 .title(createTaskDTO.getTitle())
                 .description(createTaskDTO.getDescription())
                 .status(StatusTaskEnum.NEW)
-                .priority(createTaskDTO.getPriority())
+                .priority(createTaskDTO.getPriority() != null ? createTaskDTO.getPriority() : PriorityEnum.MEDIUM)
                 .dueDate(createTaskDTO.getDueDate())
                 .assignedTo(currentUser)
                 .workspace(workspace)
@@ -83,7 +114,15 @@ public class TaskService {
                 .build();
 
         task = taskRepository.save(task);
-        return convertToTaskResponseDto(task);
+        
+        TaskResponseDTO dto = convertToTaskResponseDto(task);
+        dto.setCommentsCount(0);
+        dto.setIsOverdue(false);
+        if (task.getDueDate() != null) {
+            dto.setDaysUntilDue((int) ChronoUnit.DAYS.between(LocalDateTime.now(), task.getDueDate()));
+        }
+        
+        return dto;
     }
 
     public void deleteTask(Long taskId){
@@ -139,7 +178,16 @@ public class TaskService {
         }
         task = taskRepository.save(task);
 
-        return convertToTaskResponseDto(task);
+        TaskResponseDTO dto = convertToTaskResponseDto(task);
+        dto.setCommentsCount(task.getComments() != null ? task.getComments().size() : 0);
+        dto.setIsOverdue(task.getDueDate() != null && 
+                        task.getDueDate().isBefore(LocalDateTime.now()) && 
+                        task.getStatus() != StatusTaskEnum.COMPLETED);
+        if (task.getDueDate() != null) {
+            dto.setDaysUntilDue((int) ChronoUnit.DAYS.between(LocalDateTime.now(), task.getDueDate()));
+        }
+        
+        return dto;
     }
 
     //endregion

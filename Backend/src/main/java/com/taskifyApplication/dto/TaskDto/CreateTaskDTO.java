@@ -18,12 +18,11 @@ public class CreateTaskDTO {
     @NotNull(message = "Workspace ID is required")
     private Long workspaceId;
 
-    @NotNull(message = "Category ID is required")
     private Long categoryId;
 
     private Long assignedToId;
 
-    private PriorityEnum priority = PriorityEnum.MEDIUM;
+    private PriorityEnum priority;
 
     private LocalDateTime dueDate;
 }
