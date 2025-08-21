@@ -1,6 +1,9 @@
 package com.taskifyApplication.service;
 
+import com.taskifyApplication.dto.WorkspaceDto.CreateWorkspaceDTO;
+import com.taskifyApplication.dto.WorkspaceDto.UpdateWorkspaceDTO;
 import com.taskifyApplication.dto.WorkspaceDto.WorkspaceNameDTO;
+import com.taskifyApplication.dto.WorkspaceDto.WorkspaceResponseDTO;
 import com.taskifyApplication.model.RoleEnum;
 import com.taskifyApplication.model.User;
 import com.taskifyApplication.model.Workspace;
@@ -13,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.method.support.CompositeUriComponentsContributor;
 
 import java.util.List;
 import java.util.Optional;
@@ -29,6 +33,8 @@ public class WorkspaceService {
     private WorkspaceMemberRepository workspaceMemberRepository;
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private CompositeUriComponentsContributor compositeUriComponentsContributor;
 
     // endregion
 
@@ -39,21 +45,30 @@ public class WorkspaceService {
     }
 
     public Workspace getWorkspaceById(Long workspaceId) {
-        return workspaceRepository.getReferenceById(workspaceId);
+        User currentUser = getCurrentUser();
+        if(workspaceRepository.existsById(workspaceId)
+                && workspaceRepository.accessibleForUser(currentUser, workspaceId))
+        {
+            return workspaceRepository.getReferenceById(workspaceId);
+        }
+        else {
+            throw new IllegalStateException("Workspace not found or you dont have access");
+        }
     }
 
-    public Workspace createWorkspace(String name, String description, User owner) {
+    public WorkspaceResponseDTO createWorkspace(CreateWorkspaceDTO createWorkspaceDTO) {
+        User owner = getCurrentUser();
         List<Workspace> existingWorkspaces = workspaceRepository.findByOwner(owner);
         boolean nameExists = existingWorkspaces.stream()
-                .anyMatch(w -> w.getName().equalsIgnoreCase(name));
+                .anyMatch(w -> w.getName().equalsIgnoreCase(createWorkspaceDTO.getName()));
 
         if (nameExists) {
             throw new IllegalArgumentException("You already have a workspace with this name");
         }
 
         Workspace workspace = Workspace.builder()
-                .name(name)
-                .description(description)
+                .name(createWorkspaceDTO.getName())
+                .description(createWorkspaceDTO.getDescription())
                 .owner(owner)
                 .inviteCode(generateInviteCode())
                 .build();
@@ -64,12 +79,11 @@ public class WorkspaceService {
                 .workspace(workspace)
                 .user(owner)
                 .role(RoleEnum.OWNER)
-                .isActive(true)
                 .build();
 
         workspaceMemberRepository.save(ownerMember);
 
-        return workspace;
+        return convertToWorkspaceResponseDTO(workspace);
     }
 
     public void deleteWorkspace(Long workspaceId) {
@@ -82,6 +96,20 @@ public class WorkspaceService {
         workspaceRepository.delete(workspace);
     }
 
+    public WorkspaceResponseDTO updateWorkspace(UpdateWorkspaceDTO updateWorkspaceDTO) {
+
+        Workspace workspace = workspaceRepository.findById(updateWorkspaceDTO.getId())
+                .orElseThrow(() -> new IllegalArgumentException("Workspace not found"));
+        User user = getCurrentUser();
+        if (workspace.getOwner().equals(user)) {
+            throw new IllegalArgumentException("Cannot update workspace if you are not the OWNER");
+        }
+        workspace.setName(updateWorkspaceDTO.getName());
+        workspace.setDescription(updateWorkspaceDTO.getDescription());
+        workspaceRepository.save(workspace);
+        return convertToWorkspaceResponseDTO(workspace);
+    }
+
     // endregion
 
     // region MEMBERS CONFIG
@@ -92,7 +120,7 @@ public class WorkspaceService {
             throw new IllegalArgumentException("You don't have permission to add members to this workspace");
         }
 
-        if (workspaceMemberRepository.existsByWorkspaceAndUserAndIsActive(workspace, userToAdd, true)) {
+        if (workspaceMemberRepository.existsByWorkspaceAndUser(workspace, userToAdd)) {
             throw new IllegalArgumentException("User is already a member of this workspace");
         }
 
@@ -100,7 +128,6 @@ public class WorkspaceService {
 
         if (existingMember.isPresent()) {
             WorkspaceMember member = existingMember.get();
-            member.setIsActive(true);
             member.setRole(role);
             workspaceMemberRepository.save(member);
         } else {
@@ -108,7 +135,6 @@ public class WorkspaceService {
                     .workspace(workspace)
                     .user(userToAdd)
                     .role(role)
-                    .isActive(true)
                     .build();
 
             workspaceMemberRepository.save(newMember);
@@ -124,12 +150,6 @@ public class WorkspaceService {
 
         if (workspace.getOwner().equals(userToRemove)) {
             throw new IllegalArgumentException("Cannot remove workspace owner");
-        }
-
-        int updatedRows = workspaceMemberRepository.deactivateMember(workspace, userToRemove);
-
-        if (updatedRows == 0) {
-            throw new IllegalArgumentException("User is not a member of this workspace");
         }
     }
 
@@ -152,10 +172,10 @@ public class WorkspaceService {
     }
     // endregion
 
-    // region Validação
+    // region VALIDATION
     public boolean canUserAccessWorkspace(Workspace workspace, User user) {
         return workspace.getOwner().equals(user) ||
-                workspaceMemberRepository.existsByWorkspaceAndUserAndIsActive(workspace, user, true);
+                workspaceMemberRepository.existsByWorkspaceAndUser(workspace, user);
     }
 
     public boolean canUserManageWorkspace(Workspace workspace, User user) {
@@ -169,20 +189,12 @@ public class WorkspaceService {
         }
 
         return workspaceMemberRepository.findByWorkspaceAndUser(workspace, user)
-                .filter(WorkspaceMember::getIsActive)
                 .map(WorkspaceMember::getRole)
                 .orElse(null);
     }
     // endregion
 
-    private User getCurrentUser() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
-    }
-
-    // region InviteCode
+    // region INVITE CODE
 
     public Workspace joinWorkspaceByInviteCode(String inviteCode, User user) {
         Workspace workspace = workspaceRepository.findByInviteCode(inviteCode)
@@ -193,7 +205,6 @@ public class WorkspaceService {
                 .workspace(workspace)
                 .user(user)
                 .role(RoleEnum.MEMBER)
-                .isActive(true)
                 .build();
 
         workspaceMemberRepository.save(newMember);
@@ -225,4 +236,22 @@ public class WorkspaceService {
     }
     // endregion
 
+    // region PRIVATE FUNCTIONS
+    private WorkspaceResponseDTO convertToWorkspaceResponseDTO(Workspace workspace) {
+        WorkspaceResponseDTO workspaceResponseDTO = new WorkspaceResponseDTO();
+        workspaceResponseDTO.setName(workspace.getName());
+        workspaceResponseDTO.setDescription(workspace.getDescription());
+        workspaceResponseDTO.setInviteCode(workspace.getInviteCode());
+        workspaceResponseDTO.setCreatedAt(workspace.getCreatedAt());
+        workspaceResponseDTO.setUpdatedAt(workspace.getUpdatedAt());
+        return workspaceResponseDTO;
+    }
+
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+    }
+    //endregion
 }

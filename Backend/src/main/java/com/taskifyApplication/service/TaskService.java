@@ -185,7 +185,6 @@ public class TaskService {
 
         if (task.getWorkspace() != null) {
             WorkspaceResponseDTO workspaceDto = new WorkspaceResponseDTO();
-            workspaceDto.setId(task.getWorkspace().getId());
             workspaceDto.setName(task.getWorkspace().getName());
             workspaceDto.setDescription(task.getWorkspace().getDescription());
             workspaceDto.setCreatedAt(task.getWorkspace().getCreatedAt());

@@ -1,6 +1,7 @@
 package com.taskifyApplication.dto.WorkspaceDto;
 
 
+import com.taskifyApplication.model.User;
 import lombok.Data;
 import jakarta.validation.constraints.*;
 
@@ -13,5 +14,4 @@ public class CreateWorkspaceDTO {
     @Size(max = 255, message = "Description must not exceed 255 characters")
     private String description;
 
-    private Boolean isPublic = false;
 }

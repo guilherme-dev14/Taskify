@@ -11,7 +11,9 @@ import java.util.List;
 @Repository
 public interface TaskRepository extends JpaRepository<Task, Long> {
     List<Task> findByWorkspace(Workspace workspace);
+
     List<Task> findByStatus(StatusTaskEnum status);
+
     List<Task> findByWorkspaceAndStatus(Workspace workspace, StatusTaskEnum status);
 
     List<Task> findByAssignedTo(User assignedTo);

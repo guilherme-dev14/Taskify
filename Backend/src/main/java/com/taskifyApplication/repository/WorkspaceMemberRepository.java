@@ -15,26 +15,22 @@ import java.util.Optional;
 
 @Repository
 public interface WorkspaceMemberRepository extends JpaRepository<WorkspaceMember, Long> {
-    List<WorkspaceMember> findByWorkspaceAndIsActive(Workspace workspace, Boolean isActive);
+
     Optional<WorkspaceMember> findByWorkspaceAndUser(Workspace workspace, User user);
-    List<WorkspaceMember> findByUserAndIsActive(User user, Boolean isActive);
-    boolean existsByWorkspaceAndUserAndIsActive(Workspace workspace, User user, Boolean isActive);
+
+
+    boolean existsByWorkspaceAndUser(Workspace workspace, User user);
     @Query("SELECT CASE WHEN COUNT(*) > 0 THEN true ELSE false END FROM Workspace w " +
             "LEFT JOIN WorkspaceMember wm ON w.id = wm.workspace.id " +
             "WHERE w.id = :workspaceId AND " +
-            "(w.owner = :user OR (wm.user = :user AND wm.role IN ('ADMIN', 'OWNER') AND wm.isActive = true))")
+            "(w.owner = :user OR (wm.user = :user AND wm.role IN ('ADMIN', 'OWNER')))")
+
     boolean canUserManage(@Param("workspaceId") Long workspaceId, @Param("user") User user);
 
-    @Modifying
-    @Query("UPDATE WorkspaceMember wm SET wm.isActive = false WHERE wm.workspace = :workspace AND wm.user = :user")
-    int deactivateMember(@Param("workspace") Workspace workspace, @Param("user") User user);
+
 
     @Modifying
-    @Query("UPDATE WorkspaceMember wm SET wm.isActive = true WHERE wm.workspace = :workspace AND wm.user = :user")
-    int reactivateMember(@Param("workspace") Workspace workspace, @Param("user") User user);
-
-    @Modifying
-    @Query("UPDATE WorkspaceMember wm SET wm.role = :newRole WHERE wm.workspace = :workspace AND wm.user = :user AND wm.isActive = true")
+    @Query("UPDATE WorkspaceMember wm SET wm.role = :newRole WHERE wm.workspace = :workspace AND wm.user = :user")
     int updateMemberRole(@Param("workspace") Workspace workspace, @Param("user") User user, @Param("newRole") RoleEnum newRole);
 
 }

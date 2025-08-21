@@ -17,12 +17,15 @@ import java.util.function.Function;
 @Service
 public class JwtService {
 
+    // region PRIVATE VARIABLES
     @Value("${jwt.secret:mySecretKey}")
     private String secretKey;
 
     @Value("${jwt.expiration:86400}")
     private long jwtExpiration;
+    // endregion
 
+    // region PUBLIC FUNCTIONS
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
     }
@@ -59,7 +62,9 @@ public class JwtService {
         final String username = extractUsername(token);
         return (username.equals(userDetails.getUsername())) && !isTokenExpired(token);
     }
+    // endregion
 
+    // region PRIVATE FUNCTIONS
     private boolean isTokenExpired(String token) {
         return extractExpiration(token).before(new Date());
     }
@@ -81,5 +86,6 @@ public class JwtService {
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         return Keys.hmacShaKeyFor(keyBytes);
     }
+    // endregion
 }
 

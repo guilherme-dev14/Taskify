@@ -39,7 +39,6 @@ public class CategoryService {
     private TaskRepository taskRepository;
     // endregion
 
-
     // region PUBLIC FUNCTIONS
     public CategoryResponseDTO getCategoryById(Long categoryId) {
         Category category = categoryRepository.findById(categoryId)
@@ -105,7 +104,7 @@ public class CategoryService {
 
     // endregion
 
-    // region PRIVATE AUXILIARS FUNCTIONS
+    // region PRIVATE FUNCTIONS
     private CategoryResponseDTO convertToCategoryResponseDTO(Category category) {
         CategoryResponseDTO categoryResponseDTO = new CategoryResponseDTO();
 

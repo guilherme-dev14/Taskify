@@ -11,10 +11,12 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class CustomUserDetailsService implements UserDetailsService {
-
+    // region REPOSITORIES
     @Autowired
     private UserRepository userRepository;
+    // endregion
 
+    // region PUBLIC FUNCTION
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         User user = userRepository.findByEmail(email)
@@ -27,4 +29,5 @@ public class CustomUserDetailsService implements UserDetailsService {
 
         return builder.build();
     }
+    // endregion
 }

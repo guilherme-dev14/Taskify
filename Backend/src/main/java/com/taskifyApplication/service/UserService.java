@@ -1,7 +1,5 @@
 package com.taskifyApplication.service;
 
-
-
 import com.taskifyApplication.dto.UserDto.UpdateProfileDTO;
 import com.taskifyApplication.dto.UserDto.UserDTO;
 import com.taskifyApplication.model.User;
@@ -13,10 +11,12 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class UserService {
-
+    // region REPOSITORIES
     @Autowired
     private UserRepository userRepository;
+    // endregion
 
+    // region PUBLIC FUNCTIONS
     public UserDTO getCurrentUserProfile() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String email = authentication.getName();
@@ -53,7 +53,9 @@ public class UserService {
         user = userRepository.save(user);
         return convertToProfileDTO(user);
     }
+    // endregion
 
+    // region PRIVATE FUNCTIONS
     private UserDTO convertToProfileDTO(User user) {
         return getUserDTO(user);
     }
@@ -68,4 +70,5 @@ public class UserService {
         dto.setCreatedAt(user.getCreatedAt().toOffsetDateTime());
         return dto;
     }
+    // endregion
 }

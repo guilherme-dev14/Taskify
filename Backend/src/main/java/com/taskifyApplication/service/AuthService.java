@@ -18,6 +18,7 @@ import static com.taskifyApplication.service.UserService.getUserDTO;
 @Service
 public class AuthService {
 
+    // region REPOSITORIES
     @Autowired
     private UserRepository userRepository;
 
@@ -31,7 +32,9 @@ public class AuthService {
     private AuthenticationManager authenticationManager;
     @Autowired
     private CustomUserDetailsService userDetailsService;
+    // endregion
 
+    // region PUBLIC FUNCTIONS
     public AuthResponseDTO register(CreateUserRequestDTO request) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new IllegalArgumentException("Email already exists");
@@ -79,8 +82,11 @@ public class AuthService {
                 .user(convertToProfileDTO(user))
                 .build();
     }
+    // endregion
 
+    // region PRIVATE FUNCTIONS
     private UserDTO convertToProfileDTO(User user) {
         return getUserDTO(user);
     }
+    // endregion
 }

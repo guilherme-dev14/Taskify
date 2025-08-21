@@ -35,8 +35,7 @@ public class Workspace {
     private User owner;
 
     @Column(name = "invite_code", length = 50, unique = true)
-    private String inviteCode; // Para convites por link
-
+    private String inviteCode;
     @PrePersist
     protected void onCreate() {
         createdAt = updatedAt = OffsetDateTime.now();
@@ -48,12 +47,12 @@ public class Workspace {
 
     public boolean isMember(User user) {
         return members.stream()
-                .anyMatch(member -> member.getUser().equals(user) && member.getIsActive());
+                .anyMatch(member -> member.getUser().equals(user));
     }
 
     public RoleEnum getUserRole(User user) {
         return members.stream()
-                .filter(member -> member.getUser().equals(user) && member.getIsActive())
+                .filter(member -> member.getUser().equals(user))
                 .map(WorkspaceMember::getRole)
                 .findFirst()
                 .orElse(null);

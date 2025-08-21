@@ -31,9 +31,6 @@ public class WorkspaceMember {
     @Column(nullable = false, updatable = false)
     private OffsetDateTime joinedAt;
 
-    @Column(nullable = false)
-    private Boolean isActive = true;
-
     @PrePersist
     protected void onCreate() {
         joinedAt = OffsetDateTime.now();

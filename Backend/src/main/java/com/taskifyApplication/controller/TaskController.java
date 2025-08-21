@@ -1,10 +1,10 @@
 package com.taskifyApplication.controller;
 
 import com.taskifyApplication.dto.TaskDto.*;
-import com.taskifyApplication.model.Task;
 import com.taskifyApplication.service.TaskService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,10 +17,8 @@ import java.util.List;
 @SecurityRequirement(name = "bearerAuth")
 public class TaskController {
 
-    private final TaskService taskService;
-    public TaskController(TaskService taskService) {
-        this.taskService = taskService;
-    }
+    @Autowired
+    private TaskService taskService;
 
     @GetMapping(name = "getAllTasksFromUser")
     public ResponseEntity<List<TaskSummaryDTO>> getAllTasksFromUser() {

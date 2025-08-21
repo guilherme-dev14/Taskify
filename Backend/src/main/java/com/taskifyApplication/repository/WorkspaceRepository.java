@@ -17,21 +17,23 @@ public interface WorkspaceRepository extends JpaRepository<Workspace, Long> {
     Optional<Workspace> findByInviteCode(String inviteCode);
 
     @Query("SELECT w FROM Workspace w JOIN WorkspaceMember wm ON w.id = wm.workspace.id " +
-            "WHERE wm.user = :user AND wm.isActive = true")
+            "WHERE wm.user = :user")
     List<Workspace> findWorkspacesByMember(User user);
 
     @Query("SELECT DISTINCT w FROM Workspace w " +
             "LEFT JOIN WorkspaceMember wm ON w.id = wm.workspace.id " +
-            "WHERE w.owner = :user OR (wm.user = :user AND wm.isActive = true) " +
+            "WHERE w.owner = :user OR (wm.user = :user) " +
             "ORDER BY w.updatedAt DESC")
     List<WorkspaceNameDTO> findAllAccessibleByUser(@Param("user") User user);
 
     @Query("SELECT CASE WHEN w.owner = :user THEN 'OWNER' " +
             "ELSE wm.role END " +
             "FROM Workspace w " +
-            "LEFT JOIN WorkspaceMember wm ON w.id = wm.workspace.id AND wm.user = :user AND wm.isActive = true " +
+            "LEFT JOIN WorkspaceMember wm ON w.id = wm.workspace.id AND wm.user = :user " +
             "WHERE w.id = :workspaceId")
     String getUserRoleInWorkspace(@Param("workspaceId") Long workspaceId, @Param("user") User user);
 
     boolean existsByInviteCode(String inviteCode);
+
+    boolean accessibleForUser(User user, long workspaceId);
 }
