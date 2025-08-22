@@ -5,6 +5,7 @@ import com.taskifyApplication.model.PriorityEnum;
 import com.taskifyApplication.model.StatusTaskEnum;
 import lombok.Data;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 public class TaskSummaryDTO {
@@ -14,5 +15,5 @@ public class TaskSummaryDTO {
     private PriorityEnum priority;
     private LocalDateTime dueDate;
     private String assignedToName;
-    private String categoryName;
+    private List<String> categoryNames;
 }

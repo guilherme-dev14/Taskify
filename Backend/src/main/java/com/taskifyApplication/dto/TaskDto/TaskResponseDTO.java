@@ -15,6 +15,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -30,7 +31,7 @@ public class TaskResponseDTO {
     private OffsetDateTime createdAt;
 
     private WorkspaceNameDTO workspace;
-    private CategoryResponseDTO category;
+    private List<CategoryResponseDTO> categories;
     private UserSummaryDTO assignedTo;
     private UserSummaryDTO createdBy;
 

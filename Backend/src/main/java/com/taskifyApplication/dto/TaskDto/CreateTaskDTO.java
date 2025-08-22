@@ -5,6 +5,7 @@ import com.taskifyApplication.model.PriorityEnum;
 import lombok.Data;
 import jakarta.validation.constraints.*;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 public class CreateTaskDTO {
@@ -18,7 +19,7 @@ public class CreateTaskDTO {
     @NotNull(message = "Workspace ID is required")
     private Long workspaceId;
 
-    private Long categoryId;
+    private List<Long> categoryIds;
 
     private Long assignedToId;
 

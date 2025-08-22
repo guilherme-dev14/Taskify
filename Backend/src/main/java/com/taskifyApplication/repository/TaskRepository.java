@@ -12,9 +12,9 @@ import java.util.List;
 
 @Repository
 public interface TaskRepository extends JpaRepository<Task, Long> {
-    List<Task> findByWorkspace(Workspace workspace);
+    List<Task> findByWorkspaceAndAssignedTo(Workspace workspace, User currentUser);
 
-    List<Task> findByStatus(StatusTaskEnum status);
+    List<Task> findByStatusAndAssignedTo(StatusTaskEnum status, User currentUser);
 
     List<Task> findByWorkspaceAndStatus(Workspace workspace, StatusTaskEnum status);
 
@@ -27,7 +27,21 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     @Query("SELECT t FROM Task t WHERE t.dueDate BETWEEN :start AND :end")
     List<Task> findTasksDueBetween(LocalDateTime start, LocalDateTime end);
 
-    @Query("SELECT COUNT(t) FROM Task t WHERE t.category.id = :categoryId")
+    @Query("SELECT COUNT(t) FROM Task t JOIN t.categories c WHERE c.id = :categoryId")
     Integer countByCategoryId(@Param("categoryId") Long categoryId);
 
+    @Query("SELECT t FROM Task t JOIN FETCH t.categories WHERE t.workspace = :workspace")
+    List<Task> findByWorkspaceWithCategories(@Param("workspace") Workspace workspace);
+
+    @Query("SELECT t FROM Task t JOIN t.categories c WHERE c.id = :categoryId")
+    List<Task> findByCategory(@Param("categoryId") Long categoryId);
+
+    @Query("SELECT COUNT(t) FROM Task t WHERE t.assignedTo = :user AND t.dueDate >= :startOfDay AND t.dueDate < :endOfDay AND t.status != :completedStatus")
+    Integer countTasksDueToday(@Param("user") User user, @Param("startOfDay") LocalDateTime startOfDay, @Param("endOfDay") LocalDateTime endOfDay, @Param("completedStatus") StatusTaskEnum completedStatus);
+
+    @Query("SELECT COUNT(t) FROM Task t WHERE t.status = :status")
+    Integer countByStatus(@Param("status") StatusTaskEnum status);
+
+    @Query("SELECT COUNT(t) FROM Task t WHERE t.assignedTo = :user AND t.dueDate < :currentDateTime AND t.status != :completedStatus")
+    Integer countOverdueTasks(@Param("user") User user, @Param("currentDateTime") LocalDateTime currentDateTime, @Param("completedStatus") StatusTaskEnum completedStatus);
 }

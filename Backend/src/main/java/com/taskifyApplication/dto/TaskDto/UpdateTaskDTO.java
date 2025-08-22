@@ -5,6 +5,7 @@ import com.taskifyApplication.model.StatusTaskEnum;
 import lombok.Data;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 public class UpdateTaskDTO {
@@ -15,7 +16,7 @@ public class UpdateTaskDTO {
     @Size(max = 1000, message = "Description must not exceed 1000 characters")
     private String description;
 
-    private Long categoryId;
+    private List<Long> categoryIds;
     private Long assignedToId;
     private PriorityEnum priority;
     private StatusTaskEnum status;

@@ -2,6 +2,7 @@ package com.taskifyApplication.controller;
 
 import com.taskifyApplication.dto.TaskDto.*;
 import com.taskifyApplication.dto.common.PageResponse;
+import com.taskifyApplication.model.StatusTaskEnum;
 import com.taskifyApplication.service.TaskService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
@@ -45,6 +46,13 @@ public class TaskController {
         return ResponseEntity.ok(task);
     }
 
+    public ResponseEntity<List<TaskSummaryDTO>> getTasksByStatus(StatusTaskEnum status) {
+        List<TaskSummaryDTO> task = taskService.getAllTasksByStatus(status);
+        return ResponseEntity.ok(task);
+
+
+    }
+
     @PostMapping
     public ResponseEntity<TaskResponseDTO> createTask(@Valid @RequestBody CreateTaskDTO createTaskDTO) {
         TaskResponseDTO task = taskService.createTask(createTaskDTO);
@@ -63,5 +71,11 @@ public class TaskController {
             @Valid @RequestBody UpdateTaskDTO updateTaskDTO) {
         TaskResponseDTO task = taskService.updateTask(id, updateTaskDTO);
         return ResponseEntity.ok(task);
+    }
+
+    @GetMapping("/dashboard/stats")
+    public ResponseEntity<DashboardStatsDTO> getDashboardStats() {
+        DashboardStatsDTO stats = taskService.getDashboardStats();
+        return ResponseEntity.ok(stats);
     }
 }

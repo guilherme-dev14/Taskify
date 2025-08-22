@@ -55,9 +55,14 @@ public class Task {
     @JoinColumn(name = "workspace_id", nullable = false)
     private Workspace workspace;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_id")
-    private Category category;
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+        name = "task_categories",
+        joinColumns = @JoinColumn(name = "task_id"),
+        inverseJoinColumns = @JoinColumn(name = "category_id")
+    )
+    @Builder.Default
+    private List<Category> categories = new ArrayList<>();
 
     public boolean canEdit(User user) {
         return workspace.getUserRole(user) != null &&

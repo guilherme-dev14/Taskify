@@ -21,7 +21,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -43,11 +45,11 @@ public class TaskService {
     public PageResponse<TaskSummaryDTO> getAllTasksFromUser(Pageable pageable) {
         User currentUser = getCurrentUser();
         Page<Task> taskPage = taskRepository.findByAssignedTo(currentUser, pageable);
-        
+
         List<TaskSummaryDTO> taskSummaries = taskPage.getContent().stream()
                 .map(this::convertToTaskSummaryDto)
                 .collect(Collectors.toList());
-                
+
         return PageResponse.<TaskSummaryDTO>builder()
                 .content(taskSummaries)
                 .page(taskPage.getNumber())
@@ -70,19 +72,18 @@ public class TaskService {
         }
 
         TaskDetailDTO dto = convertToTaskDetailDto(task);
-        
-        // Calcular campos adicionais manualmente
+
         if (task.getAssignedTo() != null) {
             dto.getAssignedTo().setCreatedAt(task.getAssignedTo().getCreatedAt().toOffsetDateTime());
         }
         dto.setCommentsCount(task.getComments() != null ? task.getComments().size() : 0);
-        dto.setIsOverdue(task.getDueDate() != null && 
-                        task.getDueDate().isBefore(LocalDateTime.now()) && 
-                        task.getStatus() != StatusTaskEnum.COMPLETED);
+        dto.setIsOverdue(task.getDueDate() != null &&
+                task.getDueDate().isBefore(LocalDateTime.now()) &&
+                task.getStatus() != StatusTaskEnum.COMPLETED);
         if (task.getDueDate() != null) {
             dto.setDaysUntilDue((int) ChronoUnit.DAYS.between(LocalDateTime.now(), task.getDueDate()));
         }
-        
+
         return dto;
     }
 
@@ -92,10 +93,12 @@ public class TaskService {
         Workspace workspace = workspaceRepository.findById(createTaskDTO.getWorkspaceId())
                 .orElseThrow(() -> new IllegalArgumentException("Workspace not found"));
 
-        Category category = null;
-        if (createTaskDTO.getCategoryId() != null) {
-            category = categoryRepository.findById(createTaskDTO.getCategoryId())
-                    .orElseThrow(() -> new IllegalArgumentException("Category not found"));
+        List<Category> categories = new ArrayList<>();
+        if (createTaskDTO.getCategoryIds() != null && !createTaskDTO.getCategoryIds().isEmpty()) {
+            categories = categoryRepository.findAllById(createTaskDTO.getCategoryIds());
+            if (categories.size() != createTaskDTO.getCategoryIds().size()) {
+                throw new IllegalArgumentException("Some categories not found");
+            }
         }
 
         if (taskRepository.existsByTitleAndWorkspace(createTaskDTO.getTitle(), workspace)) {
@@ -110,22 +113,22 @@ public class TaskService {
                 .dueDate(createTaskDTO.getDueDate())
                 .assignedTo(currentUser)
                 .workspace(workspace)
-                .category(category)
+                .categories(categories)
                 .build();
 
         task = taskRepository.save(task);
-        
+
         TaskResponseDTO dto = convertToTaskResponseDto(task);
         dto.setCommentsCount(0);
         dto.setIsOverdue(false);
         if (task.getDueDate() != null) {
             dto.setDaysUntilDue((int) ChronoUnit.DAYS.between(LocalDateTime.now(), task.getDueDate()));
         }
-        
+
         return dto;
     }
 
-    public void deleteTask(Long taskId){
+    public void deleteTask(Long taskId) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new IllegalArgumentException("Task not found with id: " + taskId));
         taskRepository.delete(task);
@@ -165,10 +168,12 @@ public class TaskService {
             task.setDueDate(updateTaskDTO.getDueDate());
         }
 
-        if (updateTaskDTO.getCategoryId() != null) {
-            Category category = categoryRepository.findById(updateTaskDTO.getCategoryId())
-                    .orElseThrow(() -> new IllegalArgumentException("Category not found with id: " + updateTaskDTO.getCategoryId()));
-            task.setCategory(category);
+        if (updateTaskDTO.getCategoryIds() != null) {
+            List<Category> categories = categoryRepository.findAllById(updateTaskDTO.getCategoryIds());
+            if (categories.size() != updateTaskDTO.getCategoryIds().size()) {
+                throw new IllegalArgumentException("Some categories not found");
+            }
+            task.setCategories(categories);
         }
 
         if (updateTaskDTO.getAssignedToId() != null) {
@@ -180,14 +185,38 @@ public class TaskService {
 
         TaskResponseDTO dto = convertToTaskResponseDto(task);
         dto.setCommentsCount(task.getComments() != null ? task.getComments().size() : 0);
-        dto.setIsOverdue(task.getDueDate() != null && 
-                        task.getDueDate().isBefore(LocalDateTime.now()) && 
-                        task.getStatus() != StatusTaskEnum.COMPLETED);
+        dto.setIsOverdue(task.getDueDate() != null &&
+                task.getDueDate().isBefore(LocalDateTime.now()) &&
+                task.getStatus() != StatusTaskEnum.COMPLETED);
         if (task.getDueDate() != null) {
             dto.setDaysUntilDue((int) ChronoUnit.DAYS.between(LocalDateTime.now(), task.getDueDate()));
         }
-        
+
         return dto;
+    }
+
+    public DashboardStatsDTO getDashboardStats() {
+        User currentUser = getCurrentUser();
+        DashboardStatsDTO dashboardStats = new DashboardStatsDTO();
+
+        LocalDate today = LocalDate.now();
+        LocalDateTime startOfDay = today.atStartOfDay();
+        LocalDateTime endOfDay = today.plusDays(1).atStartOfDay();
+
+        dashboardStats.setTotalTasks(taskRepository.findByAssignedTo(currentUser).size());
+        dashboardStats.setToDoToday(taskRepository.countTasksDueToday(currentUser, startOfDay, endOfDay, StatusTaskEnum.COMPLETED));
+        dashboardStats.setOverdue(taskRepository.countOverdueTasks(currentUser, LocalDateTime.now(), StatusTaskEnum.COMPLETED));
+        dashboardStats.setInProgress(taskRepository.countByStatus(StatusTaskEnum.IN_PROGRESS));
+        return dashboardStats;
+    }
+
+    public List<TaskSummaryDTO> getAllTasksByStatus(StatusTaskEnum status) {
+        User currentUser = getCurrentUser();
+        List<Task> tasks = taskRepository.findByStatusAndAssignedTo(status, currentUser);
+
+        return tasks.stream()
+                .map(this::convertToTaskSummaryDto)
+                .collect(Collectors.toList());
     }
 
     //endregion
@@ -213,8 +242,10 @@ public class TaskService {
             dto.setAssignedToName(task.getAssignedTo().getFirstName());
         }
 
-        if (task.getCategory() != null) {
-            dto.setCategoryName(task.getCategory().getName());
+        if (task.getCategories() != null && !task.getCategories().isEmpty()) {
+            dto.setCategoryNames(task.getCategories().stream()
+                    .map(Category::getName)
+                    .collect(Collectors.toList()));
         }
 
         return dto;
@@ -242,12 +273,17 @@ public class TaskService {
             dto.setWorkspace(workspaceDto);
         }
 
-        if (task.getCategory() != null) {
-            CategoryResponseDTO categoryDto = new CategoryResponseDTO();
-            categoryDto.setId(task.getCategory().getId());
-            categoryDto.setName(task.getCategory().getName());
-            categoryDto.setDescription(task.getCategory().getDescription());
-            dto.setCategory(categoryDto);
+        if (task.getCategories() != null && !task.getCategories().isEmpty()) {
+            List<CategoryResponseDTO> categoryDtos = task.getCategories().stream()
+                    .map(category -> {
+                        CategoryResponseDTO categoryDto = new CategoryResponseDTO();
+                        categoryDto.setId(category.getId());
+                        categoryDto.setName(category.getName());
+                        categoryDto.setDescription(category.getDescription());
+                        return categoryDto;
+                    })
+                    .collect(Collectors.toList());
+            dto.setCategories(categoryDtos);
         }
 
         if (task.getAssignedTo() != null) {
@@ -291,11 +327,16 @@ public class TaskService {
             dto.setWorkspace(workspaceDto);
         }
 
-        if (task.getCategory() != null) {
-            CategoryResponseDTO categoryDto = new CategoryResponseDTO();
-            categoryDto.setId(task.getCategory().getId());
-            categoryDto.setName(task.getCategory().getName());
-            dto.setCategory(categoryDto);
+        if (task.getCategories() != null && !task.getCategories().isEmpty()) {
+            List<CategoryResponseDTO> categoryDtos = task.getCategories().stream()
+                    .map(category -> {
+                        CategoryResponseDTO categoryDto = new CategoryResponseDTO();
+                        categoryDto.setId(category.getId());
+                        categoryDto.setName(category.getName());
+                        return categoryDto;
+                    })
+                    .collect(Collectors.toList());
+            dto.setCategories(categoryDtos);
         }
 
         if (task.getAssignedTo() != null) {

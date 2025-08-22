@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.springframework.data.jpa.domain.AbstractAuditable_.createdBy;
 
@@ -35,6 +37,10 @@ public class Category {
 
     @Column(nullable = false)
     private OffsetDateTime updatedAt;
+
+    @ManyToMany(mappedBy = "categories", fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<Task> tasks = new ArrayList<>();
 
     @PrePersist
     protected void onCreate() {

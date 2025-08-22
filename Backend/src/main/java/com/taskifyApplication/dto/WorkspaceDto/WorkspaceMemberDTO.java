@@ -8,7 +8,7 @@ import java.time.OffsetDateTime;
 @Data
 public class WorkspaceMemberDTO {
     private Long id;
-    private UserSummaryDTO user;
+    private Long userId;
     private RoleEnum role;
     private OffsetDateTime joinedAt;
 

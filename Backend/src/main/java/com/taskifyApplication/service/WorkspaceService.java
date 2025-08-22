@@ -258,13 +258,14 @@ public class WorkspaceService {
     }
 
     private WorkspaceSummaryDTO convertToWorkspaceSummaryDTO(Workspace workspace) {
+        User user = getCurrentUser();
         WorkspaceSummaryDTO workspaceSummaryDTO = new WorkspaceSummaryDTO();
         workspaceSummaryDTO.setName(workspace.getName());
         workspaceSummaryDTO.setDescription(workspace.getDescription());
         workspaceSummaryDTO.setCreatedAt(workspace.getCreatedAt());
         workspaceSummaryDTO.setOwnerName(workspace.getOwner().getFirstName() + " " + workspace.getOwner().getLastName());
         workspaceSummaryDTO.setMemberCount(workspace.getMembers().size());
-        workspaceSummaryDTO.setTaskCount(taskRepository.findByWorkspace(workspace).size());
+        workspaceSummaryDTO.setTaskCount(taskRepository.findByWorkspaceAndAssignedTo(workspace, user).size());
         return workspaceSummaryDTO;
     }
 

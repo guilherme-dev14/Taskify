@@ -24,7 +24,7 @@ public class TaskDetailDTO {
     private OffsetDateTime updatedAt;
 
     private WorkspaceResponseDTO workspace;
-    private CategoryResponseDTO category;
+    private List<CategoryResponseDTO> categories;
     private UserDTO assignedTo;
     private UserDTO createdBy;
 
