@@ -70,7 +70,6 @@ export const Register = () => {
 
   const handleBeforeStepChange = useCallback(
     async (currentStep: number, nextStep: number): Promise<boolean> => {
-      // Indo do passo 2 (info pessoal) para passo 3 (credenciais)
       if (currentStep === 2 && nextStep === 3) {
         setHasTriedToAdvance(true);
         const isValid = await trigger(["firstName", "lastName"]);
@@ -83,7 +82,6 @@ export const Register = () => {
         return true;
       }
 
-      // Indo do passo 3 (credenciais) para passo 4 (sucesso)
       if (currentStep === 3 && nextStep === 4) {
         setHasTriedToAdvance(true);
         const isValid = await trigger(["email", "username", "password"]);
@@ -93,20 +91,16 @@ export const Register = () => {
           return false;
         }
 
-        // Se os campos são válidos, tenta fazer o registro
         setShowErrors(false);
         const registrationSuccess = await performRegistration();
 
         if (!registrationSuccess) {
-          // Se o registro falhou, não avança para o próximo passo
           return false;
         }
 
-        // Registro bem-sucedido, pode avançar
         return true;
       }
 
-      // Voltando de um passo posterior para anterior
       if (nextStep < currentStep) {
         setShowErrors(false);
         setHasTriedToAdvance(false);
@@ -121,11 +115,6 @@ export const Register = () => {
     },
     [trigger, performRegistration]
   );
-
-  const onSubmit: SubmitHandler<IRegisterRequest> = async (e) => {
-    e?.preventDefault();
-    // Previne o submit do form, deixa o stepper controlar a navegação
-  };
 
   const handleInputChange = useCallback(
     (fieldName: keyof IRegisterRequest) => {

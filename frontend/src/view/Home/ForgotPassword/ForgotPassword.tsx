@@ -1,7 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useCallback } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import * as yup from "yup";
 import LightRays from "../../../components/Background/lightRays";
@@ -18,7 +19,6 @@ export const ForgotPassword: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const navigate = useNavigate();
 
   const {
     register,
@@ -30,27 +30,22 @@ export const ForgotPassword: React.FC = () => {
     mode: "onChange",
   });
 
-  const onSubmit: SubmitHandler<ForgotPasswordForm> = useCallback(
-    async (data) => {
-      setIsLoading(true);
-      setError(null);
+  const onSubmit: SubmitHandler<ForgotPasswordForm> = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
 
-      try {
-        // Simular API call
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-        
-        // Aqui você faria a chamada real para a API
-        // await authService.forgotPassword(data.email);
-        
-        setIsSuccess(true);
-      } catch (err: any) {
-        setError(err.response?.data?.message || "Something went wrong. Please try again.");
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    []
-  );
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      setIsSuccess(true);
+    } catch (err: any) {
+      setError(
+        err.response?.data?.message || "Something went wrong. Please try again."
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   if (isSuccess) {
     return (
@@ -77,17 +72,21 @@ export const ForgotPassword: React.FC = () => {
             className="w-full max-w-md bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-8 text-center"
           >
             <div className="text-6xl mb-6">📧</div>
-            <h2 className="text-2xl font-bold text-white mb-4">Check Your Email</h2>
+            <h2 className="text-2xl font-bold text-white mb-4">
+              Check Your Email
+            </h2>
             <p className="text-gray-400 mb-6">
               We've sent a password reset link to{" "}
-              <span className="text-blue-400 font-medium">{getValues("email")}</span>
+              <span className="text-blue-400 font-medium">
+                {getValues("email")}
+              </span>
             </p>
-            
+
             <div className="space-y-4">
               <p className="text-sm text-gray-500">
                 Didn't receive the email? Check your spam folder.
               </p>
-              
+
               <div className="flex flex-col space-y-3">
                 <button
                   onClick={() => window.location.reload()}
@@ -95,7 +94,7 @@ export const ForgotPassword: React.FC = () => {
                 >
                   Resend Email
                 </button>
-                
+
                 <Link
                   to="/login"
                   className="w-full px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-semibold transition-all duration-300 text-center block"
@@ -139,7 +138,8 @@ export const ForgotPassword: React.FC = () => {
                 Forgot Password?
               </h1>
               <p className="text-gray-400">
-                Enter your email address and we'll send you a link to reset your password.
+                Enter your email address and we'll send you a link to reset your
+                password.
               </p>
             </div>
 

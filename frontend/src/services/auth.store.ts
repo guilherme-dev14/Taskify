@@ -6,8 +6,8 @@ import type {
   IRegisterRequest,
   ILoginRequest,
 } from "../types/auth.types";
-import authService from "../services/auth.service";
-import userService from "../services/user.service";
+import authService from "../services/Auth/auth.service";
+import userService from "./User/user.service";
 import { getToken } from "../utils/token.utils";
 
 interface AuthState {
@@ -26,7 +26,7 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       user: null,
       isAuthenticated: false,
       isLoading: false,

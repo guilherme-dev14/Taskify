@@ -10,16 +10,7 @@ export interface ITask {
   workspaceId: string;
   assigneeId?: string;
   createdById: string;
-  tags: string[];
-  attachments?: ITaskAttachment[];
-}
-
-export interface ITaskAttachment {
-  id: string;
-  fileName: string;
-  fileUrl: string;
-  fileSize: number;
-  uploadedAt: string;
+  categories: string[];
 }
 
 export interface ICreateTaskRequest {
@@ -29,7 +20,7 @@ export interface ICreateTaskRequest {
   dueDate: string;
   workspaceId: string;
   assigneeId?: string;
-  tags: string[];
+  categories: string[];
 }
 
 export interface IUpdateTaskRequest {
@@ -39,7 +30,7 @@ export interface IUpdateTaskRequest {
   priority?: "low" | "medium" | "high";
   dueDate?: string;
   assigneeId?: string;
-  tags?: string[];
+  categories?: string[];
 }
 
 export interface ITaskFilters {

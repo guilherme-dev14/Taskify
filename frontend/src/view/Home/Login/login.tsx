@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { useForm, type SubmitHandler } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import Stepper, { Step } from "../../../components/Stepper";
 import { Link, useNavigate } from "react-router-dom";
@@ -27,7 +27,6 @@ export const Login = () => {
 
   const {
     register,
-    handleSubmit,
     formState: { errors },
     trigger,
     getValues,
@@ -57,11 +56,9 @@ export const Login = () => {
 
   const handleBeforeStepChange = useCallback(
     async (currentStep: number, nextStep: number): Promise<boolean> => {
-      // Indo do passo 2 para o 3 (do formulário para o sucesso)
       if (currentStep === 2 && nextStep === 3) {
         setHasTriedToAdvance(true);
 
-        // Primeiro valida os campos
         const isValid = await trigger(["email", "password"]);
 
         if (!isValid) {
@@ -69,23 +66,19 @@ export const Login = () => {
           return false;
         }
 
-        // Se os campos são válidos, tenta fazer login
         setShowErrors(false);
         const loginSuccess = await performLogin();
 
         if (!loginSuccess) {
-          // Se o login falhou, não avança para o próximo passo
           return false;
         }
 
-        // Login bem-sucedido, pode avançar
         setTimeout(() => {
           navigate("/dashboard");
-        }, 2000); // Redireciona após 2 segundos para o usuário ver a mensagem de sucesso
+        }, 2000);
         return true;
       }
 
-      // Voltando de um passo posterior para anterior
       if (nextStep < currentStep) {
         setShowErrors(false);
         setHasTriedToAdvance(false);
@@ -98,12 +91,8 @@ export const Login = () => {
 
       return true;
     },
-    [trigger, performLogin]
+    [trigger, performLogin, navigate]
   );
-
-  const onSubmit: SubmitHandler<ILoginRequest> = async (e) => {
-    e?.preventDefault();
-  };
 
   const handleInputChange = useCallback(
     (fieldName: keyof ILoginRequest) => {

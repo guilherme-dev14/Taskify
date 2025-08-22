@@ -5,7 +5,6 @@ import {
   MagnifyingGlassIcon,
   FunnelIcon,
   EllipsisVerticalIcon,
-  UserCircleIcon,
 } from "@heroicons/react/24/outline";
 
 interface Task {
@@ -40,7 +39,8 @@ const mockTasks: Task[] = [
   {
     id: "2",
     title: "Fix authentication bug",
-    description: "Resolve the login issue that prevents users from accessing their accounts",
+    description:
+      "Resolve the login issue that prevents users from accessing their accounts",
     priority: "high",
     dueDate: "2024-01-23",
     workspace: "work",
@@ -178,7 +178,7 @@ const KanbanView: React.FC = () => {
 
   const handleDrop = (e: React.DragEvent, targetColumnId: string) => {
     e.preventDefault();
-    
+
     if (!draggedTask) return;
 
     setColumns((prevColumns) => {
@@ -342,7 +342,7 @@ const KanbanView: React.FC = () => {
                         p-4 rounded-lg border-l-4 cursor-move hover:shadow-lg transition-all duration-200
                         bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm
                         ${getPriorityColor(task.priority)}
-                        ${draggedTask?.id === task.id ? 'opacity-50' : ''}
+                        ${draggedTask?.id === task.id ? "opacity-50" : ""}
                       `}
                     >
                       {/* Task Header */}

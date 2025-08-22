@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import {
@@ -5,7 +6,6 @@ import {
   PaintBrushIcon,
   BellIcon,
   ShieldCheckIcon,
-  GlobeAltIcon,
   UserGroupIcon,
   ArchiveBoxIcon,
   ExclamationTriangleIcon,
@@ -211,7 +211,9 @@ const SettingsView: React.FC = () => {
               type="checkbox"
               className="sr-only peer"
               checked={setting.value}
-              onChange={(e) => handleSettingChange(setting.id, e.target.checked)}
+              onChange={(e) =>
+                handleSettingChange(setting.id, e.target.checked)
+              }
             />
             <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
           </label>
@@ -282,10 +284,16 @@ const SettingsView: React.FC = () => {
         return renderSettingsSection("Appearance Settings", appearanceSettings);
 
       case "notifications":
-        return renderSettingsSection("Notification Settings", notificationSettings);
+        return renderSettingsSection(
+          "Notification Settings",
+          notificationSettings
+        );
 
       case "privacy":
-        return renderSettingsSection("Privacy & Security Settings", privacySettings);
+        return renderSettingsSection(
+          "Privacy & Security Settings",
+          privacySettings
+        );
 
       case "workspace":
         return renderSettingsSection("Workspace Settings", workspaceSettings);
@@ -303,7 +311,8 @@ const SettingsView: React.FC = () => {
                 Export Your Data
               </h4>
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                Download a copy of all your data including tasks, workspaces, and settings.
+                Download a copy of all your data including tasks, workspaces,
+                and settings.
               </p>
               <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium">
                 Export Data
@@ -316,7 +325,8 @@ const SettingsView: React.FC = () => {
                 Clear Local Cache
               </h4>
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                Clear your browser's local cache to free up space and resolve issues.
+                Clear your browser's local cache to free up space and resolve
+                issues.
               </p>
               <button className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors font-medium">
                 Clear Cache
@@ -338,9 +348,10 @@ const SettingsView: React.FC = () => {
                     Delete Account
                   </h5>
                   <p className="text-sm text-red-700 dark:text-red-300 mb-4">
-                    Permanently delete your account and all associated data. This action cannot be undone.
+                    Permanently delete your account and all associated data.
+                    This action cannot be undone.
                   </p>
-                  
+
                   {!showDangerZone ? (
                     <button
                       onClick={() => setShowDangerZone(true)}
@@ -357,7 +368,9 @@ const SettingsView: React.FC = () => {
                         <input
                           type="text"
                           value={deleteConfirmation}
-                          onChange={(e) => setDeleteConfirmation(e.target.value)}
+                          onChange={(e) =>
+                            setDeleteConfirmation(e.target.value)
+                          }
                           className="w-full px-3 py-2 border border-red-300 dark:border-red-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 bg-white dark:bg-gray-800"
                           placeholder="DELETE"
                         />
@@ -366,7 +379,6 @@ const SettingsView: React.FC = () => {
                         <button
                           onClick={() => {
                             if (deleteConfirmation === "DELETE") {
-                              // Handle account deletion
                               console.log("Account deletion confirmed");
                             }
                           }}

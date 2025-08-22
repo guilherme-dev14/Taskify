@@ -37,7 +37,6 @@ const ProfileView: React.FC = () => {
   const [activeTab, setActiveTab] = useState("general");
   const [isEditing, setIsEditing] = useState(false);
 
-  // Mock data - replace with real user data
   const [profileData, setProfileData] = useState<ProfileData>({
     firstName: user?.firstName || "John",
     lastName: user?.lastName || "Doe",
@@ -89,7 +88,6 @@ const ProfileView: React.FC = () => {
   ];
 
   const handleSaveProfile = () => {
-    // Save profile data logic here
     setIsEditing(false);
   };
 
@@ -116,7 +114,8 @@ const ProfileView: React.FC = () => {
             <div className="flex items-center space-x-6">
               <div className="relative">
                 <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
-                  {profileData.firstName[0]}{profileData.lastName[0]}
+                  {profileData.firstName[0]}
+                  {profileData.lastName[0]}
                 </div>
                 <button className="absolute bottom-0 right-0 w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white hover:bg-blue-700 transition-colors">
                   <CameraIcon className="w-4 h-4" />
@@ -141,7 +140,9 @@ const ProfileView: React.FC = () => {
                 <input
                   type="text"
                   value={profileData.firstName}
-                  onChange={(e) => handleInputChange("firstName", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("firstName", e.target.value)
+                  }
                   disabled={!isEditing}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-700"
                 />
@@ -154,7 +155,9 @@ const ProfileView: React.FC = () => {
                 <input
                   type="text"
                   value={profileData.lastName}
-                  onChange={(e) => handleInputChange("lastName", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("lastName", e.target.value)
+                  }
                   disabled={!isEditing}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-700"
                 />
@@ -180,7 +183,9 @@ const ProfileView: React.FC = () => {
                 <input
                   type="text"
                   value={profileData.username}
-                  onChange={(e) => handleInputChange("username", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("username", e.target.value)
+                  }
                   disabled={!isEditing}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-700"
                 />
@@ -193,7 +198,9 @@ const ProfileView: React.FC = () => {
                 <input
                   type="text"
                   value={profileData.location}
-                  onChange={(e) => handleInputChange("location", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("location", e.target.value)
+                  }
                   disabled={!isEditing}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-700"
                 />
@@ -303,7 +310,8 @@ const ProfileView: React.FC = () => {
                 Two-Factor Authentication
               </h3>
               <p className="text-gray-600 dark:text-gray-400 mb-4">
-                Add an extra layer of security to your account by enabling two-factor authentication.
+                Add an extra layer of security to your account by enabling
+                two-factor authentication.
               </p>
               <button className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium">
                 Enable 2FA
@@ -321,13 +329,34 @@ const ProfileView: React.FC = () => {
               </h3>
               <div className="space-y-4">
                 {[
-                  { id: "task_updates", label: "Task updates and deadlines", enabled: true },
-                  { id: "team_invites", label: "Team invitations", enabled: true },
-                  { id: "workspace_activity", label: "Workspace activity", enabled: false },
-                  { id: "marketing", label: "Marketing emails", enabled: false },
+                  {
+                    id: "task_updates",
+                    label: "Task updates and deadlines",
+                    enabled: true,
+                  },
+                  {
+                    id: "team_invites",
+                    label: "Team invitations",
+                    enabled: true,
+                  },
+                  {
+                    id: "workspace_activity",
+                    label: "Workspace activity",
+                    enabled: false,
+                  },
+                  {
+                    id: "marketing",
+                    label: "Marketing emails",
+                    enabled: false,
+                  },
                 ].map((notification) => (
-                  <div key={notification.id} className="flex items-center justify-between">
-                    <span className="text-gray-700 dark:text-gray-300">{notification.label}</span>
+                  <div
+                    key={notification.id}
+                    className="flex items-center justify-between"
+                  >
+                    <span className="text-gray-700 dark:text-gray-300">
+                      {notification.label}
+                    </span>
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input
                         type="checkbox"
@@ -352,7 +381,10 @@ const ProfileView: React.FC = () => {
               </h3>
               <div className="space-y-4">
                 {recentActivity.map((activity) => (
-                  <div key={activity.id} className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                  <div
+                    key={activity.id}
+                    className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors"
+                  >
                     <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center flex-shrink-0">
                       <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
                     </div>
@@ -405,11 +437,31 @@ const ProfileView: React.FC = () => {
           className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8"
         >
           {[
-            { label: "Tasks Completed", value: profileStats.tasksCompleted, icon: ChartBarIcon, color: "blue" },
-            { label: "Active Projects", value: profileStats.projectsActive, icon: Cog6ToothIcon, color: "green" },
-            { label: "Team Members", value: profileStats.teamMembers, icon: UserGroupIcon, color: "purple" },
-            { label: "Workspaces", value: profileStats.totalWorkspaces, icon: GlobeAltIcon, color: "orange" },
-          ].map((stat, index) => (
+            {
+              label: "Tasks Completed",
+              value: profileStats.tasksCompleted,
+              icon: ChartBarIcon,
+              color: "blue",
+            },
+            {
+              label: "Active Projects",
+              value: profileStats.projectsActive,
+              icon: Cog6ToothIcon,
+              color: "green",
+            },
+            {
+              label: "Team Members",
+              value: profileStats.teamMembers,
+              icon: UserGroupIcon,
+              color: "purple",
+            },
+            {
+              label: "Workspaces",
+              value: profileStats.totalWorkspaces,
+              icon: GlobeAltIcon,
+              color: "orange",
+            },
+          ].map((stat) => (
             <div
               key={stat.label}
               className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl p-6 border border-gray-200/50 dark:border-gray-700/50"

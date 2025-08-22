@@ -16,7 +16,7 @@ interface StepperProps extends HTMLAttributes<HTMLDivElement> {
   onBeforeStepChange?: (
     currentStep: number,
     nextStep: number
-  ) => Promise<boolean> | boolean; // Nova prop
+  ) => Promise<boolean> | boolean;
   onFinalStepCompleted?: () => void;
   stepCircleContainerClassName?: string;
   stepContainerClassName?: string;
@@ -39,7 +39,7 @@ export default function Stepper({
   children,
   initialStep = 1,
   onStepChange = () => {},
-  onBeforeStepChange, // Nova prop
+  onBeforeStepChange,
   onFinalStepCompleted = () => {},
   stepCircleContainerClassName = "",
   stepContainerClassName = "",
@@ -56,14 +56,13 @@ export default function Stepper({
 }: StepperProps) {
   const [currentStep, setCurrentStep] = useState<number>(initialStep);
   const [direction, setDirection] = useState<number>(0);
-  const [isValidating, setIsValidating] = useState(false); // Novo estado
+  const [isValidating, setIsValidating] = useState(false);
   const stepsArray = Children.toArray(children);
   const totalSteps = stepsArray.length;
   const isCompleted = currentStep > totalSteps;
   const isLastStep = currentStep === totalSteps;
 
   const updateStep = async (newStep: number) => {
-    // Verificar se há validação antes de mudar o step
     if (onBeforeStepChange && newStep > currentStep) {
       setIsValidating(true);
       try {

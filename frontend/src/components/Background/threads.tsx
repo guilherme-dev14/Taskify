@@ -9,9 +9,8 @@ interface ThreadsProps {
   enableMouseInteraction?: boolean;
 }
 
-// Shader otimizado com menos linhas
 const fragmentShaderOptimized = `
-precision mediump float; // Mudou de highp para mediump
+precision mediump float; 
 
 uniform float iTime;
 uniform vec3 iResolution;
@@ -56,11 +55,11 @@ float lineFn(vec2 st, float width, float perc, float offset, vec2 mouse, float t
     float split_point = 0.1 + split_offset;
 
     float amplitude_normal = smoothstep(split_point, 0.7, st.x);
-    float amplitude_strength = 0.3; // Reduzido de 0.5
+    float amplitude_strength = 0.3;
     float finalAmplitude = amplitude_normal * amplitude_strength
                            * amplitude * (1.0 + (mouse.y - 0.5) * 0.15); 
 
-    float time_scaled = time / 15.0 + (mouse.x - 0.5) * 0.5; // Animação mais lenta
+    float time_scaled = time / 15.0 + (mouse.x - 0.5) * 0.5; 
     float blur = smoothstep(split_point, split_point + 0.05, st.x) * perc;
 
     float xnoise = mix(
@@ -84,7 +83,7 @@ float lineFn(vec2 st, float width, float perc, float offset, vec2 mouse, float t
     );
 
     return clamp(
-        (line_start - line_end) * (1.0 - smoothstep(0.0, 1.0, pow(perc, 0.5))), // Suavizado
+        (line_start - line_end) * (1.0 - smoothstep(0.0, 1.0, pow(perc, 0.5))), 
         0.0,
         1.0
     );
