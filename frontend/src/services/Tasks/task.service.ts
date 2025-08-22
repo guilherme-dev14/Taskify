@@ -26,31 +26,31 @@ export const taskService = {
       });
     }
 
-    const response = await api.get(`/tasks?${params.toString()}`);
+    const response = await api.get(`/task?${params.toString()}`);
     return response.data;
   },
 
   async getTaskById(id: string): Promise<ITask> {
-    const response = await api.get(`/tasks/${id}`);
+    const response = await api.get(`/task/${id}`);
     return response.data;
   },
 
   async getDashboardStats(): Promise<IDashboardStats> {
-    const response = await api.get("/tasks/dashboard/stats");
+    const response = await api.get("/task/dashboard/stats");
     return response.data;
   },
 
   async createTask(task: ICreateTaskRequest): Promise<ITask> {
-    const response = await api.post("/tasks", task);
+    const response = await api.post("/task", task);
     return response.data;
   },
 
   async updateTask(id: string, updates: IUpdateTaskRequest): Promise<ITask> {
-    const response = await api.put(`/tasks/${id}`, updates);
+    const response = await api.put(`/task/${id}`, updates);
     return response.data;
   },
 
   async deleteTask(id: string): Promise<void> {
-    await api.delete(`/tasks/${id}`);
+    await api.delete(`/task/${id}`);
   },
 };

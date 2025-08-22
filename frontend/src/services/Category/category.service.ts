@@ -1,17 +1,38 @@
+import type {
+  ICategoryResponse,
+  ICreateCategory,
+  IUpdateCategory,
+} from "../../types/category.types";
+import api from "../api";
+
 export const categoryService = {
-  createCategory: async (data: ) => {
-    
-  },
-  getWorkspaceCategories: async (workspaceId: string) => {
-    // Implementation for fetching categories for a workspace
+  async createCategory(data: ICreateCategory): Promise<ICategoryResponse> {
+    const response = await api.post("/category", data);
+    return response.data;
   },
 
-  getCategoryById: async(categoryId: string)
+  async getCategoryById(categoryId: string): Promise<ICategoryResponse> {
+    const response = await api.get(`/category/${categoryId}`);
+    return response.data;
+  },
 
-  getAllCategoriesFromWorkspace
+  async getAllCategoriesFromWorkspace(
+    workspaceId: string
+  ): Promise<ICategoryResponse[]> {
+    const response = await api.get(`/category/workspace/${workspaceId}`);
+    return response.data;
+  },
 
+  async deleteCategory(categoryId: string) {
+    const response = await api.delete(`/category/${categoryId}`);
+    return response.data;
+  },
 
-  deleteCategory
-
-  updateCategory
+  async updateCategory(
+    categoryId: string,
+    data: IUpdateCategory
+  ): Promise<ICategoryResponse> {
+    const response = await api.put(`/category/${categoryId}`, data);
+    return response.data;
+  },
 };

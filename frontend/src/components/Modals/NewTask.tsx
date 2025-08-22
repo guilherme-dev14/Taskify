@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { workspaceService } from "../../services/Workspace/workspace.service";
-import type { IWorkspace, ICategory } from "../../types/workspace.types";
+import type { IWorkspaceName } from "../../types/workspace.types";
+import type { ICategoryResponse } from "../../types/category.types";
+import type { ICreateTaskRequest } from "../../types/task.types";
+import { categoryService } from "../../services/Category/category.service";
 
 export interface NewTaskModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit?: (taskData: NewTaskFormData) => void;
+  onSubmit?: (taskData: ICreateTaskRequest) => void;
 }
 
 export interface NewTaskFormData {
@@ -32,11 +35,10 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({
     workspaceId: "",
   });
 
-  const [workspaces, setWorkspaces] = useState<IWorkspace[]>([]);
-  const [categories, setCategories] = useState<ICategory[]>([]);
+  const [workspaces, setWorkspaces] = useState<IWorkspaceName[]>([]);
+  const [categories, setCategories] = useState<ICategoryResponse[]>([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
-  const [newCategoryColor, setNewCategoryColor] = useState("#3B82F6");
   const [showNewCategoryForm, setShowNewCategoryForm] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -45,7 +47,14 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({
       alert("Please select a workspace");
       return;
     }
-    onSubmit?.(formData);
+    onSubmit?.({
+      title: formData.title,
+      description: formData.description,
+      priority: formData.priority,
+      dueDate: formData.dueDate,
+      workspaceId: formData.workspaceId,
+      categories: formData.categoryIds,
+    });
     handleClose();
   };
 
@@ -59,7 +68,6 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({
       workspaceId: "",
     });
     setNewCategoryName("");
-    setNewCategoryColor("#3B82F6");
     setShowNewCategoryForm(false);
     onClose();
   };
@@ -68,9 +76,9 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({
     if (!newCategoryName.trim() || !formData.workspaceId) return;
 
     try {
-      const newCategory = await workspaceService.createCategory({
+      const newCategory = await categoryService.createCategory({
         name: newCategoryName.trim(),
-        color: newCategoryColor,
+        description: "",
         workspaceId: formData.workspaceId,
       });
 
@@ -80,7 +88,6 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({
         categoryIds: [...formData.categoryIds, newCategory.id],
       });
       setNewCategoryName("");
-      setNewCategoryColor("#3B82F6");
       setShowNewCategoryForm(false);
     } catch (error) {
       console.error("Error creating category:", error);
@@ -105,12 +112,6 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({
   };
 
   useEffect(() => {
-    if (isOpen) {
-      loadWorkspaces();
-    }
-  }, [isOpen]);
-
-  useEffect(() => {
     if (formData.workspaceId) {
       loadCategories(formData.workspaceId);
     } else {
@@ -118,26 +119,32 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({
     }
   }, [formData.workspaceId]);
 
-  const loadWorkspaces = async () => {
+  const loadWorkspaces = React.useCallback(async () => {
     try {
-      const response = await workspaceService.getWorkspaces();
-      setWorkspaces(response.workspaces);
+      const workspaces = await workspaceService.getWorkspacesFromUser();
+      setWorkspaces(workspaces);
 
-      if (!formData.workspaceId && response.workspaces.length > 0) {
+      if (!formData.workspaceId && workspaces.length > 0) {
         setFormData((prev) => ({
           ...prev,
-          workspaceId: response.workspaces[0].id,
+          workspaceId: workspaces[0].id,
         }));
       }
     } catch (error) {
       console.error("Error loading workspaces:", error);
     }
-  };
+  }, [formData.workspaceId]);
+
+  useEffect(() => {
+    if (isOpen) {
+      loadWorkspaces();
+    }
+  }, [isOpen, loadWorkspaces]);
 
   const loadCategories = async (workspaceId: string) => {
     setIsLoadingCategories(true);
     try {
-      const categories = await workspaceService.getWorkspaceCategories(
+      const categories = await categoryService.getAllCategoriesFromWorkspace(
         workspaceId
       );
       setCategories(categories);
@@ -148,25 +155,9 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({
     }
   };
 
-  const selectedWorkspace = workspaces.find(
-    (w) => w.id === formData.workspaceId
-  );
   const selectedCategories = categories.filter((cat) =>
     formData.categoryIds.includes(cat.id)
   );
-
-  const categoryColors = [
-    "#3B82F6",
-    "#EF4444",
-    "#10B981",
-    "#F59E0B",
-    "#8B5CF6",
-    "#EC4899",
-    "#14B8A6",
-    "#F97316",
-    "#6366F1",
-    "#84CC16",
-  ];
 
   const priorityColors = {
     low: "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-700",
@@ -250,11 +241,6 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({
                       </option>
                     ))}
                   </select>
-                  {selectedWorkspace && (
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                      {selectedWorkspace.description}
-                    </p>
-                  )}
                 </div>
 
                 {/* Title */}
@@ -355,14 +341,13 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({
                         {selectedCategories.map((category) => (
                           <span
                             key={category.id}
-                            className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium text-white"
-                            style={{ backgroundColor: category.color }}
+                            className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-700"
                           >
                             {category.name}
                             <button
                               type="button"
                               onClick={() => toggleCategory(category.id)}
-                              className="ml-2 text-white/80 hover:text-white"
+                              className="ml-2 text-blue-800/80 hover:text-blue-800 dark:text-blue-300/80 dark:hover:text-blue-300"
                             >
                               ×
                             </button>
@@ -379,25 +364,10 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({
                             type="text"
                             value={newCategoryName}
                             onChange={(e) => setNewCategoryName(e.target.value)}
-                            onKeyPress={handleKeyPress}
+                            onKeyUp={handleKeyPress}
                             className="flex-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
                             placeholder="Category name..."
                           />
-                          <div className="flex gap-1">
-                            {categoryColors.map((color) => (
-                              <button
-                                key={color}
-                                type="button"
-                                onClick={() => setNewCategoryColor(color)}
-                                className={`w-8 h-8 rounded-full border-2 transition-all ${
-                                  newCategoryColor === color
-                                    ? "border-gray-800 dark:border-white scale-110"
-                                    : "border-gray-300 dark:border-gray-600"
-                                }`}
-                                style={{ backgroundColor: color }}
-                              />
-                            ))}
-                          </div>
                         </div>
                         <div className="flex gap-2">
                           <button
@@ -433,14 +403,9 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({
                             onClick={() => toggleCategory(category.id)}
                             className={`px-3 py-2 rounded-lg border text-sm font-medium transition-all ${
                               formData.categoryIds.includes(category.id)
-                                ? "ring-2 ring-blue-500 scale-105"
-                                : "hover:scale-105"
+                                ? "bg-blue-100 text-blue-800 border-blue-200 ring-2 ring-blue-500 scale-105 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-700"
+                                : "bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100 hover:scale-105 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700 dark:hover:bg-gray-700"
                             }`}
-                            style={{
-                              backgroundColor: `${category.color}20`,
-                              color: category.color,
-                              borderColor: `${category.color}40`,
-                            }}
                           >
                             {category.name}
                             {formData.categoryIds.includes(category.id) && (

@@ -35,8 +35,3 @@ export interface ICreateCategoryRequest {
   name: string;
   workspaceId: string;
 }
-
-export interface IWorkspacesResponse {
-  workspaces: IWorkspace[];
-  total: number;
-}

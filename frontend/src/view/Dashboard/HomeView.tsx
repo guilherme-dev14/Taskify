@@ -6,7 +6,8 @@ import {
   type IDashboardStats,
 } from "../../services/Tasks/task.service";
 import { useNavigationStore } from "../../stores/navigation.store";
-import { NewTaskModal, type NewTaskFormData } from "../../components/Modals/NewTask";
+import { NewTaskModal } from "../../components/Modals/NewTask";
+import type { ICreateTaskRequest } from "../../types/task.types";
 
 const HomeView: React.FC = () => {
   const [stats, setStats] = useState<IDashboardStats | null>(null);
@@ -179,8 +180,14 @@ const HomeView: React.FC = () => {
       <NewTaskModal
         isOpen={isNewTaskModalOpen}
         onClose={() => setIsNewTaskModalOpen(false)}
-        onSubmit={(taskData: NewTaskFormData) => {
-          console.log("New task data:", taskData);
+        onSubmit={async (taskData: ICreateTaskRequest) => {
+          try {
+            await taskService.createTask(taskData);
+            fetchDashboardData();
+          } catch (error) {
+            console.error("Error creating task:", error);
+            setError("Failed to create task");
+          }
         }}
       />
     </div>
