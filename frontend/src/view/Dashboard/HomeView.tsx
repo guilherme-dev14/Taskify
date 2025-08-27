@@ -8,6 +8,9 @@ import {
 import { useNavigationStore } from "../../stores/navigation.store";
 import { NewTaskModal } from "../../components/Modals/NewTask";
 import type { ICreateTaskRequest } from "../../types/task.types";
+import { workspaceService } from "../../services/Workspace/workspace.service";
+import { NewWorkspaceModal } from "../../components/Modals/NewWorkspace";
+import type { ICreateWorkspaceRequest } from "../../types/workspace.types";
 
 const HomeView: React.FC = () => {
   const [stats, setStats] = useState<IDashboardStats | null>(null);
@@ -15,7 +18,7 @@ const HomeView: React.FC = () => {
   const [, setError] = useState<string | null>(null);
   const [isNewTaskModalOpen, setIsNewTaskModalOpen] = useState(false);
   const { setCurrentView } = useNavigationStore();
-
+  const [isNewWorkspaceModalOpen, setIsNewWorkspaceModalOpen] = useState(false);
   useEffect(() => {
     fetchDashboardData();
   }, []);
@@ -140,7 +143,7 @@ const HomeView: React.FC = () => {
                 description: "Create a workspace for team collaboration",
                 icon: "🏢",
                 color: "purple",
-                action: () => setCurrentView("kanban"),
+                action: () => setIsNewWorkspaceModalOpen(true),
               },
               {
                 title: "View Calendar",
@@ -187,6 +190,20 @@ const HomeView: React.FC = () => {
           } catch (error) {
             console.error("Error creating task:", error);
             setError("Failed to create task");
+          }
+        }}
+      />
+
+      <NewWorkspaceModal
+        isOpen={isNewWorkspaceModalOpen}
+        onClose={() => setIsNewWorkspaceModalOpen(false)}
+        onSubmit={async (workspaceData: ICreateWorkspaceRequest) => {
+          try {
+            await workspaceService.createWorkspace(workspaceData);
+            fetchDashboardData();
+          } catch (error) {
+            console.error("Error creating workspace:", error);
+            setError("Failed to create workspace");
           }
         }}
       />

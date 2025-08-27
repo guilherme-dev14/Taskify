@@ -3,7 +3,7 @@ export interface ITask {
   title: string;
   description: string;
   status: "todo" | "in_progress" | "review" | "completed" | "overdue";
-  priority: "low" | "medium" | "high";
+  priority: "LOW" | "MEDIUM" | "HIGH" | "URGENT";
   dueDate: string;
   createdAt: string;
   updatedAt: string;
@@ -16,11 +16,11 @@ export interface ITask {
 export interface ICreateTaskRequest {
   title: string;
   description: string;
-  priority: "low" | "medium" | "high";
-  dueDate: string;
-  workspaceId: string;
-  assigneeId?: string;
-  categories: string[];
+  priority: "LOW" | "MEDIUM" | "HIGH" | "URGENT";
+  dueDate: string | null;
+  workspaceId: number;
+  assigneeId?: number;
+  categoryIds: number[];
 }
 
 export interface IUpdateTaskRequest {

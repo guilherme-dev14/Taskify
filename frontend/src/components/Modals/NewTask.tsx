@@ -15,7 +15,7 @@ export interface NewTaskModalProps {
 export interface NewTaskFormData {
   title: string;
   description: string;
-  priority: "low" | "medium" | "high";
+  priority: "LOW" | "MEDIUM" | "HIGH" | "URGENT";
   dueDate: string;
   categoryIds: string[];
   workspaceId: string;
@@ -29,7 +29,7 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({
   const [formData, setFormData] = useState<NewTaskFormData>({
     title: "",
     description: "",
-    priority: "medium",
+    priority: "MEDIUM",
     dueDate: "",
     categoryIds: [],
     workspaceId: "",
@@ -47,14 +47,19 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({
       alert("Please select a workspace");
       return;
     }
+    const dueDateTime = formData.dueDate
+      ? `${formData.dueDate}T23:59:59`
+      : null;
+
     onSubmit?.({
       title: formData.title,
       description: formData.description,
       priority: formData.priority,
-      dueDate: formData.dueDate,
-      workspaceId: formData.workspaceId,
-      categories: formData.categoryIds,
+      dueDate: dueDateTime,
+      workspaceId: parseInt(formData.workspaceId),
+      categoryIds: formData.categoryIds.map((id) => parseInt(id)),
     });
+    console.log(formData);
     handleClose();
   };
 
@@ -62,7 +67,7 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({
     setFormData({
       title: "",
       description: "",
-      priority: "medium",
+      priority: "MEDIUM",
       dueDate: "",
       categoryIds: [],
       workspaceId: "",
@@ -160,10 +165,12 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({
   );
 
   const priorityColors = {
-    low: "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-700",
-    medium:
+    LOW: "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-700",
+    MEDIUM:
       "bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-700",
-    high: "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-700",
+    HIGH: "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-700",
+    URGENT:
+      "bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-700",
   };
 
   return (
@@ -283,21 +290,26 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Priority
                     </label>
-                    <div className="grid grid-cols-3 gap-2">
-                      {(["low", "medium", "high"] as const).map((priority) => (
-                        <button
-                          key={priority}
-                          type="button"
-                          onClick={() => setFormData({ ...formData, priority })}
-                          className={`px-3 py-2 rounded-lg border text-sm font-medium transition-all ${
-                            formData.priority === priority
-                              ? priorityColors[priority]
-                              : "bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700 dark:hover:bg-gray-700"
-                          }`}
-                        >
-                          {priority.charAt(0).toUpperCase() + priority.slice(1)}
-                        </button>
-                      ))}
+                    <div className="grid grid-cols-4 gap-2">
+                      {(["LOW", "MEDIUM", "HIGH", "URGENT"] as const).map(
+                        (priority) => (
+                          <button
+                            key={priority}
+                            type="button"
+                            onClick={() =>
+                              setFormData({ ...formData, priority })
+                            }
+                            className={`px-3 py-2 rounded-lg border text-sm font-medium transition-all ${
+                              formData.priority === priority
+                                ? priorityColors[priority]
+                                : "bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700 dark:hover:bg-gray-700"
+                            }`}
+                          >
+                            {priority.charAt(0).toUpperCase() +
+                              priority.slice(1)}
+                          </button>
+                        )
+                      )}
                     </div>
                   </div>
 
