@@ -9,7 +9,7 @@ export interface IWorkspace {
 }
 
 export interface IWorkspaceName {
-  id: string;
+  id: number;
   name: string;
 }
 

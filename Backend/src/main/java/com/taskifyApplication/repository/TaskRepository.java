@@ -12,7 +12,30 @@ import java.util.List;
 
 @Repository
 public interface TaskRepository extends JpaRepository<Task, Long> {
-    List<Task> findByWorkspaceAndAssignedTo(Workspace workspace, User currentUser);
+    @Query("SELECT t FROM Task t WHERE t.workspace = :workspace AND t.assignedTo = :user " +
+           "AND (:status IS NULL OR t.status = :status) " +
+           "AND (:priority IS NULL OR t.priority = :priority)")
+    List<Task> findByWorkspaceAndAssignedTo(@Param("workspace") Workspace workspace, 
+                                           @Param("user") User currentUser,
+                                           @Param("status") StatusTaskEnum status,
+                                           @Param("priority") PriorityEnum priority);
+
+    @Query("SELECT t FROM Task t WHERE t.workspace = :workspace AND t.assignedTo = :user " +
+           "AND (:status IS NULL OR t.status = :status) " +
+           "AND (:priority IS NULL OR t.priority = :priority)")
+    Page<Task> findByWorkspaceAndAssignedToPageable(@Param("workspace") Workspace workspace, 
+                                                   @Param("user") User currentUser,
+                                                   @Param("status") StatusTaskEnum status,
+                                                   @Param("priority") PriorityEnum priority,
+                                                   Pageable pageable);
+
+    @Query("SELECT t FROM Task t WHERE t.assignedTo = :user " +
+           "AND (:status IS NULL OR t.status = :status) " +
+           "AND (:priority IS NULL OR t.priority = :priority)")
+    Page<Task> findByAssignedTo(@Param("user") User assignedTo, 
+                               @Param("status") StatusTaskEnum status,
+                               @Param("priority") PriorityEnum priority,
+                               Pageable pageable);
 
     List<Task> findByStatusAndAssignedTo(StatusTaskEnum status, User currentUser);
 
@@ -21,8 +44,12 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     List<Task> findByAssignedTo(User assignedTo);
     
     Page<Task> findByAssignedTo(User assignedTo, Pageable pageable);
+    
+    @Query("SELECT t FROM Task t WHERE t.assignedTo = :user AND t.workspace.id = :workspaceId")
+    Page<Task> findByAssignedToAndWorkspaceId(@Param("user") User assignedTo, @Param("workspaceId") Long workspaceId, Pageable pageable);
 
     boolean existsByTitleAndWorkspace(String title, Workspace workspace);
+
 
     @Query("SELECT t FROM Task t WHERE t.dueDate BETWEEN :start AND :end")
     List<Task> findTasksDueBetween(LocalDateTime start, LocalDateTime end);

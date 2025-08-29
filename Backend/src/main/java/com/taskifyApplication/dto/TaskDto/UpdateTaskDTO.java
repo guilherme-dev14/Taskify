@@ -15,6 +15,8 @@ public class UpdateTaskDTO {
 
     @Size(max = 1000, message = "Description must not exceed 1000 characters")
     private String description;
+    
+    private String notes;
 
     private List<Long> categoryIds;
     private Long assignedToId;

@@ -132,7 +132,7 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({
       if (!formData.workspaceId && workspaces.length > 0) {
         setFormData((prev) => ({
           ...prev,
-          workspaceId: workspaces[0].id,
+          workspaceId: workspaces[0].id.toString(),
         }));
       }
     } catch (error) {
@@ -290,7 +290,7 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Priority
                     </label>
-                    <div className="grid grid-cols-4 gap-2">
+                    <div className="cols-4 gap-3 ">
                       {(["LOW", "MEDIUM", "HIGH", "URGENT"] as const).map(
                         (priority) => (
                           <button
@@ -324,7 +324,7 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({
                       onChange={(e) =>
                         setFormData({ ...formData, dueDate: e.target.value })
                       }
-                      className="w-full px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                      className=" px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                     />
                   </div>
                 </div>

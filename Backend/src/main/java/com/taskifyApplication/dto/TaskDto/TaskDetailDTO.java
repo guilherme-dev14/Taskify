@@ -17,6 +17,7 @@ public class TaskDetailDTO {
     private Long id;
     private String title;
     private String description;
+    private String notes;
     private StatusTaskEnum status;
     private PriorityEnum priority;
     private LocalDateTime dueDate;

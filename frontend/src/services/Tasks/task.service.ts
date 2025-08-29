@@ -15,9 +15,8 @@ export interface IDashboardStats {
 }
 
 export const taskService = {
-  async getTasks(filters?: ITaskFilters): Promise<ITasksResponse> {
+  async getAllTasks(filters?: ITaskFilters): Promise<ITasksResponse> {
     const params = new URLSearchParams();
-
     if (filters) {
       Object.entries(filters).forEach(([key, value]) => {
         if (value !== undefined) {
@@ -25,8 +24,10 @@ export const taskService = {
         }
       });
     }
-
-    const response = await api.get(`/tasks?${params.toString()}`);
+    const url = `/tasks?${params.toString()}`;
+    console.log("🌐 API URL being called:", url);
+    console.log("🔧 Params object:", Object.fromEntries(params.entries()));
+    const response = await api.get(url);
     return response.data;
   },
 

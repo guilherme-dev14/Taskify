@@ -43,8 +43,26 @@ public class TaskService {
 
     // region PUBLIC FUNCTIONS SERVICE
     public PageResponse<TaskSummaryDTO> getAllTasksFromUser(Pageable pageable) {
+        return getAllTasksFromUser(pageable, null);
+    }
+
+    public PageResponse<TaskSummaryDTO> getAllTasksFromUser(Pageable pageable, Long workspaceId) {
         User currentUser = getCurrentUser();
-        Page<Task> taskPage = taskRepository.findByAssignedTo(currentUser, pageable);
+        System.out.println("🔍 TaskService - Processing request:");
+        System.out.println("  currentUser: " + currentUser.getEmail());
+        System.out.println("  workspaceId: " + workspaceId);
+        
+        Page<Task> taskPage;
+        
+        if (workspaceId != null) {
+            System.out.println("  Using workspace filter");
+            taskPage = taskRepository.findByAssignedToAndWorkspaceId(currentUser, workspaceId, pageable);
+        } else {
+            System.out.println("  No workspace filter - getting all tasks");
+            taskPage = taskRepository.findByAssignedTo(currentUser, pageable);
+        }
+        
+        System.out.println("  Found " + taskPage.getTotalElements() + " tasks");
 
         List<TaskSummaryDTO> taskSummaries = taskPage.getContent().stream()
                 .map(this::convertToTaskSummaryDto)
@@ -155,6 +173,10 @@ public class TaskService {
         if (updateTaskDTO.getDescription() != null) {
             task.setDescription(updateTaskDTO.getDescription());
         }
+        
+        if (updateTaskDTO.getNotes() != null) {
+            task.setNotes(updateTaskDTO.getNotes());
+        }
 
         if (updateTaskDTO.getStatus() != null) {
             task.setStatus(updateTaskDTO.getStatus());
@@ -256,6 +278,7 @@ public class TaskService {
         dto.setId(task.getId());
         dto.setTitle(task.getTitle());
         dto.setDescription(task.getDescription());
+        dto.setNotes(task.getNotes());
         dto.setStatus(task.getStatus());
         dto.setPriority(task.getPriority());
         dto.setDueDate(task.getDueDate());

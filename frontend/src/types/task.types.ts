@@ -2,7 +2,8 @@ export interface ITask {
   id: string;
   title: string;
   description: string;
-  status: "todo" | "in_progress" | "review" | "completed" | "overdue";
+  notes?: string;
+  status: "NEW" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
   priority: "LOW" | "MEDIUM" | "HIGH" | "URGENT";
   dueDate: string;
   createdAt: string;
@@ -26,26 +27,30 @@ export interface ICreateTaskRequest {
 export interface IUpdateTaskRequest {
   title?: string;
   description?: string;
-  status?: "todo" | "in_progress" | "review" | "completed";
-  priority?: "low" | "medium" | "high";
-  dueDate?: string;
-  assigneeId?: string;
-  categories?: string[];
+  notes?: string;
+  status?: "NEW" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
+  priority?: "LOW" | "MEDIUM" | "HIGH" | "URGENT";
+  dueDate?: string | null;
+  assignedToId?: number | null;
+  categoryIds?: number[];
 }
-
 export interface ITaskFilters {
-  workspaceId?: string;
-  status?: string;
-  priority?: string;
-  assigneeId?: string;
-  search?: string;
-  page?: number;
-  limit?: number;
+  page: number;
+  size: number;
+  workspaceId?: number;
+  status?: "NEW" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
+  priority?: "LOW" | "MEDIUM" | "HIGH" | "URGENT";
+  sortBy: "createdAt" | "updatedAt";
+  sortDir: "asc" | "desc";
 }
 
 export interface ITasksResponse {
-  tasks: ITask[];
-  total: number;
+  content: ITask[];
+  totalElements: number;
   page: number;
   totalPages: number;
+  size: number;
+  first: boolean;
+  last: boolean;
+  empty: boolean;
 }

@@ -265,7 +265,7 @@ public class WorkspaceService {
         workspaceSummaryDTO.setCreatedAt(workspace.getCreatedAt());
         workspaceSummaryDTO.setOwnerName(workspace.getOwner().getFirstName() + " " + workspace.getOwner().getLastName());
         workspaceSummaryDTO.setMemberCount(workspace.getMembers().size());
-        workspaceSummaryDTO.setTaskCount(taskRepository.findByWorkspaceAndAssignedTo(workspace, user).size());
+        workspaceSummaryDTO.setTaskCount(taskRepository.findByWorkspaceAndAssignedTo(workspace, user, null, null).size());
         return workspaceSummaryDTO;
     }
 

@@ -99,13 +99,13 @@ const HomeView: React.FC = () => {
                   <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
                     {stat.label}
                   </p>
-                  <p className={`text-3xl font-bold text-${stat.color}-500`}>
+                  <div className={`text-3xl font-bold text-${stat.color}-500`}>
                     {isLoadingStats ? (
                       <div className="animate-pulse bg-gray-200 dark:bg-gray-700 rounded h-8 w-12"></div>
                     ) : (
                       stat.value
                     )}
-                  </p>
+                  </div>
                 </div>
                 <div
                   className={`w-12 h-12 rounded-full bg-${stat.color}-100 dark:bg-${stat.color}-900/30 flex items-center justify-center`}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   PlusIcon,
@@ -7,48 +7,68 @@ import {
   CheckCircleIcon,
   ClockIcon,
   ExclamationTriangleIcon,
-  EllipsisVerticalIcon,
+  TrashIcon,
   ChevronDownIcon,
   BuildingOfficeIcon,
 } from "@heroicons/react/24/outline";
 import { CheckCircleIcon as CheckCircleIconSolid } from "@heroicons/react/24/solid";
-import type { IWorkspaceName } from "../../types/workspace.types";
 import type { ITask, ITaskFilters } from "../../types/task.types";
+
+type WorkspaceOption = { id: string | number; name: string };
 import { taskService } from "../../services/Tasks/task.service";
 import { workspaceService } from "../../services/Workspace/workspace.service";
 import { NewTaskModal } from "../../components/Modals/NewTask";
+import { TaskDetailsModal } from "../../components/Modals/TaskDetails";
 import type { ICreateTaskRequest } from "../../types/task.types";
+import { getOperationErrorInfo, type ErrorInfo } from "../../utils/errorHandler";
+import { ErrorNotification } from "../../components/UI/ErrorNotification";
 
 const TasksView: React.FC = () => {
-  const [selectedWorkspace, setSelectedWorkspace] = useState<string>("all");
+  const [selectedWorkspace, setSelectedWorkspace] = useState<string | number>("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [priorityFilter, setPriorityFilter] = useState<string>("all");
-  const [tasks, setTasks] = useState<ITask[]>([]);
+  const [allTasks, setAllTasks] = useState<ITask[]>([]);
   const [workspaces, setWorkspaces] = useState<
-    (IWorkspaceName & { color?: string })[]
+    (WorkspaceOption & { color?: string })[]
   >([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isNewTaskModalOpen, setIsNewTaskModalOpen] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [isTaskDetailsModalOpen, setIsTaskDetailsModalOpen] = useState(false);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [errorInfo, setErrorInfo] = useState<ErrorInfo | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isWorkspaceDropdownOpen, setIsWorkspaceDropdownOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [taskToDelete, setTaskToDelete] = useState<ITask | null>(null);
 
   useEffect(() => {
     loadWorkspaces();
   }, []);
 
   useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  useEffect(() => {
     loadTasks();
-  }, [
-    selectedWorkspace,
-    searchTerm,
-    statusFilter,
-    priorityFilter,
-    currentPage,
-  ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedWorkspace, currentPage]);
+
+  // Reset page when filters change (status, priority, search)
+  useEffect(() => {
+    if (currentPage !== 1) {
+      setCurrentPage(1);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusFilter, priorityFilter, debouncedSearchTerm]);
 
   const loadWorkspaces = async () => {
     try {
@@ -61,40 +81,40 @@ const TasksView: React.FC = () => {
       setWorkspaces([allWorkspace, ...workspacesWithColors]);
     } catch (error) {
       console.error("Error loading workspaces:", error);
-      setError("Failed to load workspaces");
+      setErrorInfo(getOperationErrorInfo('load', error));
     }
   };
 
   const loadTasks = async () => {
     try {
       setIsLoading(true);
-      setError(null);
+      setErrorInfo(null);
 
+      const workspaceIdValue = selectedWorkspace !== "all" ? (typeof selectedWorkspace === 'string' ? parseInt(selectedWorkspace) : selectedWorkspace) : undefined;
+      
       const filters: ITaskFilters = {
-        page: currentPage,
-        limit: 12,
+        page: currentPage - 1,
+        size: 12,
+        workspaceId: workspaceIdValue,
+        sortBy: "createdAt",
+        sortDir: "desc",
       };
 
-      if (selectedWorkspace !== "all") {
-        filters.workspaceId = selectedWorkspace;
-      }
-      if (searchTerm) {
-        filters.search = searchTerm;
-      }
-      if (statusFilter !== "all") {
-        filters.status = statusFilter;
-      }
-      if (priorityFilter !== "all") {
-        filters.priority = priorityFilter;
-      }
+      console.log("🔍 DEBUG WORKSPACE FILTER:", {
+        selectedWorkspace,
+        workspaceIdValue,
+        filters,
+        workspaces: workspaces.map(w => ({ id: w.id, name: w.name }))
+      });
 
-      const response = await taskService.getTasks(filters);
-      setTasks(response.tasks);
+      const response = await taskService.getAllTasks(filters);
+      console.log("📦 API Response:", response);
+      setAllTasks(response.content);
       setTotalPages(response.totalPages);
     } catch (error) {
       console.error("Error loading tasks:", error);
-      setError("Failed to load tasks");
-      setTasks([]);
+      setErrorInfo(getOperationErrorInfo('load', error));
+      setAllTasks([]);
     } finally {
       setIsLoading(false);
     }
@@ -103,23 +123,55 @@ const TasksView: React.FC = () => {
   const handleCreateTask = async (taskData: ICreateTaskRequest) => {
     try {
       await taskService.createTask(taskData);
-      loadTasks(); // Reload tasks
-      loadWorkspaces(); // Reload workspaces to update task counts
+      loadTasks();
+      loadWorkspaces();
     } catch (error) {
       console.error("Error creating task:", error);
-      setError("Failed to create task");
+      setErrorInfo(getOperationErrorInfo('create', error));
     }
+  };
+
+  const handleTaskClick = (taskId: string) => {
+    setSelectedTaskId(taskId);
+    setIsTaskDetailsModalOpen(true);
+  };
+
+  const handleTaskUpdate = () => {
+    loadTasks();
+  };
+
+  const handleDeleteClick = (task: ITask, event: React.MouseEvent) => {
+    event.stopPropagation(); // Impede que o click abra o modal de detalhes
+    setTaskToDelete(task);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!taskToDelete) return;
+    
+    try {
+      await taskService.deleteTask(taskToDelete.id);
+      setIsDeleteModalOpen(false);
+      setTaskToDelete(null);
+      loadTasks(); // Recarrega a lista de tasks
+    } catch (error) {
+      console.error("Error deleting task:", error);
+      setErrorInfo(getOperationErrorInfo('delete', error));
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setIsDeleteModalOpen(false);
+    setTaskToDelete(null);
   };
 
   const getStatusIcon = (status: ITask["status"]) => {
     switch (status) {
-      case "completed":
+      case "COMPLETED":
         return <CheckCircleIconSolid className="w-5 h-5 text-green-500" />;
-      case "in_progress":
+      case "IN_PROGRESS":
         return <ClockIcon className="w-5 h-5 text-blue-500" />;
-      case "review":
-        return <ClockIcon className="w-5 h-5 text-purple-500" />;
-      case "overdue":
+      case "CANCELLED":
         return <ExclamationTriangleIcon className="w-5 h-5 text-red-500" />;
       default:
         return <CheckCircleIcon className="w-5 h-5 text-gray-400" />;
@@ -128,20 +180,44 @@ const TasksView: React.FC = () => {
 
   const getStatusText = (status: ITask["status"]) => {
     switch (status) {
-      case "todo":
+      case "NEW":
         return "To Do";
-      case "in_progress":
+      case "IN_PROGRESS":
         return "In Progress";
-      case "review":
-        return "Review";
-      case "completed":
+      case "COMPLETED":
         return "Completed";
-      case "overdue":
-        return "Overdue";
+      case "CANCELLED":
+        return "Cancelled";
       default:
         return status;
     }
   };
+
+  const filteredTasks = useMemo(() => {
+    let filtered = allTasks;
+
+    // Filtro por status
+    if (statusFilter !== "all") {
+      filtered = filtered.filter((task) => task.status === statusFilter);
+    }
+
+    // Filtro por prioridade
+    if (priorityFilter !== "all") {
+      filtered = filtered.filter((task) => task.priority === priorityFilter);
+    }
+
+    // Filtro por busca
+    if (debouncedSearchTerm) {
+      const searchTerm = debouncedSearchTerm.toLowerCase();
+      filtered = filtered.filter((task) => {
+        const title = task.title?.toLowerCase() || "";
+        const description = task.description?.toLowerCase() || "";
+        return title.includes(searchTerm) || description.includes(searchTerm);
+      });
+    }
+
+    return filtered;
+  }, [allTasks, statusFilter, priorityFilter, debouncedSearchTerm]);
 
   const getPriorityColor = (priority: ITask["priority"]) => {
     switch (priority) {
@@ -320,11 +396,10 @@ const TasksView: React.FC = () => {
                       className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       <option value="all">All Status</option>
-                      <option value="todo">To Do</option>
-                      <option value="in_progress">In Progress</option>
-                      <option value="review">Review</option>
-                      <option value="completed">Completed</option>
-                      <option value="overdue">Overdue</option>
+                      <option value="NEW">To Do</option>
+                      <option value="IN_PROGRESS">In Progress</option>
+                      <option value="COMPLETED">Completed</option>
+                      <option value="CANCELLED">Cancelled</option>
                     </select>
                   </div>
                   <div>
@@ -349,12 +424,6 @@ const TasksView: React.FC = () => {
           )}
         </AnimatePresence>
 
-        {/* Error Message */}
-        {error && (
-          <div className="mb-6 p-4 bg-red-100 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-lg text-red-800 dark:text-red-200">
-            {error}
-          </div>
-        )}
 
         {/* Loading State */}
         {isLoading ? (
@@ -380,13 +449,14 @@ const TasksView: React.FC = () => {
               transition={{ duration: 0.6, delay: 0.3 }}
               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
             >
-              {tasks?.map((task, index) => (
+              {filteredTasks?.map((task, index) => (
                 <motion.div
                   key={task.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: 0.1 * index }}
                   className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl p-6 border border-gray-200/50 dark:border-gray-700/50 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer group"
+                  onClick={() => handleTaskClick(task.id)}
                 >
                   {/* Task Header */}
                   <div className="flex items-start justify-between mb-4">
@@ -396,8 +466,12 @@ const TasksView: React.FC = () => {
                         {getStatusText(task.status)}
                       </span>
                     </div>
-                    <button className="opacity-0 group-hover:opacity-100 transition-opacity">
-                      <EllipsisVerticalIcon className="w-5 h-5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200" />
+                    <button 
+                      onClick={(e) => handleDeleteClick(task, e)}
+                      className="opacity-0 group-hover:opacity-100 transition-all duration-200 p-2 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30"
+                      title="Delete task"
+                    >
+                      <TrashIcon className="w-5 h-5 text-gray-400 hover:text-red-500 dark:hover:text-red-400" />
                     </button>
                   </div>
 
@@ -471,7 +545,7 @@ const TasksView: React.FC = () => {
         )}
 
         {/* Empty State */}
-        {!isLoading && tasks?.length === 0 && (
+        {!isLoading && filteredTasks?.length === 0 && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -498,6 +572,72 @@ const TasksView: React.FC = () => {
           isOpen={isNewTaskModalOpen}
           onClose={() => setIsNewTaskModalOpen(false)}
           onSubmit={handleCreateTask}
+        />
+
+        {/* Task Details Modal */}
+        {selectedTaskId && (
+          <TaskDetailsModal
+            isOpen={isTaskDetailsModalOpen}
+            onClose={() => {
+              setIsTaskDetailsModalOpen(false);
+              setSelectedTaskId(null);
+            }}
+            taskId={selectedTaskId}
+            onTaskUpdate={handleTaskUpdate}
+          />
+        )}
+
+        {/* Delete Confirmation Modal */}
+        <AnimatePresence>
+          {isDeleteModalOpen && taskToDelete && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+                onClick={handleDeleteCancel}
+              />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-md mx-4"
+              >
+                <div className="text-center">
+                  <div className="mx-auto flex items-center justify-center w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 mb-4">
+                    <TrashIcon className="w-6 h-6 text-red-600 dark:text-red-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                    Delete Task
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400 mb-6">
+                    Are you sure you want to delete "{taskToDelete.title}"? This action cannot be undone.
+                  </p>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={handleDeleteCancel}
+                      className="flex-1 px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors font-medium"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleDeleteConfirm}
+                      className="flex-1 px-4 py-2 text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors font-medium"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+
+        {/* Error Notification */}
+        <ErrorNotification
+          errorInfo={errorInfo}
+          onClose={() => setErrorInfo(null)}
         />
       </div>
     </div>

@@ -29,14 +29,22 @@ public class TaskController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "desc") String sortDir) {
+            @RequestParam(defaultValue = "desc") String sortDir,
+            @RequestParam(required = false) Long workspaceId) {
+        
+        System.out.println("🔍 TaskController - Received parameters:");
+        System.out.println("  page: " + page);
+        System.out.println("  size: " + size);
+        System.out.println("  sortBy: " + sortBy);
+        System.out.println("  sortDir: " + sortDir);
+        System.out.println("  workspaceId: " + workspaceId);
         
         Sort sort = sortDir.equalsIgnoreCase("desc") ? 
             Sort.by(sortBy).descending() : 
             Sort.by(sortBy).ascending();
             
         Pageable pageable = PageRequest.of(page, size, sort);
-        PageResponse<TaskSummaryDTO> tasks = taskService.getAllTasksFromUser(pageable);
+        PageResponse<TaskSummaryDTO> tasks = taskService.getAllTasksFromUser(pageable, workspaceId);
         return ResponseEntity.ok(tasks);
     }
 
