@@ -37,16 +37,24 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
                                @Param("priority") PriorityEnum priority,
                                Pageable pageable);
 
-    List<Task> findByStatusAndAssignedTo(StatusTaskEnum status, User currentUser);
-
-    List<Task> findByWorkspaceAndStatus(Workspace workspace, StatusTaskEnum status);
 
     List<Task> findByAssignedTo(User assignedTo);
-    
+
     Page<Task> findByAssignedTo(User assignedTo, Pageable pageable);
-    
+    @Query("SELECT t FROM Task t WHERE t.assignedTo = :user " + 
+           "AND (t.status = :status) " + 
+           "AND (:workspace IS NULL OR t.workspace = :workspace)")
+    List<Task> findByStatusWorkspaceAndAssignedTo(@Param("status") StatusTaskEnum status, 
+                                                 @Param("user") User currentUser, 
+                                                 @Param("workspace") Workspace workspace);
+
+    @Query("SELECT t FROM Task t WHERE t.assignedTo = :user")
+    List<Task> findByWorkspaceAndStatus(@Param("workspace") Workspace workspace, @Param("status") StatusTaskEnum status, @Param("user")  User currentUser);
+
+
     @Query("SELECT t FROM Task t WHERE t.assignedTo = :user AND t.workspace.id = :workspaceId")
     Page<Task> findByAssignedToAndWorkspaceId(@Param("user") User assignedTo, @Param("workspaceId") Long workspaceId, Pageable pageable);
+
 
     boolean existsByTitleAndWorkspace(String title, Workspace workspace);
 
@@ -71,4 +79,14 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
 
     @Query("SELECT COUNT(t) FROM Task t WHERE t.assignedTo = :user AND t.dueDate < :currentDateTime AND t.status != :completedStatus")
     Integer countOverdueTasks(@Param("user") User user, @Param("currentDateTime") LocalDateTime currentDateTime, @Param("completedStatus") StatusTaskEnum completedStatus);
+    
+    @Query("SELECT t FROM Task t WHERE t.assignedTo = :user " +
+           "AND (:workspaceId IS NULL OR t.workspace.id = :workspaceId) " +
+           "AND (:status IS NULL OR t.status = :status) " +
+           "AND (:priority IS NULL OR t.priority = :priority)")
+    Page<Task> findTasksWithFilters(@Param("user") User assignedTo, 
+                                   @Param("workspaceId") Long workspaceId,
+                                   @Param("status") StatusTaskEnum status,
+                                   @Param("priority") PriorityEnum priority,
+                                   Pageable pageable);
 }

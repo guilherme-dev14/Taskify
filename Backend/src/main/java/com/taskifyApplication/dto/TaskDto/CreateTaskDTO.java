@@ -2,6 +2,7 @@ package com.taskifyApplication.dto.TaskDto;
 
 
 import com.taskifyApplication.model.PriorityEnum;
+import com.taskifyApplication.model.StatusTaskEnum;
 import lombok.Data;
 import jakarta.validation.constraints.*;
 import java.time.LocalDateTime;
@@ -24,6 +25,8 @@ public class CreateTaskDTO {
     private Long assignedToId;
 
     private PriorityEnum priority;
+
+    private StatusTaskEnum status;
 
     private LocalDateTime dueDate;
 }

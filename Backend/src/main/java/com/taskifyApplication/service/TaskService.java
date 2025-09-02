@@ -2,6 +2,7 @@ package com.taskifyApplication.service;
 
 import com.taskifyApplication.dto.CategoryDto.CategoryResponseDTO;
 import com.taskifyApplication.dto.TaskDto.*;
+import com.taskifyApplication.dto.TaskDto.TaskSummaryDTO;
 import com.taskifyApplication.dto.UserDto.UserDTO;
 import com.taskifyApplication.dto.UserDto.UserSummaryDTO;
 import com.taskifyApplication.dto.WorkspaceDto.WorkspaceNameDTO;
@@ -46,23 +47,48 @@ public class TaskService {
         return getAllTasksFromUser(pageable, null);
     }
 
-    public PageResponse<TaskSummaryDTO> getAllTasksFromUser(Pageable pageable, Long workspaceId) {
+    public PageResponse<TaskSummaryDTO> getAllTasksFromUser(Pageable pageable, Long workspaceId, StatusTaskEnum status, PriorityEnum priority) {
         User currentUser = getCurrentUser();
-        System.out.println("🔍 TaskService - Processing request:");
-        System.out.println("  currentUser: " + currentUser.getEmail());
-        System.out.println("  workspaceId: " + workspaceId);
+        
+        Page<Task> taskPage;
+        
+        if (workspaceId != null || status != null || priority != null) {
+            taskPage = taskRepository.findTasksWithFilters(currentUser, workspaceId, status, priority, pageable);
+        } else {
+            taskPage = taskRepository.findByAssignedTo(currentUser, pageable);
+        }
+        
+        List<TaskSummaryDTO> taskSummaries = taskPage.getContent().stream()
+                .map(this::convertToTaskSummaryDto)
+                .collect(Collectors.toList());
+
+        return PageResponse.<TaskSummaryDTO>builder()
+                .content(taskSummaries)
+                .totalElements(taskPage.getTotalElements())
+                .page(taskPage.getNumber())
+                .totalPages(taskPage.getTotalPages())
+                .size(taskPage.getSize())
+                .first(taskPage.isFirst())
+                .last(taskPage.isLast())
+                .empty(taskPage.isEmpty())
+                .build();
+    }
+
+    public PageResponse<TaskSummaryDTO> getAllTasksFromUser(Pageable pageable, Long workspaceId) {
+        return getAllTasksFromUser(pageable, workspaceId, null, null);
+    }
+    
+    private PageResponse<TaskSummaryDTO> getAllTasksFromUserOld(Pageable pageable, Long workspaceId) {
+        User currentUser = getCurrentUser();
         
         Page<Task> taskPage;
         
         if (workspaceId != null) {
-            System.out.println("  Using workspace filter");
             taskPage = taskRepository.findByAssignedToAndWorkspaceId(currentUser, workspaceId, pageable);
         } else {
-            System.out.println("  No workspace filter - getting all tasks");
             taskPage = taskRepository.findByAssignedTo(currentUser, pageable);
         }
-        
-        System.out.println("  Found " + taskPage.getTotalElements() + " tasks");
+
 
         List<TaskSummaryDTO> taskSummaries = taskPage.getContent().stream()
                 .map(this::convertToTaskSummaryDto)
@@ -123,10 +149,12 @@ public class TaskService {
             throw new IllegalStateException("Task with this title already exists in the workspace!");
         }
 
+        StatusTaskEnum finalStatus = createTaskDTO.getStatus() != null ? createTaskDTO.getStatus() : StatusTaskEnum.NEW;
+        
         Task task = Task.builder()
                 .title(createTaskDTO.getTitle())
                 .description(createTaskDTO.getDescription())
-                .status(StatusTaskEnum.NEW)
+                .status(finalStatus)
                 .priority(createTaskDTO.getPriority() != null ? createTaskDTO.getPriority() : PriorityEnum.MEDIUM)
                 .dueDate(createTaskDTO.getDueDate())
                 .assignedTo(currentUser)
@@ -232,14 +260,22 @@ public class TaskService {
         return dashboardStats;
     }
 
-    public List<TaskSummaryDTO> getAllTasksByStatus(StatusTaskEnum status) {
+    public List<TaskSummaryDTO> getAllTasksByStatus(StatusTaskEnum status, Long workspaceId) {
         User currentUser = getCurrentUser();
-        List<Task> tasks = taskRepository.findByStatusAndAssignedTo(status, currentUser);
+        
+        Workspace workspace = null;
+        if (workspaceId != null) {
+            workspace = workspaceRepository.findById(workspaceId)
+                    .orElseThrow(() -> new IllegalArgumentException("Workspace not found"));
+        }
+        
+        List<Task> tasks = taskRepository.findByStatusWorkspaceAndAssignedTo(status, currentUser, workspace);
 
         return tasks.stream()
                 .map(this::convertToTaskSummaryDto)
                 .collect(Collectors.toList());
     }
+
 
     //endregion
 

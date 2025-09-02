@@ -3,6 +3,8 @@ package com.taskifyApplication.controller;
 import com.taskifyApplication.dto.TaskDto.*;
 import com.taskifyApplication.dto.common.PageResponse;
 import com.taskifyApplication.model.StatusTaskEnum;
+import com.taskifyApplication.model.PriorityEnum;
+import com.taskifyApplication.model.Workspace;
 import com.taskifyApplication.service.TaskService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
@@ -30,21 +32,16 @@ public class TaskController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir,
-            @RequestParam(required = false) Long workspaceId) {
-        
-        System.out.println("🔍 TaskController - Received parameters:");
-        System.out.println("  page: " + page);
-        System.out.println("  size: " + size);
-        System.out.println("  sortBy: " + sortBy);
-        System.out.println("  sortDir: " + sortDir);
-        System.out.println("  workspaceId: " + workspaceId);
-        
+            @RequestParam(required = false) Long workspaceId,
+            @RequestParam(required = false) StatusTaskEnum status,
+            @RequestParam(required = false) PriorityEnum priority) {
+
         Sort sort = sortDir.equalsIgnoreCase("desc") ? 
             Sort.by(sortBy).descending() : 
             Sort.by(sortBy).ascending();
             
         Pageable pageable = PageRequest.of(page, size, sort);
-        PageResponse<TaskSummaryDTO> tasks = taskService.getAllTasksFromUser(pageable, workspaceId);
+        PageResponse<TaskSummaryDTO> tasks = taskService.getAllTasksFromUser(pageable, workspaceId, status, priority);
         return ResponseEntity.ok(tasks);
     }
 
@@ -53,12 +50,12 @@ public class TaskController {
         TaskDetailDTO task = taskService.getTaskById(id);
         return ResponseEntity.ok(task);
     }
-
-    public ResponseEntity<List<TaskSummaryDTO>> getTasksByStatus(StatusTaskEnum status) {
-        List<TaskSummaryDTO> task = taskService.getAllTasksByStatus(status);
-        return ResponseEntity.ok(task);
-
-
+    @GetMapping("/kanban")
+    public ResponseEntity<List<TaskSummaryDTO>> getTasksByStatus(
+            @RequestParam StatusTaskEnum status,
+            @RequestParam(required = false) Long workspaceId) {
+        List<TaskSummaryDTO> tasks = taskService.getAllTasksByStatus(status, workspaceId);
+        return ResponseEntity.ok(tasks);
     }
 
     @PostMapping
@@ -86,4 +83,5 @@ public class TaskController {
         DashboardStatsDTO stats = taskService.getDashboardStats();
         return ResponseEntity.ok(stats);
     }
+
 }

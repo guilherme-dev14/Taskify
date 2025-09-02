@@ -9,8 +9,6 @@ export interface ITask {
   createdAt: string;
   updatedAt: string;
   workspaceId: string;
-  assigneeId?: string;
-  createdById: string;
   categories: string[];
 }
 
@@ -22,6 +20,7 @@ export interface ICreateTaskRequest {
   workspaceId: number;
   assigneeId?: number;
   categoryIds: number[];
+  status?: "NEW" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
 }
 
 export interface IUpdateTaskRequest {

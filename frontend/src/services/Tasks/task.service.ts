@@ -54,4 +54,19 @@ export const taskService = {
   async deleteTask(id: string): Promise<void> {
     await api.delete(`/tasks/${id}`);
   },
+
+  async getTasksByStatus(
+    status: string,
+    workspaceId?: string
+  ): Promise<ITask[]> {
+    const params: Record<string, string> = { status };
+    if (workspaceId) {
+      params.workspaceId = workspaceId;
+    }
+
+    const response = await api.get(`/tasks/kanban`, {
+      params,
+    });
+    return response.data;
+  },
 };

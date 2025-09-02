@@ -10,6 +10,7 @@ export interface NewTaskModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit?: (taskData: ICreateTaskRequest) => void;
+  initialStatus?: "NEW" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
 }
 
 export interface NewTaskFormData {
@@ -25,6 +26,7 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({
   isOpen,
   onClose,
   onSubmit,
+  initialStatus,
 }) => {
   const [formData, setFormData] = useState<NewTaskFormData>({
     title: "",
@@ -51,15 +53,17 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({
       ? `${formData.dueDate}T23:59:59`
       : null;
 
-    onSubmit?.({
+    const taskData = {
       title: formData.title,
       description: formData.description,
       priority: formData.priority,
       dueDate: dueDateTime,
       workspaceId: parseInt(formData.workspaceId),
       categoryIds: formData.categoryIds.map((id) => parseInt(id)),
-    });
-    console.log(formData);
+      status: initialStatus || "NEW",
+    };
+
+    onSubmit?.(taskData);
     handleClose();
   };
 
@@ -224,6 +228,37 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({
               </div>
 
               <div className="space-y-6">
+                {/* Status Display */}
+                {initialStatus && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Task Status
+                    </label>
+                    <div
+                      className={`inline-flex items-center px-4 py-2 rounded-lg border text-sm font-medium ${
+                        initialStatus === "NEW"
+                          ? "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-700"
+                          : initialStatus === "IN_PROGRESS"
+                          ? "bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-700"
+                          : initialStatus === "COMPLETED"
+                          ? "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-700"
+                          : "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-700"
+                      }`}
+                    >
+                      {initialStatus === "NEW"
+                        ? "New"
+                        : initialStatus === "IN_PROGRESS"
+                        ? "In Progress"
+                        : initialStatus === "COMPLETED"
+                        ? "Completed"
+                        : "Cancelled"}
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      This task will be created with the status above
+                    </p>
+                  </div>
+                )}
+
                 {/* Workspace Selection */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">

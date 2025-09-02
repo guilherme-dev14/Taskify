@@ -20,11 +20,16 @@ import { workspaceService } from "../../services/Workspace/workspace.service";
 import { NewTaskModal } from "../../components/Modals/NewTask";
 import { TaskDetailsModal } from "../../components/Modals/TaskDetails";
 import type { ICreateTaskRequest } from "../../types/task.types";
-import { getOperationErrorInfo, type ErrorInfo } from "../../utils/errorHandler";
+import {
+  getOperationErrorInfo,
+  type ErrorInfo,
+} from "../../utils/errorHandler";
 import { ErrorNotification } from "../../components/UI/ErrorNotification";
 
 const TasksView: React.FC = () => {
-  const [selectedWorkspace, setSelectedWorkspace] = useState<string | number>("all");
+  const [selectedWorkspace, setSelectedWorkspace] = useState<string | number>(
+    "all"
+  );
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [showFilters, setShowFilters] = useState(false);
@@ -81,7 +86,7 @@ const TasksView: React.FC = () => {
       setWorkspaces([allWorkspace, ...workspacesWithColors]);
     } catch (error) {
       console.error("Error loading workspaces:", error);
-      setErrorInfo(getOperationErrorInfo('load', error));
+      setErrorInfo(getOperationErrorInfo("load", error));
     }
   };
 
@@ -90,8 +95,13 @@ const TasksView: React.FC = () => {
       setIsLoading(true);
       setErrorInfo(null);
 
-      const workspaceIdValue = selectedWorkspace !== "all" ? (typeof selectedWorkspace === 'string' ? parseInt(selectedWorkspace) : selectedWorkspace) : undefined;
-      
+      const workspaceIdValue =
+        selectedWorkspace !== "all"
+          ? typeof selectedWorkspace === "string"
+            ? parseInt(selectedWorkspace)
+            : selectedWorkspace
+          : undefined;
+
       const filters: ITaskFilters = {
         page: currentPage - 1,
         size: 12,
@@ -104,7 +114,7 @@ const TasksView: React.FC = () => {
         selectedWorkspace,
         workspaceIdValue,
         filters,
-        workspaces: workspaces.map(w => ({ id: w.id, name: w.name }))
+        workspaces: workspaces.map((w) => ({ id: w.id, name: w.name })),
       });
 
       const response = await taskService.getAllTasks(filters);
@@ -113,7 +123,7 @@ const TasksView: React.FC = () => {
       setTotalPages(response.totalPages);
     } catch (error) {
       console.error("Error loading tasks:", error);
-      setErrorInfo(getOperationErrorInfo('load', error));
+      setErrorInfo(getOperationErrorInfo("load", error));
       setAllTasks([]);
     } finally {
       setIsLoading(false);
@@ -127,7 +137,7 @@ const TasksView: React.FC = () => {
       loadWorkspaces();
     } catch (error) {
       console.error("Error creating task:", error);
-      setErrorInfo(getOperationErrorInfo('create', error));
+      setErrorInfo(getOperationErrorInfo("create", error));
     }
   };
 
@@ -148,7 +158,7 @@ const TasksView: React.FC = () => {
 
   const handleDeleteConfirm = async () => {
     if (!taskToDelete) return;
-    
+
     try {
       await taskService.deleteTask(taskToDelete.id);
       setIsDeleteModalOpen(false);
@@ -156,7 +166,7 @@ const TasksView: React.FC = () => {
       loadTasks(); // Recarrega a lista de tasks
     } catch (error) {
       console.error("Error deleting task:", error);
-      setErrorInfo(getOperationErrorInfo('delete', error));
+      setErrorInfo(getOperationErrorInfo("delete", error));
     }
   };
 
@@ -424,7 +434,6 @@ const TasksView: React.FC = () => {
           )}
         </AnimatePresence>
 
-
         {/* Loading State */}
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -466,7 +475,7 @@ const TasksView: React.FC = () => {
                         {getStatusText(task.status)}
                       </span>
                     </div>
-                    <button 
+                    <button
                       onClick={(e) => handleDeleteClick(task, e)}
                       className="opacity-0 group-hover:opacity-100 transition-all duration-200 p-2 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30"
                       title="Delete task"
@@ -499,17 +508,6 @@ const TasksView: React.FC = () => {
                         Due {new Date(task.dueDate).toLocaleDateString()}
                       </span>
                     </div>
-
-                    {task.assigneeId && (
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-medium">
-                          A
-                        </div>
-                        <span className="text-sm text-gray-600 dark:text-gray-400">
-                          Assigned
-                        </span>
-                      </div>
-                    )}
                   </div>
                 </motion.div>
               ))}
@@ -612,7 +610,8 @@ const TasksView: React.FC = () => {
                     Delete Task
                   </h3>
                   <p className="text-gray-600 dark:text-gray-400 mb-6">
-                    Are you sure you want to delete "{taskToDelete.title}"? This action cannot be undone.
+                    Are you sure you want to delete "{taskToDelete.title}"? This
+                    action cannot be undone.
                   </p>
                   <div className="flex gap-3">
                     <button
