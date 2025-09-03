@@ -13,6 +13,7 @@ import {
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { useAuthStore } from "../../services/auth.store";
+import { WorkspaceSettings } from "../../components/WorkspaceSettings/WorkspaceSettings";
 
 interface Setting {
   id: string;
@@ -296,7 +297,11 @@ const SettingsView: React.FC = () => {
         );
 
       case "workspace":
-        return renderSettingsSection("Workspace Settings", workspaceSettings);
+        return (
+          <div className="space-y-6">
+            <WorkspaceSettings />
+          </div>
+        );
 
       case "data":
         return (
@@ -430,82 +435,114 @@ const SettingsView: React.FC = () => {
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Sidebar */}
+        {activeTab === "workspace" ? (
+          <WorkspaceSettings />
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            {/* Sidebar */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="lg:col-span-1"
+            >
+              <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl border border-gray-200/50 dark:border-gray-700/50 overflow-hidden sticky top-8">
+                <nav className="space-y-1 p-4">
+                  {tabs.map((tab) => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
+                        activeTab === tab.id
+                          ? "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
+                          : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/30"
+                      }`}
+                    >
+                      <tab.icon className="w-5 h-5" />
+                      {tab.label}
+                    </button>
+                  ))}
+                </nav>
+
+                {/* Quick Actions */}
+                <div className="border-t border-gray-200 dark:border-gray-700 p-4">
+                  <h4 className="font-medium text-gray-900 dark:text-white mb-3">
+                    Quick Actions
+                  </h4>
+                  <div className="space-y-2">
+                    <button className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors text-sm text-gray-700 dark:text-gray-300">
+                      Reset to defaults
+                    </button>
+                    <button className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors text-sm text-gray-700 dark:text-gray-300">
+                      Import settings
+                    </button>
+                    <button
+                      onClick={logout}
+                      className="w-full text-left px-3 py-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors text-sm text-red-600 dark:text-red-400"
+                    >
+                      Sign out
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Main Content */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="lg:col-span-3"
+            >
+              <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl p-8 border border-gray-200/50 dark:border-gray-700/50">
+                {renderTabContent()}
+
+                {/* Save Button */}
+                {activeTab !== "data" && (
+                  <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        Changes are saved automatically
+                      </p>
+                      <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+                        <CheckIcon className="w-4 h-4" />
+                        <span className="text-sm font-medium">Saved</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {/* Floating workspace navigation when in workspace tab */}
+        {activeTab === "workspace" && (
           <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="lg:col-span-1"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="fixed top-4 left-4 z-50"
           >
-            <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl border border-gray-200/50 dark:border-gray-700/50 overflow-hidden sticky top-8">
-              <nav className="space-y-1 p-4">
+            <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-md rounded-lg border border-gray-200/50 dark:border-gray-700/50 p-2">
+              <nav className="flex space-x-1">
                 {tabs.map((tab) => (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
+                    className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors ${
                       activeTab === tab.id
                         ? "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
                         : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/30"
                     }`}
                   >
-                    <tab.icon className="w-5 h-5" />
-                    {tab.label}
+                    <tab.icon className="w-4 h-4" />
+                    <span className="hidden sm:inline">{tab.label}</span>
                   </button>
                 ))}
               </nav>
-
-              {/* Quick Actions */}
-              <div className="border-t border-gray-200 dark:border-gray-700 p-4">
-                <h4 className="font-medium text-gray-900 dark:text-white mb-3">
-                  Quick Actions
-                </h4>
-                <div className="space-y-2">
-                  <button className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors text-sm text-gray-700 dark:text-gray-300">
-                    Reset to defaults
-                  </button>
-                  <button className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors text-sm text-gray-700 dark:text-gray-300">
-                    Import settings
-                  </button>
-                  <button
-                    onClick={logout}
-                    className="w-full text-left px-3 py-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors text-sm text-red-600 dark:text-red-400"
-                  >
-                    Sign out
-                  </button>
-                </div>
-              </div>
             </div>
           </motion.div>
-
-          {/* Main Content */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="lg:col-span-3"
-          >
-            <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl p-8 border border-gray-200/50 dark:border-gray-700/50">
-              {renderTabContent()}
-
-              {/* Save Button */}
-              {activeTab !== "data" && (
-                <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Changes are saved automatically
-                    </p>
-                    <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
-                      <CheckIcon className="w-4 h-4" />
-                      <span className="text-sm font-medium">Saved</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </motion.div>
-        </div>
+        )}
       </div>
     </div>
   );

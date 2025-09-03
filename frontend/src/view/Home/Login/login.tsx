@@ -325,7 +325,6 @@ export const Login = () => {
               <Step>
                 <div className="text-center space-y-8 py-8">
                   <div className="space-y-4">
-                    <div className="text-6xl">🎉</div>
                     <h3 className="text-3xl font-bold text-green-400">
                       Welcome back!
                     </h3>

@@ -1,6 +1,7 @@
 package com.taskifyApplication.service;
 
 import com.taskifyApplication.dto.WorkspaceDto.*;
+import com.taskifyApplication.dto.UserDto.UserSummaryDTO;
 import com.taskifyApplication.model.RoleEnum;
 import com.taskifyApplication.model.User;
 import com.taskifyApplication.model.Workspace;
@@ -14,12 +15,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.method.support.CompositeUriComponentsContributor;
-
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -34,6 +33,8 @@ public class WorkspaceService {
     private UserRepository userRepository;
     @Autowired
     private TaskRepository taskRepository;
+    @Autowired
+    private NotificationService notificationService;
 
     // endregion
 
@@ -134,21 +135,16 @@ public class WorkspaceService {
             throw new IllegalArgumentException("User is already a member of this workspace");
         }
 
-        Optional<WorkspaceMember> existingMember = workspaceMemberRepository.findByWorkspaceAndUser(workspace, userToAdd);
+        WorkspaceMember newMember = WorkspaceMember.builder()
+                .workspace(workspace)
+                .user(userToAdd)
+                .role(role)
+                .build();
 
-        if (existingMember.isPresent()) {
-            WorkspaceMember member = existingMember.get();
-            member.setRole(role);
-            workspaceMemberRepository.save(member);
-        } else {
-            WorkspaceMember newMember = WorkspaceMember.builder()
-                    .workspace(workspace)
-                    .user(userToAdd)
-                    .role(role)
-                    .build();
-
-            workspaceMemberRepository.save(newMember);
-        }
+        workspaceMemberRepository.save(newMember);
+        
+        // Notify the invited user
+        notificationService.notifyWorkspaceInvite(userToAdd, workspace, requestingUser);
     }
 
     public void removeMemberFromWorkspace(Long workspaceId, User userToRemove, User requestingUser) {
@@ -160,6 +156,14 @@ public class WorkspaceService {
 
         if (workspace.getOwner().equals(userToRemove)) {
             throw new IllegalArgumentException("Cannot remove workspace owner");
+        }
+
+        Optional<WorkspaceMember> memberToRemove = workspaceMemberRepository.findByWorkspaceAndUser(workspace, userToRemove);
+        
+        if (memberToRemove.isPresent()) {
+            workspaceMemberRepository.delete(memberToRemove.get());
+        } else {
+            throw new IllegalArgumentException("User is not a member of this workspace");
         }
     }
 
@@ -210,6 +214,9 @@ public class WorkspaceService {
         Workspace workspace = workspaceRepository.findByInviteCode(inviteCode)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid invite code"));
 
+        if (workspaceMemberRepository.existsByWorkspaceAndUser(workspace, user) || workspace.getOwner().equals(user)) {
+            throw new IllegalArgumentException("You are already a member of this workspace");
+        }
 
         WorkspaceMember newMember = WorkspaceMember.builder()
                 .workspace(workspace)
@@ -218,6 +225,18 @@ public class WorkspaceService {
                 .build();
 
         workspaceMemberRepository.save(newMember);
+        
+        // Notify existing members about new member
+        workspace.getMembers().forEach(member -> {
+            if (!member.getUser().equals(user)) {
+                notificationService.notifyMemberJoined(member.getUser(), workspace, user);
+            }
+        });
+        
+        // Also notify the owner if they're not already in the members list
+        if (!workspace.getOwner().equals(user)) {
+            notificationService.notifyMemberJoined(workspace.getOwner(), workspace, user);
+        }
 
         return workspace;
     }
@@ -243,6 +262,42 @@ public class WorkspaceService {
         } while (workspaceRepository.existsByInviteCode(code));
 
         return code;
+    }
+
+    public String getWorkspaceInviteCode(Long workspaceId) {
+        User currentUser = getCurrentUser();
+        Workspace workspace = getWorkspaceById(workspaceId);
+
+        if (canUserManageWorkspace(workspace, currentUser)) {
+            throw new IllegalArgumentException("You don't have permission to view invite codes for this workspace");
+        }
+
+        return workspace.getInviteCode();
+    }
+
+    public List<WorkspaceMembersResponseDTO> getWorkspaceMembers(Long workspaceId) {
+        User currentUser = getCurrentUser();
+        Workspace workspace = getWorkspaceById(workspaceId);
+
+        if (!canUserAccessWorkspace(workspace, currentUser)) {
+            throw new IllegalArgumentException("You don't have access to this workspace");
+        }
+
+        List<WorkspaceMembersResponseDTO> members = workspace.getMembers().stream()
+                .map(this::convertToWorkspaceMemberResponseDTO)
+                .collect(Collectors.toList());
+
+        // Add the owner as well
+        WorkspaceMembersResponseDTO ownerDTO = new WorkspaceMembersResponseDTO();
+        ownerDTO.setId(null);
+        ownerDTO.setUser(convertToUserSummaryDTO(workspace.getOwner()));
+        ownerDTO.setRole(RoleEnum.OWNER);
+        ownerDTO.setJoinedAt(workspace.getCreatedAt());
+        ownerDTO.setOwner(true);
+
+        members.add(0, ownerDTO); // Add owner at the beginning
+
+        return members;
     }
     // endregion
 
@@ -274,6 +329,27 @@ public class WorkspaceService {
         String email = authentication.getName();
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
+    }
+
+    private WorkspaceMembersResponseDTO convertToWorkspaceMemberResponseDTO(WorkspaceMember member) {
+        WorkspaceMembersResponseDTO dto = new WorkspaceMembersResponseDTO();
+        dto.setId(member.getId());
+        dto.setUser(convertToUserSummaryDTO(member.getUser()));
+        dto.setRole(member.getRole());
+        dto.setJoinedAt(member.getJoinedAt());
+        dto.setOwner(false);
+        return dto;
+    }
+
+    private UserSummaryDTO convertToUserSummaryDTO(User user) {
+        UserSummaryDTO dto = new UserSummaryDTO();
+        dto.setId(user.getId());
+        dto.setUsername(user.getUsername());
+        dto.setFirstName(user.getFirstName());
+        dto.setLastName(user.getLastName());
+        dto.setEmail(user.getEmail());
+        dto.setProfilePictureUrl(user.getProfilePictureUrl());
+        return dto;
     }
     //endregion
 }

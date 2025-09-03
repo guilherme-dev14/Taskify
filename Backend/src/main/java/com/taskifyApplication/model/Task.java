@@ -67,6 +67,63 @@ public class Task {
     @Builder.Default
     private List<Category> categories = new ArrayList<>();
 
+    // Subtask relationship
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parent_task_id")
+    private Task parentTask;
+
+    @OneToMany(mappedBy = "parentTask", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<Task> subtasks = new ArrayList<>();
+
+    // Dependencies
+    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<TaskDependency> dependencies = new ArrayList<>();
+
+    @OneToMany(mappedBy = "dependsOnTask", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<TaskDependency> dependentTasks = new ArrayList<>();
+
+    // Time tracking
+    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<TimeTracking> timeTrackingEntries = new ArrayList<>();
+
+    // Tags
+    @ElementCollection
+    @CollectionTable(name = "task_tags", joinColumns = @JoinColumn(name = "task_id"))
+    @Column(name = "tag")
+    @Builder.Default
+    private List<String> tags = new ArrayList<>();
+
+    // Progress tracking
+    @Builder.Default
+    private Integer progress = 0; // 0-100
+
+    // Template reference
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "template_id")
+    private TaskTemplate template;
+
+    // Checklist items
+    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("orderIndex ASC")
+    @Builder.Default
+    private List<ChecklistItem> checklist = new ArrayList<>();
+
+    // Attachments
+    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<Attachment> attachments = new ArrayList<>();
+
+    // Custom fields (JSON storage)
+    @Column(columnDefinition = "TEXT")
+    private String customFieldsJson;
+
+    @Column(name = "updated_at")
+    private OffsetDateTime updatedAt;
+
     public boolean canEdit(User user) {
         return workspace.getUserRole(user) != null &&
                 (assignedTo == null || assignedTo.equals(user) ||
@@ -76,12 +133,19 @@ public class Task {
 
     @PrePersist
     protected void onCreate(){
-        this.createdAt = OffsetDateTime.now();
+        OffsetDateTime now = OffsetDateTime.now();
+        this.createdAt = now;
+        this.updatedAt = now;
         if (this.status == null) {
             this.status = StatusTaskEnum.NEW;
         }
         if (this.priority == null) {
             this.priority = PriorityEnum.LOW;
         }
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = OffsetDateTime.now();
     }
 }

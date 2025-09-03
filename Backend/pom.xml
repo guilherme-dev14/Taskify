@@ -101,6 +101,78 @@
 		<version>0.12.3</version>
 		<scope>runtime</scope>
 	</dependency>
+
+	<!-- WebSocket Support -->
+	<dependency>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-websocket</artifactId>
+	</dependency>
+
+	<!-- File Upload Support -->
+	<dependency>
+		<groupId>commons-io</groupId>
+		<artifactId>commons-io</artifactId>
+		<version>2.11.0</version>
+	</dependency>
+	
+	<!-- AWS S3 Support for File Storage -->
+	<dependency>
+		<groupId>com.amazonaws</groupId>
+		<artifactId>aws-java-sdk-s3</artifactId>
+		<version>1.12.565</version>
+	</dependency>
+
+	<!-- Image Processing -->
+	<dependency>
+		<groupId>net.coobird</groupId>
+		<artifactId>thumbnailator</artifactId>
+		<version>0.4.20</version>
+	</dependency>
+
+	<!-- Full-text Search -->
+	<dependency>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-data-elasticsearch</artifactId>
+	</dependency>
+
+	<!-- Event Publishing -->
+	<dependency>
+		<groupId>org.springframework</groupId>
+		<artifactId>spring-context-support</artifactId>
+	</dependency>
+
+	<!-- Async Processing (included in spring-boot-starter) -->
+	<!-- spring-boot-starter includes task scheduling capabilities -->
+
+	<!-- JSON Processing -->
+	<dependency>
+		<groupId>com.fasterxml.jackson.datatype</groupId>
+		<artifactId>jackson-datatype-jsr310</artifactId>
+	</dependency>
+
+	<!-- MapStruct for DTO mapping -->
+	<dependency>
+		<groupId>org.mapstruct</groupId>
+		<artifactId>mapstruct</artifactId>
+		<version>1.5.5.Final</version>
+	</dependency>
+
+	<!-- Cache Support -->
+	<dependency>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-cache</artifactId>
+	</dependency>
+	<dependency>
+		<groupId>org.ehcache</groupId>
+		<artifactId>ehcache</artifactId>
+		<version>3.10.8</version>
+	</dependency>
+
+	<!-- Validation -->
+	<dependency>
+		<groupId>org.hibernate.validator</groupId>
+		<artifactId>hibernate-validator</artifactId>
+	</dependency>
 </dependencies>
 
 

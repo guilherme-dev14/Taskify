@@ -84,4 +84,42 @@ public class TaskController {
         return ResponseEntity.ok(stats);
     }
 
+    // Workspace-wide task endpoints
+    @GetMapping("/workspace/{workspaceId}")
+    public ResponseEntity<PageResponse<TaskSummaryDTO>> getAllTasksInWorkspace(
+            @PathVariable Long workspaceId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sort,
+            @RequestParam(defaultValue = "DESC") String direction,
+            @RequestParam(required = false) StatusTaskEnum status,
+            @RequestParam(required = false) PriorityEnum priority) {
+        try {
+            Sort.Direction sortDirection = Sort.Direction.fromString(direction);
+            Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sort));
+            
+            PageResponse<TaskSummaryDTO> tasks = taskService.getAllTasksInWorkspace(workspaceId, status, priority, pageable);
+            return ResponseEntity.ok(tasks);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @GetMapping("/workspace/{workspaceId}/list")
+    public ResponseEntity<List<TaskSummaryDTO>> getAllTasksInWorkspaceList(
+            @PathVariable Long workspaceId,
+            @RequestParam(required = false) StatusTaskEnum status,
+            @RequestParam(required = false) PriorityEnum priority) {
+        try {
+            List<TaskSummaryDTO> tasks = taskService.getAllTasksInWorkspaceList(workspaceId, status, priority);
+            return ResponseEntity.ok(tasks);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
 }

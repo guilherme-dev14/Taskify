@@ -41,15 +41,32 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     List<Task> findByAssignedTo(User assignedTo);
 
     Page<Task> findByAssignedTo(User assignedTo, Pageable pageable);
+
+    // Workspace-wide task methods (for collaborative view)
+    List<Task> findByWorkspace(Workspace workspace);
+    
+    Page<Task> findByWorkspace(Workspace workspace, Pageable pageable);
+    
+    @Query("SELECT t FROM Task t WHERE t.workspace = :workspace " +
+           "AND (:status IS NULL OR t.status = :status) " +
+           "AND (:priority IS NULL OR t.priority = :priority)")
+    List<Task> findByWorkspaceWithFilters(@Param("workspace") Workspace workspace,
+                                         @Param("status") StatusTaskEnum status,
+                                         @Param("priority") PriorityEnum priority);
+                                         
+    @Query("SELECT t FROM Task t WHERE t.workspace = :workspace " +
+           "AND (:status IS NULL OR t.status = :status) " +
+           "AND (:priority IS NULL OR t.priority = :priority)")
+    Page<Task> findByWorkspaceWithFiltersPageable(@Param("workspace") Workspace workspace,
+                                                 @Param("status") StatusTaskEnum status,
+                                                 @Param("priority") PriorityEnum priority,
+                                                 Pageable pageable);
     @Query("SELECT t FROM Task t WHERE t.assignedTo = :user " + 
            "AND (t.status = :status) " + 
            "AND (:workspace IS NULL OR t.workspace = :workspace)")
     List<Task> findByStatusWorkspaceAndAssignedTo(@Param("status") StatusTaskEnum status, 
                                                  @Param("user") User currentUser, 
                                                  @Param("workspace") Workspace workspace);
-
-    @Query("SELECT t FROM Task t WHERE t.assignedTo = :user")
-    List<Task> findByWorkspaceAndStatus(@Param("workspace") Workspace workspace, @Param("status") StatusTaskEnum status, @Param("user")  User currentUser);
 
 
     @Query("SELECT t FROM Task t WHERE t.assignedTo = :user AND t.workspace.id = :workspaceId")
@@ -89,4 +106,80 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
                                    @Param("status") StatusTaskEnum status,
                                    @Param("priority") PriorityEnum priority,
                                    Pageable pageable);
+
+    // Advanced search and filtering methods
+    @Query("SELECT DISTINCT t FROM Task t LEFT JOIN t.tags tag WHERE " +
+           "(:workspaceId IS NULL OR t.workspace.id = :workspaceId) " +
+           "AND (:assigneeId IS NULL OR t.assignedTo.id = :assigneeId) " +
+           "AND (:parentTaskId IS NULL OR t.parentTask.id = :parentTaskId) " +
+           "AND (:status IS NULL OR t.status = :status) " +
+           "AND (:priority IS NULL OR t.priority = :priority) " +
+           "AND (:estimatedHoursMin IS NULL OR t.estimatedHours >= :estimatedHoursMin) " +
+           "AND (:estimatedHoursMax IS NULL OR t.estimatedHours <= :estimatedHoursMax) " +
+           "AND (:progressMin IS NULL OR t.progress >= :progressMin) " +
+           "AND (:progressMax IS NULL OR t.progress <= :progressMax) " +
+           "AND (:templateId IS NULL OR t.template.id = :templateId) " +
+           "AND (:dueDateFrom IS NULL OR t.dueDate >= :dueDateFrom) " +
+           "AND (:dueDateTo IS NULL OR t.dueDate <= :dueDateTo) " +
+           "AND (:tags IS NULL OR tag IN :tags)")
+    Page<Task> findWithAdvancedFilters(@Param("workspaceId") Long workspaceId,
+                                      @Param("assigneeId") Long assigneeId,
+                                      @Param("parentTaskId") Long parentTaskId,
+                                      @Param("status") StatusTaskEnum status,
+                                      @Param("priority") PriorityEnum priority,
+                                      @Param("estimatedHoursMin") Integer estimatedHoursMin,
+                                      @Param("estimatedHoursMax") Integer estimatedHoursMax,
+                                      @Param("progressMin") Integer progressMin,
+                                      @Param("progressMax") Integer progressMax,
+                                      @Param("templateId") Long templateId,
+                                      @Param("dueDateFrom") LocalDateTime dueDateFrom,
+                                      @Param("dueDateTo") LocalDateTime dueDateTo,
+                                      @Param("tags") List<String> tags,
+                                      Pageable pageable);
+
+    // Full-text search
+    @Query("SELECT t FROM Task t WHERE " +
+           "LOWER(t.title) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+           "LOWER(t.description) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+           "LOWER(t.notes) LIKE LOWER(CONCAT('%', :query, '%'))")
+    Page<Task> searchByText(@Param("query") String query, Pageable pageable);
+
+    @Query("SELECT t FROM Task t WHERE t.workspace.id = :workspaceId AND (" +
+           "LOWER(t.title) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+           "LOWER(t.description) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+           "LOWER(t.notes) LIKE LOWER(CONCAT('%', :query, '%')))")
+    Page<Task> searchByTextInWorkspace(@Param("workspaceId") Long workspaceId, 
+                                      @Param("query") String query, 
+                                      Pageable pageable);
+
+    // Subtask queries
+    List<Task> findByParentTaskOrderByCreatedAtAsc(Task parentTask);
+    
+    @Query("SELECT COUNT(t) FROM Task t WHERE t.parentTask = :parentTask")
+    Long countSubtasks(@Param("parentTask") Task parentTask);
+    
+    @Query("SELECT COUNT(t) FROM Task t WHERE t.parentTask = :parentTask AND t.status = 'COMPLETED'")
+    Long countCompletedSubtasks(@Param("parentTask") Task parentTask);
+
+    // Tag queries
+    @Query("SELECT DISTINCT tag FROM Task t JOIN t.tags tag WHERE t.workspace.id = :workspaceId " +
+           "GROUP BY tag ORDER BY COUNT(tag) DESC")
+    List<String> findMostUsedTagsInWorkspace(@Param("workspaceId") Long workspaceId, Pageable pageable);
+
+    @Query("SELECT t FROM Task t JOIN t.tags tag WHERE tag = :tag AND t.workspace.id = :workspaceId")
+    List<Task> findByTagInWorkspace(@Param("tag") String tag, @Param("workspaceId") Long workspaceId);
+
+    // Template usage
+    @Query("SELECT COUNT(t) FROM Task t WHERE t.template.id = :templateId")
+    Long countTasksFromTemplate(@Param("templateId") Long templateId);
+
+    // Dashboard statistics
+    @Query("SELECT COUNT(t) FROM Task t WHERE t.workspace.id = :workspaceId")
+    Long countTasksInWorkspace(@Param("workspaceId") Long workspaceId);
+
+    @Query("SELECT COUNT(t) FROM Task t WHERE t.workspace.id = :workspaceId AND t.status = :status")
+    Long countTasksByStatusInWorkspace(@Param("workspaceId") Long workspaceId, @Param("status") StatusTaskEnum status);
+
+    @Query("SELECT COUNT(t) FROM Task t WHERE t.workspace.id = :workspaceId AND t.assignedTo.id = :userId")
+    Long countTasksAssignedToUserInWorkspace(@Param("workspaceId") Long workspaceId, @Param("userId") Long userId);
 }

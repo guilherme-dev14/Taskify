@@ -14,6 +14,7 @@ class AuthService {
   }
 
   async register(data: IRegisterRequest): Promise<IAuthResponse> {
+    debugger;
     const response = await api.post<IAuthResponse>("/auth/register", data);
     return response.data;
   }

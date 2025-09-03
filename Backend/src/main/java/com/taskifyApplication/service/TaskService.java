@@ -40,6 +40,8 @@ public class TaskService {
     private CategoryRepository categoryRepository;
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private NotificationService notificationService;
     // endregion
 
     // region PUBLIC FUNCTIONS SERVICE
@@ -164,6 +166,11 @@ public class TaskService {
 
         task = taskRepository.save(task);
 
+        // Create notification if task is assigned to someone other than creator
+        if (task.getAssignedTo() != null && !task.getAssignedTo().equals(currentUser)) {
+            notificationService.notifyTaskAssigned(task.getAssignedTo(), task, currentUser);
+        }
+
         TaskResponseDTO dto = convertToTaskResponseDto(task);
         dto.setCommentsCount(0);
         dto.setIsOverdue(false);
@@ -226,12 +233,45 @@ public class TaskService {
             task.setCategories(categories);
         }
 
+        User previousAssignedUser = task.getAssignedTo();
         if (updateTaskDTO.getAssignedToId() != null) {
             User assignedUser = userRepository.findById(updateTaskDTO.getAssignedToId())
                     .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + updateTaskDTO.getAssignedToId()));
             task.setAssignedTo(assignedUser);
         }
+        
         task = taskRepository.save(task);
+
+        // Create notifications for task updates
+        User newAssignedUser = task.getAssignedTo();
+        
+        // Notify if task was newly assigned to someone
+        if (newAssignedUser != null && 
+            !newAssignedUser.equals(currentUser) && 
+            !newAssignedUser.equals(previousAssignedUser)) {
+            notificationService.notifyTaskAssigned(newAssignedUser, task, currentUser);
+        }
+        
+        // Notify previous assignee about task updates (if different from current user and new assignee)
+        if (previousAssignedUser != null && 
+            !previousAssignedUser.equals(currentUser) && 
+            !previousAssignedUser.equals(newAssignedUser)) {
+            notificationService.notifyTaskUpdated(previousAssignedUser, task, currentUser, "Task details updated");
+        }
+        
+        // Notify current assignee about task updates (if different from current user)
+        if (newAssignedUser != null && 
+            !newAssignedUser.equals(currentUser) && 
+            newAssignedUser.equals(previousAssignedUser)) {
+            notificationService.notifyTaskUpdated(newAssignedUser, task, currentUser, "Task details updated");
+        }
+        
+        // Notify about task completion
+        if (updateTaskDTO.getStatus() == StatusTaskEnum.COMPLETED && 
+            newAssignedUser != null && 
+            !newAssignedUser.equals(currentUser)) {
+            notificationService.notifyTaskCompleted(newAssignedUser, task, currentUser);
+        }
 
         TaskResponseDTO dto = convertToTaskResponseDto(task);
         dto.setCommentsCount(task.getComments() != null ? task.getComments().size() : 0);
@@ -401,9 +441,11 @@ public class TaskService {
         if (task.getAssignedTo() != null) {
             UserSummaryDTO userDto = new UserSummaryDTO();
             userDto.setId(task.getAssignedTo().getId());
+            userDto.setUsername(task.getAssignedTo().getUsername());
             userDto.setFirstName(task.getAssignedTo().getFirstName());
             userDto.setLastName(task.getAssignedTo().getLastName());
             userDto.setEmail(task.getAssignedTo().getEmail());
+            userDto.setProfilePictureUrl(task.getAssignedTo().getProfilePictureUrl());
             dto.setAssignedTo(userDto);
         }
 
@@ -418,6 +460,85 @@ public class TaskService {
         dto.setCommentsCount(task.getComments() != null ? task.getComments().size() : 0);
 
         return dto;
+    }
+
+    // Workspace-wide task methods for collaborative view
+    public PageResponse<TaskSummaryDTO> getAllTasksInWorkspace(Long workspaceId, Pageable pageable) {
+        return getAllTasksInWorkspace(workspaceId, null, null, pageable);
+    }
+
+    public PageResponse<TaskSummaryDTO> getAllTasksInWorkspace(Long workspaceId, StatusTaskEnum status, 
+                                                              PriorityEnum priority, Pageable pageable) {
+        User currentUser = getCurrentUser();
+        
+        Workspace workspace = workspaceRepository.findById(workspaceId)
+                .orElseThrow(() -> new IllegalArgumentException("Workspace not found"));
+                
+        // Verify user has access to this workspace
+        if (!canUserAccessWorkspace(workspace, currentUser)) {
+            throw new IllegalArgumentException("You don't have access to this workspace");
+        }
+
+        Page<Task> taskPage;
+        if (status != null || priority != null) {
+            taskPage = taskRepository.findByWorkspaceWithFiltersPageable(workspace, status, priority, pageable);
+        } else {
+            taskPage = taskRepository.findByWorkspace(workspace, pageable);
+        }
+
+        List<TaskSummaryDTO> taskSummaries = taskPage.getContent().stream()
+                .map(this::convertToTaskSummaryDto)
+                .collect(Collectors.toList());
+
+        return PageResponse.<TaskSummaryDTO>builder()
+                .content(taskSummaries)
+                .page(taskPage.getNumber())
+                .size(taskPage.getSize())
+                .totalElements(taskPage.getTotalElements())
+                .totalPages(taskPage.getTotalPages())
+                .first(taskPage.isFirst())
+                .last(taskPage.isLast())
+                .empty(taskPage.isEmpty())
+                .build();
+    }
+
+    public List<TaskSummaryDTO> getAllTasksInWorkspaceList(Long workspaceId) {
+        return getAllTasksInWorkspaceList(workspaceId, null, null);
+    }
+
+    public List<TaskSummaryDTO> getAllTasksInWorkspaceList(Long workspaceId, StatusTaskEnum status, PriorityEnum priority) {
+        User currentUser = getCurrentUser();
+        
+        Workspace workspace = workspaceRepository.findById(workspaceId)
+                .orElseThrow(() -> new IllegalArgumentException("Workspace not found"));
+                
+        // Verify user has access to this workspace
+        if (!canUserAccessWorkspace(workspace, currentUser)) {
+            throw new IllegalArgumentException("You don't have access to this workspace");
+        }
+
+        List<Task> tasks;
+        if (status != null || priority != null) {
+            tasks = taskRepository.findByWorkspaceWithFilters(workspace, status, priority);
+        } else {
+            tasks = taskRepository.findByWorkspace(workspace);
+        }
+
+        return tasks.stream()
+                .map(this::convertToTaskSummaryDto)
+                .collect(Collectors.toList());
+    }
+
+    // Helper method to check workspace access
+    private boolean canUserAccessWorkspace(Workspace workspace, User user) {
+        // Check if user is owner
+        if (workspace.getOwner().equals(user)) {
+            return true;
+        }
+        
+        // Check if user is a member
+        return workspace.getMembers().stream()
+                .anyMatch(member -> member.getUser().equals(user));
     }
     // endregion
 }

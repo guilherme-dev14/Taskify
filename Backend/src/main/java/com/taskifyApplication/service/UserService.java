@@ -53,6 +53,34 @@ public class UserService {
         user = userRepository.save(user);
         return convertToProfileDTO(user);
     }
+
+    public User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+    }
+
+    public User findByEmail(String email) {
+        return userRepository.findByEmail(email).orElse(null);
+    }
+
+    public User findById(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+    }
+
+    public java.util.Optional<User> findByUsername(String username) {
+        return userRepository.findByUsername(username);
+    }
+
+    public User getUserFromAuthentication(Authentication authentication) {
+        if (authentication == null || authentication.getName() == null) {
+            return null;
+        }
+        String email = authentication.getName();
+        return userRepository.findByEmail(email).orElse(null);
+    }
     // endregion
 
     // region PRIVATE FUNCTIONS
