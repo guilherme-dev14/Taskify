@@ -42,6 +42,9 @@ public class User{
     @Column(length = 255)
     private String avatar;
 
+    @Column(columnDefinition = "TEXT")
+    private String profilePictureUrl;
+
     @OneToMany(mappedBy = "assignedTo", fetch = FetchType.LAZY)
     private List<Task> assignedTasks = new ArrayList<>();
 

@@ -4,6 +4,11 @@ import type {
   ICreateWorkspaceRequest,
   IUpdateWorkspaceRequest,
   IWorkspaceName,
+  IJoinWorkspaceRequest,
+  IInviteUserRequest,
+  IWorkspaceMemberResponse,
+  IUpdateMemberRoleRequest,
+  IRemoveMemberRequest,
 } from "../../types/workspace.types";
 
 export const workspaceService = {
@@ -34,5 +39,37 @@ export const workspaceService = {
 
   async deleteWorkspace(id: string): Promise<void> {
     await api.delete(`/workspace/${id}`);
+  },
+
+  // Workspace Sharing Methods
+  async joinWorkspaceByInviteCode(data: IJoinWorkspaceRequest): Promise<void> {
+    await api.post(`/workspace/0/join`, data);
+  },
+
+  async inviteUserByEmail(workspaceId: number, data: IInviteUserRequest): Promise<void> {
+    await api.post(`/workspace/${workspaceId}/invite`, data);
+  },
+
+  async getWorkspaceMembers(workspaceId: number): Promise<IWorkspaceMemberResponse[]> {
+    const response = await api.get(`/workspace/${workspaceId}/members`);
+    return response.data;
+  },
+
+  async updateMemberRole(data: IUpdateMemberRoleRequest): Promise<void> {
+    await api.put('/workspace/member/role', data);
+  },
+
+  async removeMember(data: IRemoveMemberRequest): Promise<void> {
+    await api.delete('/workspace/member', { data });
+  },
+
+  async getInviteCode(workspaceId: number): Promise<string> {
+    const response = await api.get(`/workspace/${workspaceId}/invite-code`);
+    return response.data;
+  },
+
+  async regenerateInviteCode(workspaceId: number): Promise<string> {
+    const response = await api.post(`/workspace/${workspaceId}/invite-code/regenerate`);
+    return response.data;
   },
 };

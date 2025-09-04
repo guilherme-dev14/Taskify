@@ -7,7 +7,6 @@ import ForgotPassword from "./view/Home/ForgotPassword/ForgotPassword";
 import { Dashboard } from "./view/Dashboard/Dashboard";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { useAuthStore } from "./services/auth.store";
-import CalendarView from "./view/Calendar/CalendarView";
 export const App = () => {
   const { checkAuth } = useAuthStore();
 
@@ -24,10 +23,6 @@ export const App = () => {
       <Route
         path="/dashboard"
         element={<ProtectedRoute> {<Dashboard />} </ProtectedRoute>}
-      />
-      <Route
-        path="/calendar"
-        element={<ProtectedRoute> {<CalendarView />} </ProtectedRoute>}
       />
     </Routes>
   );

@@ -16,8 +16,22 @@ export interface IWorkspaceName {
 export interface IWorkspaceMember {
   id: string;
   userId: string;
-  role: "owner" | "admin" | "member";
+  role: "OWNER" | "ADMIN" | "MEMBER";
   joinedAt: string;
+}
+
+export interface IWorkspaceMemberResponse {
+  id: number;
+  user: {
+    id: number;
+    username: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+  role: "OWNER" | "ADMIN" | "MEMBER";
+  joinedAt: string;
+  isOwner: boolean;
 }
 
 export interface ICreateWorkspaceRequest {
@@ -34,4 +48,24 @@ export interface IUpdateWorkspaceRequest {
 export interface ICreateCategoryRequest {
   name: string;
   workspaceId: string;
+}
+
+export interface IJoinWorkspaceRequest {
+  inviteCode: string;
+}
+
+export interface IInviteUserRequest {
+  email: string;
+  role: "ADMIN" | "MEMBER";
+}
+
+export interface IUpdateMemberRoleRequest {
+  workspaceId: number;
+  userId: number;
+  newRole: "ADMIN" | "MEMBER";
+}
+
+export interface IRemoveMemberRequest {
+  workspaceId: number;
+  userId: number;
 }

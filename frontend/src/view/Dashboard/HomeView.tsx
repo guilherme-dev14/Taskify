@@ -10,7 +10,8 @@ import { NewTaskModal } from "../../components/Modals/NewTask";
 import type { ICreateTaskRequest } from "../../types/task.types";
 import { workspaceService } from "../../services/Workspace/workspace.service";
 import { NewWorkspaceModal } from "../../components/Modals/NewWorkspace";
-import type { ICreateWorkspaceRequest } from "../../types/workspace.types";
+import { JoinWorkspaceModal } from "../../components/Modals/JoinWorkspace";
+import type { ICreateWorkspaceRequest, IJoinWorkspaceRequest } from "../../types/workspace.types";
 
 const HomeView: React.FC = () => {
   const [stats, setStats] = useState<IDashboardStats | null>(null);
@@ -19,6 +20,7 @@ const HomeView: React.FC = () => {
   const [isNewTaskModalOpen, setIsNewTaskModalOpen] = useState(false);
   const { setCurrentView } = useNavigationStore();
   const [isNewWorkspaceModalOpen, setIsNewWorkspaceModalOpen] = useState(false);
+  const [isJoinWorkspaceModalOpen, setIsJoinWorkspaceModalOpen] = useState(false);
   useEffect(() => {
     fetchDashboardData();
   }, []);
@@ -129,7 +131,7 @@ const HomeView: React.FC = () => {
             Quick Actions
           </h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {[
               {
                 title: "Create New Task",
@@ -144,6 +146,13 @@ const HomeView: React.FC = () => {
                 icon: "🏢",
                 color: "purple",
                 action: () => setIsNewWorkspaceModalOpen(true),
+              },
+              {
+                title: "Join Workspace",
+                description: "Join an existing workspace with invite code",
+                icon: "👥",
+                color: "emerald",
+                action: () => setIsJoinWorkspaceModalOpen(true),
               },
               {
                 title: "View Calendar",
@@ -204,6 +213,20 @@ const HomeView: React.FC = () => {
           } catch (error) {
             console.error("Error creating workspace:", error);
             setError("Failed to create workspace");
+          }
+        }}
+      />
+
+      <JoinWorkspaceModal
+        isOpen={isJoinWorkspaceModalOpen}
+        onClose={() => setIsJoinWorkspaceModalOpen(false)}
+        onSubmit={async (joinData: IJoinWorkspaceRequest) => {
+          try {
+            await workspaceService.joinWorkspaceByInviteCode(joinData);
+            fetchDashboardData();
+          } catch (error) {
+            console.error("Error joining workspace:", error);
+            throw error; // Re-throw so the modal can handle it
           }
         }}
       />
