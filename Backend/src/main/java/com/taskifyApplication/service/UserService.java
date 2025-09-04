@@ -15,6 +15,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 @Service
 public class UserService {
     // region REPOSITORIES
@@ -153,6 +155,33 @@ public class UserService {
         // Update password
         user.setPassword(passwordEncoder.encode(changePasswordDTO.getNewPassword()));
         userRepository.save(user);
+    }
+    // endregion
+
+    // region ADDITIONAL METHODS
+    public User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+    }
+
+    public User getUserFromAuthentication(Authentication authentication) {
+        String email = authentication.getName();
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+    }
+
+    public Optional<User> findByEmail(String email) {
+        return userRepository.findByEmail(email);
+    }
+
+    public Optional<User> findByUsername(String username) {
+        return userRepository.findByUsername(username);
+    }
+
+    public Optional<User> findById(Long id) {
+        return userRepository.findById(id);
     }
     // endregion
 

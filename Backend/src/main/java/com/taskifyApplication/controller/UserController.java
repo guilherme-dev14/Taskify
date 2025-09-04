@@ -1,21 +1,19 @@
 package com.taskifyApplication.controller;
 
-import com.taskifyApplication.dto.UserDto.UpdateProfileDTO;
-import com.taskifyApplication.dto.UserDto.UserDTO;
-import com.taskifyApplication.dto.UserDto.UserStatsDTO;
-import com.taskifyApplication.dto.UserDto.UserSettingsDTO;
-import com.taskifyApplication.dto.UserDto.ChangePasswordDTO;
+import com.taskifyApplication.dto.UserDto.*;
+import com.taskifyApplication.dto.ErrorResponseDTO;
 import com.taskifyApplication.model.User;
 import com.taskifyApplication.service.UserService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/users")
-@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://localhost:5176", "http://localhost:5177"})
+@CrossOrigin(origins = "http://localhost:5173")
 @SecurityRequirement(name = "bearerAuth")
 public class UserController {
 
@@ -23,22 +21,30 @@ public class UserController {
     private UserService userService;
 
     @GetMapping("/profile")
-    public ResponseEntity<UserDTO> getCurrentUser() {
+    public ResponseEntity<?> getCurrentUser() {
         try {
             UserDTO user = userService.getCurrentUserProfile();
             return ResponseEntity.ok(user);
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.notFound().build();
+            ErrorResponseDTO error = new ErrorResponseDTO(e.getMessage(), HttpStatus.NOT_FOUND.value());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+        } catch (Exception e) {
+            ErrorResponseDTO error = new ErrorResponseDTO("Erro interno do servidor", HttpStatus.INTERNAL_SERVER_ERROR.value());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
     }
 
     @PutMapping("/updateUser")
-    public ResponseEntity<UserDTO> updateCurrentUser(@Valid @RequestBody UpdateProfileDTO updateDTO) {
+    public ResponseEntity<?> updateCurrentUser(@Valid @RequestBody UpdateProfileDTO updateDTO) {
         try {
             UserDTO user = userService.updateCurrentUserProfile(updateDTO);
             return ResponseEntity.ok(user);
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
+            ErrorResponseDTO error = new ErrorResponseDTO(e.getMessage(), HttpStatus.BAD_REQUEST.value());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        } catch (Exception e) {
+            ErrorResponseDTO error = new ErrorResponseDTO("Erro interno do servidor", HttpStatus.INTERNAL_SERVER_ERROR.value());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
     }
 
@@ -85,7 +91,13 @@ public class UserController {
     }
 
     @DeleteMapping("/deleteProfile")
-    public void deleteCurrentUser() {
+    public ResponseEntity<?> deleteCurrentUser() {
+        try {
             userService.deleteCurrentUserProfile();
-            }
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            ErrorResponseDTO error = new ErrorResponseDTO("Erro ao deletar perfil", HttpStatus.INTERNAL_SERVER_ERROR.value());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
 }

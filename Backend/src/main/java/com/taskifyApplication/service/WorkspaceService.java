@@ -115,8 +115,12 @@ public class WorkspaceService {
         if (!workspace.getOwner().equals(user)) {
             throw new IllegalArgumentException("Cannot update workspace if you are not the OWNER");
         }
-        workspace.setName(updateWorkspaceDTO.getName());
-        workspace.setDescription(updateWorkspaceDTO.getDescription());
+        if(updateWorkspaceDTO.getName() != null && !updateWorkspaceDTO.getName().equals(workspace.getName())) {
+            workspace.setName(updateWorkspaceDTO.getName());
+        }
+        if(updateWorkspaceDTO.getDescription() != null && !updateWorkspaceDTO.getDescription().equals(workspace.getDescription())) {
+            workspace.setDescription(updateWorkspaceDTO.getDescription());
+        }
         workspaceRepository.save(workspace);
         return convertToWorkspaceResponseDTO(workspace);
     }
@@ -286,16 +290,6 @@ public class WorkspaceService {
         List<WorkspaceMembersResponseDTO> members = workspace.getMembers().stream()
                 .map(this::convertToWorkspaceMemberResponseDTO)
                 .collect(Collectors.toList());
-
-        // Add the owner as well
-        WorkspaceMembersResponseDTO ownerDTO = new WorkspaceMembersResponseDTO();
-        ownerDTO.setId(null);
-        ownerDTO.setUser(convertToUserSummaryDTO(workspace.getOwner()));
-        ownerDTO.setRole(RoleEnum.OWNER);
-        ownerDTO.setJoinedAt(workspace.getCreatedAt());
-        ownerDTO.setOwner(true);
-
-        members.add(0, ownerDTO); // Add owner at the beginning
 
         return members;
     }

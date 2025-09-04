@@ -1,6 +1,6 @@
 package com.taskifyApplication.dto.TaskDto;
 
-
+import com.taskifyApplication.dto.AttachmentDto.AttachmentResponseDTO;
 import com.taskifyApplication.dto.CategoryDto.CategoryResponseDTO;
 import com.taskifyApplication.dto.CommentDto.CommentResponseDTO;
 import com.taskifyApplication.dto.UserDto.UserDTO;
@@ -31,6 +31,7 @@ public class TaskDetailDTO {
 
     private List<CommentResponseDTO> comments;
     private List<TaskHistoryDTO> history;
+    private List<AttachmentResponseDTO> attachments;
 
     private Integer commentsCount;
     private Boolean isOverdue;

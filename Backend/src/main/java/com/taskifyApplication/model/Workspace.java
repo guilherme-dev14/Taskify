@@ -28,6 +28,7 @@ public class Workspace {
     private OffsetDateTime updatedAt;
 
     @OneToMany(mappedBy = "workspace", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
     private List<WorkspaceMember> members = new ArrayList<>();
 
     @ManyToOne(fetch = FetchType.LAZY)

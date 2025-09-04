@@ -13,6 +13,12 @@ import {
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { useAuthStore } from "../../services/auth.store";
+import { useLanguage } from "../../context/LanguageContext";
+import { useTheme } from "../../context/ThemeContext";
+import type { UserSettings } from "../../services/Settings/settings.service";
+import settingsService from "../../services/Settings/settings.service";
+import { WorkspaceSettings } from "../../components/WorkspaceSettings/WorkspaceSettings";
+import userService from "../../services/User/user.service";
 
 interface Setting {
   id: string;
@@ -45,7 +51,7 @@ const SettingsView: React.FC = () => {
     workspacePrivacy: "private",
   });
   const [, setLoading] = useState(true);
-  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error'>('saved');
+  const [, setSaveStatus] = useState<"saved" | "saving" | "error">("saved");
 
   const [showDangerZone, setShowDangerZone] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
@@ -71,30 +77,30 @@ const SettingsView: React.FC = () => {
   const handleSettingChange = async (settingId: string, value: any) => {
     const newSettings = { ...settings, [settingId]: value };
     setSettings(newSettings);
-    
+
     // Handle theme changes immediately
-    if (settingId === 'theme') {
+    if (settingId === "theme") {
       setTheme(value);
     }
-    
+
     // Handle language changes immediately
-    if (settingId === 'language') {
+    if (settingId === "language") {
       setLanguage(value);
     }
-    
+
     try {
-      setSaveStatus('saving');
+      setSaveStatus("saving");
       await settingsService.updateUserSettings({ [settingId]: value });
-      setSaveStatus('saved');
+      setSaveStatus("saved");
     } catch (error) {
       console.error("Failed to save setting:", error);
-      setSaveStatus('error');
+      setSaveStatus("error");
       // Revert the setting change on error
       setSettings(settings);
-      if (settingId === 'theme') {
+      if (settingId === "theme") {
         setTheme(settings.theme as any);
       }
-      if (settingId === 'language') {
+      if (settingId === "language") {
         setLanguage(settings.language as any);
       }
     }
@@ -227,28 +233,6 @@ const SettingsView: React.FC = () => {
     },
   ];
 
-  const workspaceSettings: Setting[] = [
-    {
-      id: "defaultWorkspace",
-      label: "Default Workspace",
-      description: "Workspace to open when you log in",
-      type: "select",
-      value: settings.defaultWorkspace,
-      options: [
-        { label: "Personal", value: "personal" },
-        { label: "Work", value: "work" },
-        { label: "Side Projects", value: "side-projects" },
-      ],
-    },
-    {
-      id: "taskAutoAssign",
-      label: "Auto-assign Tasks",
-      description: "Automatically assign new tasks to yourself",
-      type: "toggle",
-      value: settings.taskAutoAssign,
-    },
-  ];
-
   const renderSettingInput = (setting: Setting) => {
     switch (setting.type) {
       case "toggle":
@@ -365,21 +349,22 @@ const SettingsView: React.FC = () => {
                 Download a copy of all your data including tasks, workspaces,
                 and settings.
               </p>
-              <button 
+              <button
                 onClick={async () => {
                   try {
                     const blob = await settingsService.exportUserData();
                     const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
+                    const a = document.createElement("a");
                     a.href = url;
-                    a.download = 'taskify-data-export.json';
+                    a.download = "taskify-data-export.json";
                     a.click();
                     window.URL.revokeObjectURL(url);
                   } catch (error) {
                     console.error("Failed to export data:", error);
                   }
                 }}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium">
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
+              >
                 Export Data
               </button>
             </div>
@@ -393,7 +378,7 @@ const SettingsView: React.FC = () => {
                 Clear your browser's local cache to free up space and resolve
                 issues.
               </p>
-              <button 
+              <button
                 onClick={async () => {
                   try {
                     await settingsService.clearCache();
@@ -402,7 +387,8 @@ const SettingsView: React.FC = () => {
                     console.error("Failed to clear cache:", error);
                   }
                 }}
-                className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors font-medium">
+                className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors font-medium"
+              >
                 Clear Cache
               </button>
             </div>
@@ -457,7 +443,10 @@ const SettingsView: React.FC = () => {
                                 await userService.deleteAccount();
                                 logout();
                               } catch (error) {
-                                console.error("Failed to delete account:", error);
+                                console.error(
+                                  "Failed to delete account:",
+                                  error
+                                );
                               }
                             }
                           }}
@@ -571,23 +560,24 @@ const SettingsView: React.FC = () => {
               <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl p-8 border border-gray-200/50 dark:border-gray-700/50">
                 {renderTabContent()}
 
-              {/* Save Button */}
-              {activeTab !== "data" && (
-                <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Changes are saved automatically
-                    </p>
-                    <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
-                      <CheckIcon className="w-4 h-4" />
-                      <span className="text-sm font-medium">Saved</span>
+                {/* Save Button */}
+                {activeTab !== "data" && (
+                  <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        Changes are saved automatically
+                      </p>
+                      <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+                        <CheckIcon className="w-4 h-4" />
+                        <span className="text-sm font-medium">Saved</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
-            </div>
-          </motion.div>
-        </div>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
       </div>
     </div>
   );

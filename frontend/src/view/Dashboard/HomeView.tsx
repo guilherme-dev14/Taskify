@@ -11,7 +11,11 @@ import type { ICreateTaskRequest } from "../../types/task.types";
 import { workspaceService } from "../../services/Workspace/workspace.service";
 import { NewWorkspaceModal } from "../../components/Modals/NewWorkspace";
 import { JoinWorkspaceModal } from "../../components/Modals/JoinWorkspace";
-import type { ICreateWorkspaceRequest, IJoinWorkspaceRequest } from "../../types/workspace.types";
+import type {
+  ICreateWorkspaceRequest,
+  IJoinWorkspaceRequest,
+} from "../../types/workspace.types";
+import DashboardContainer from "../../components/Dashboard/DashboardContainer";
 
 const HomeView: React.FC = () => {
   const [stats, setStats] = useState<IDashboardStats | null>(null);
@@ -20,7 +24,8 @@ const HomeView: React.FC = () => {
   const [isNewTaskModalOpen, setIsNewTaskModalOpen] = useState(false);
   const { setCurrentView } = useNavigationStore();
   const [isNewWorkspaceModalOpen, setIsNewWorkspaceModalOpen] = useState(false);
-  const [isJoinWorkspaceModalOpen, setIsJoinWorkspaceModalOpen] = useState(false);
+  const [isJoinWorkspaceModalOpen, setIsJoinWorkspaceModalOpen] =
+    useState(false);
   useEffect(() => {
     fetchDashboardData();
   }, []);
@@ -202,7 +207,7 @@ const HomeView: React.FC = () => {
           }
         }}
       />
-
+      <DashboardContainer />
       <NewWorkspaceModal
         isOpen={isNewWorkspaceModalOpen}
         onClose={() => setIsNewWorkspaceModalOpen(false)}

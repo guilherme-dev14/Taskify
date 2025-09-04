@@ -1,13 +1,20 @@
-import React, { useRef, useState, useCallback } from 'react';
-import { CloudArrowUpIcon, DocumentIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { attachmentService } from '../../services/Attachments/attachment.service';
-import { IUploadProgress } from '../../types/attachment.types';
+import React, { useRef, useState, useCallback } from "react";
+import {
+  CloudArrowUpIcon,
+  DocumentIcon,
+  XMarkIcon,
+} from "@heroicons/react/24/outline";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { attachmentService } from "../../services/Attachments/attachment.service";
+import type {
+  IAttachment,
+  IUploadProgress,
+} from "../../types/attachment.types";
 
 interface FileUploadProps {
   taskId?: string;
   workspaceId?: string;
-  onUploadComplete?: (attachments: any[]) => void;
+  onUploadComplete?: (attachments: IAttachment[]) => void;
   onUploadError?: (error: string) => void;
   maxFiles?: number;
   maxSize?: number; // in bytes
@@ -23,7 +30,7 @@ export function FileUpload({
   maxFiles = 10,
   maxSize = 50 * 1024 * 1024, // 50MB
   acceptedTypes = [],
-  className = ''
+  className = "",
 }: FileUploadProps) {
   const [dragOver, setDragOver] = useState(false);
   const [uploads, setUploads] = useState<IUploadProgress[]>([]);
@@ -34,42 +41,55 @@ export function FileUpload({
     mutationFn: async (files: File[]) => {
       const uploadPromises = files.map(async (file) => {
         const uploadId = Date.now() + Math.random();
-        
+
         // Add to uploads list
-        setUploads(prev => [...prev, {
-          id: uploadId.toString(),
-          filename: file.name,
-          progress: 0,
-          status: 'uploading'
-        }]);
+        setUploads((prev) => [
+          ...prev,
+          {
+            id: uploadId.toString(),
+            filename: file.name,
+            progress: 0,
+            status: "uploading",
+          },
+        ]);
 
         try {
           const attachment = await attachmentService.uploadAttachment(
             { file, taskId, workspaceId },
             (progress) => {
-              setUploads(prev => prev.map(upload => 
-                upload.id === uploadId.toString()
-                  ? { ...upload, progress }
-                  : upload
-              ));
+              setUploads((prev) =>
+                prev.map((upload) =>
+                  upload.id === uploadId.toString()
+                    ? { ...upload, progress }
+                    : upload
+                )
+              );
             }
           );
 
           // Mark as completed
-          setUploads(prev => prev.map(upload => 
-            upload.id === uploadId.toString()
-              ? { ...upload, progress: 100, status: 'completed' as const }
-              : upload
-          ));
+          setUploads((prev) =>
+            prev.map((upload) =>
+              upload.id === uploadId.toString()
+                ? { ...upload, progress: 100, status: "completed" as const }
+                : upload
+            )
+          );
 
           return attachment;
         } catch (error) {
           // Mark as error
-          setUploads(prev => prev.map(upload => 
-            upload.id === uploadId.toString()
-              ? { ...upload, status: 'error' as const, error: 'Upload failed' }
-              : upload
-          ));
+          setUploads((prev) =>
+            prev.map((upload) =>
+              upload.id === uploadId.toString()
+                ? {
+                    ...upload,
+                    status: "error" as const,
+                    error: "Upload failed",
+                  }
+                : upload
+            )
+          );
           throw error;
         }
       });
@@ -77,20 +97,22 @@ export function FileUpload({
       return Promise.all(uploadPromises);
     },
     onSuccess: (attachments) => {
-      queryClient.invalidateQueries(['attachments']);
+      queryClient.invalidateQueries({ queryKey: ["attachments"] });
       onUploadComplete?.(attachments);
-      
+
       // Clear uploads after delay
       setTimeout(() => {
         setUploads([]);
       }, 2000);
     },
-    onError: (error: any) => {
-      onUploadError?.(error.message || 'Upload failed');
-    }
+    onError: (error: unknown) => {
+      onUploadError?.(error instanceof Error ? error.message : "Upload failed");
+    },
   });
 
-  const validateFiles = (files: File[]): { valid: File[], errors: string[] } => {
+  const validateFiles = (
+    files: File[]
+  ): { valid: File[]; errors: string[] } => {
     const valid: File[] = [];
     const errors: string[] = [];
 
@@ -99,15 +121,22 @@ export function FileUpload({
       return { valid, errors };
     }
 
-    files.forEach(file => {
+    files.forEach((file) => {
       // Check file size
       if (file.size > maxSize) {
-        errors.push(`${file.name} is too large (max ${attachmentService.formatFileSize(maxSize)})`);
+        errors.push(
+          `${file.name} is too large (max ${attachmentService.formatFileSize(
+            maxSize
+          )})`
+        );
         return;
       }
 
       // Check file type
-      if (acceptedTypes.length > 0 && !acceptedTypes.some(type => file.type.includes(type))) {
+      if (
+        acceptedTypes.length > 0 &&
+        !acceptedTypes.some((type) => file.type.includes(type))
+      ) {
         errors.push(`${file.name} file type not allowed`);
         return;
       }
@@ -118,18 +147,21 @@ export function FileUpload({
     return { valid, errors };
   };
 
-  const handleFiles = useCallback((files: File[]) => {
-    const { valid, errors } = validateFiles(files);
-    
-    if (errors.length > 0) {
-      onUploadError?.(errors.join(', '));
-      return;
-    }
+  const handleFiles = useCallback(
+    (files: File[]) => {
+      const { valid, errors } = validateFiles(files);
 
-    if (valid.length > 0) {
-      uploadMutation.mutate(valid);
-    }
-  }, [uploadMutation, onUploadError]);
+      if (errors.length > 0) {
+        onUploadError?.(errors.join(", "));
+        return;
+      }
+
+      if (valid.length > 0) {
+        uploadMutation.mutate(valid);
+      }
+    },
+    [uploadMutation, onUploadError]
+  );
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -144,7 +176,7 @@ export function FileUpload({
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setDragOver(false);
-    
+
     const files = Array.from(e.dataTransfer.files);
     handleFiles(files);
   };
@@ -152,15 +184,15 @@ export function FileUpload({
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     handleFiles(files);
-    
+
     // Reset input
     if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+      fileInputRef.current.value = "";
     }
   };
 
   const removeUpload = (uploadId: string) => {
-    setUploads(prev => prev.filter(upload => upload.id !== uploadId));
+    setUploads((prev) => prev.filter((upload) => upload.id !== uploadId));
   };
 
   return (
@@ -173,11 +205,12 @@ export function FileUpload({
         onClick={() => fileInputRef.current?.click()}
         className={`
           relative border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors
-          ${dragOver 
-            ? 'border-blue-400 bg-blue-50' 
-            : 'border-gray-300 hover:border-gray-400'
+          ${
+            dragOver
+              ? "border-blue-400 bg-blue-50"
+              : "border-gray-300 hover:border-gray-400"
           }
-          ${uploadMutation.isLoading ? 'pointer-events-none opacity-50' : ''}
+          ${uploadMutation.isPending ? "pointer-events-none opacity-50" : ""}
         `}
       >
         <CloudArrowUpIcon className="mx-auto h-12 w-12 text-gray-400" />
@@ -187,7 +220,10 @@ export function FileUpload({
           </p>
           <p className="text-sm text-gray-500 mt-2">
             {acceptedTypes.length > 0 && (
-              <>Supported formats: {acceptedTypes.join(', ')}<br /></>
+              <>
+                Supported formats: {acceptedTypes.join(", ")}
+                <br />
+              </>
             )}
             Maximum file size: {attachmentService.formatFileSize(maxSize)}
             {maxFiles > 1 && <> • Up to {maxFiles} files</>}
@@ -198,7 +234,7 @@ export function FileUpload({
           ref={fileInputRef}
           type="file"
           multiple={maxFiles > 1}
-          accept={acceptedTypes.join(',')}
+          accept={acceptedTypes.join(",")}
           onChange={handleFileSelect}
           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
         />
@@ -209,18 +245,21 @@ export function FileUpload({
         <div className="space-y-2">
           <h4 className="text-sm font-medium text-gray-900">Uploading files</h4>
           {uploads.map((upload) => (
-            <div key={upload.id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+            <div
+              key={upload.id}
+              className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg"
+            >
               <DocumentIcon className="h-5 w-5 text-gray-400 flex-shrink-0" />
-              
+
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-gray-900 truncate">
                   {upload.filename}
                 </p>
-                
-                {upload.status === 'uploading' && (
+
+                {upload.status === "uploading" && (
                   <div className="mt-1">
                     <div className="bg-gray-200 rounded-full h-2">
-                      <div 
+                      <div
                         className="bg-blue-500 h-2 rounded-full transition-all duration-300"
                         style={{ width: `${upload.progress}%` }}
                       />
@@ -230,12 +269,14 @@ export function FileUpload({
                     </p>
                   </div>
                 )}
-                
-                {upload.status === 'completed' && (
-                  <p className="text-xs text-green-600 mt-1">✓ Upload completed</p>
+
+                {upload.status === "completed" && (
+                  <p className="text-xs text-green-600 mt-1">
+                    ✓ Upload completed
+                  </p>
                 )}
-                
-                {upload.status === 'error' && (
+
+                {upload.status === "error" && (
                   <p className="text-xs text-red-600 mt-1">✗ {upload.error}</p>
                 )}
               </div>

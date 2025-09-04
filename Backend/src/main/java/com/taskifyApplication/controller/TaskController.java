@@ -122,4 +122,91 @@ public class TaskController {
         }
     }
 
+    // Bulk Operations
+    @PutMapping("/bulk-update")
+    public ResponseEntity<List<TaskResponseDTO>> bulkUpdateTasks(@Valid @RequestBody BulkTaskOperationDTO bulkUpdateDTO) {
+        try {
+            List<TaskResponseDTO> updatedTasks = taskService.bulkUpdateTasks(bulkUpdateDTO);
+            return ResponseEntity.ok(updatedTasks);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @DeleteMapping("/bulk-delete")
+    public ResponseEntity<Void> bulkDeleteTasks(@RequestBody List<Long> taskIds) {
+        try {
+            taskService.bulkDeleteTasks(taskIds);
+            return ResponseEntity.noContent().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @PostMapping("/{id}/clone")
+    public ResponseEntity<TaskResponseDTO> cloneTask(@PathVariable Long id) {
+        try {
+            TaskResponseDTO clonedTask = taskService.cloneTask(id);
+            return ResponseEntity.status(HttpStatus.CREATED).body(clonedTask);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    // Subtask Management
+    @PostMapping("/{parentId}/subtasks")
+    public ResponseEntity<TaskResponseDTO> createSubtask(
+            @PathVariable Long parentId,
+            @Valid @RequestBody CreateSubtaskDTO createSubtaskDTO) {
+        try {
+            createSubtaskDTO.setParentTaskId(parentId);
+            TaskResponseDTO subtask = taskService.createSubtask(createSubtaskDTO);
+            return ResponseEntity.status(HttpStatus.CREATED).body(subtask);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @GetMapping("/{parentId}/subtasks")
+    public ResponseEntity<List<TaskSummaryDTO>> getSubtasks(@PathVariable Long parentId) {
+        try {
+            List<TaskSummaryDTO> subtasks = taskService.getSubtasks(parentId);
+            return ResponseEntity.ok(subtasks);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @GetMapping("/{subtaskId}/parent")
+    public ResponseEntity<TaskSummaryDTO> getParentTask(@PathVariable Long subtaskId) {
+        try {
+            TaskSummaryDTO parentTask = taskService.getParentTask(subtaskId);
+            return ResponseEntity.ok(parentTask);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @PutMapping("/{taskId}/convert-to-subtask/{parentId}")
+    public ResponseEntity<Void> convertToSubtask(
+            @PathVariable Long taskId,
+            @PathVariable Long parentId) {
+        try {
+            taskService.convertToSubtask(taskId, parentId);
+            return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @PutMapping("/{subtaskId}/promote-to-main-task")
+    public ResponseEntity<Void> promoteToMainTask(@PathVariable Long subtaskId) {
+        try {
+            taskService.promoteToMainTask(subtaskId);
+            return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
 }

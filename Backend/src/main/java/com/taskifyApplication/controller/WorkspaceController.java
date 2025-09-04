@@ -1,6 +1,7 @@
 package com.taskifyApplication.controller;
 
 import com.taskifyApplication.dto.WorkspaceDto.*;
+import com.taskifyApplication.dto.ErrorResponseDTO;
 import com.taskifyApplication.service.WorkspaceService;
 import com.taskifyApplication.service.UserService;
 import com.taskifyApplication.model.User;
@@ -25,97 +26,130 @@ public class WorkspaceController {
     private UserService userService;
 
     @GetMapping
-    public ResponseEntity<List<WorkspaceNameDTO>> getWorkspacesFromUser() {
+    public ResponseEntity<?> getWorkspacesFromUser() {
         try {
             List<WorkspaceNameDTO> workspace = workspaceService.getUserWorkspaces();
             return ResponseEntity.ok(workspace);
         } catch(Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            ErrorResponseDTO error = new ErrorResponseDTO("Erro interno do servidor", HttpStatus.INTERNAL_SERVER_ERROR.value());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
     }
 
     @DeleteMapping("/{id}")
-    public void deleteWorkspacesFromUser( @PathVariable Long id ) {
+    public ResponseEntity<?> deleteWorkspacesFromUser( @PathVariable Long id ) {
+        try {
             workspaceService.deleteWorkspace(id);
+            return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            ErrorResponseDTO error = new ErrorResponseDTO(e.getMessage(), HttpStatus.BAD_REQUEST.value());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        } catch (Exception e) {
+            ErrorResponseDTO error = new ErrorResponseDTO("Erro interno do servidor", HttpStatus.INTERNAL_SERVER_ERROR.value());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
     }
 
     @PostMapping
-    public ResponseEntity<WorkspaceResponseDTO> createWorkspace(@RequestBody CreateWorkspaceDTO createWorkspaceDTO) {
+    public ResponseEntity<?> createWorkspace(@RequestBody CreateWorkspaceDTO createWorkspaceDTO) {
         try {
             WorkspaceResponseDTO workspaceResponseDTO = workspaceService.createWorkspace(createWorkspaceDTO);
             return ResponseEntity.status(HttpStatus.CREATED).body(workspaceResponseDTO);
+        } catch (IllegalArgumentException e) {
+            ErrorResponseDTO error = new ErrorResponseDTO(e.getMessage(), HttpStatus.BAD_REQUEST.value());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
         } catch(Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            ErrorResponseDTO error = new ErrorResponseDTO("Erro interno do servidor", HttpStatus.INTERNAL_SERVER_ERROR.value());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
     }
 
     @PutMapping
-    public ResponseEntity<WorkspaceResponseDTO> updateWorkspace(@RequestBody UpdateWorkspaceDTO updateWorkspaceDTO) {
+    public ResponseEntity<?> updateWorkspace(@RequestBody UpdateWorkspaceDTO updateWorkspaceDTO) {
         try {
             WorkspaceResponseDTO workspaceResponseDTO = workspaceService.updateWorkspace(updateWorkspaceDTO);
             return ResponseEntity.status(HttpStatus.OK).body(workspaceResponseDTO);
+        } catch (IllegalArgumentException e) {
+            ErrorResponseDTO error = new ErrorResponseDTO(e.getMessage(), HttpStatus.BAD_REQUEST.value());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
         } catch(Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            ErrorResponseDTO error = new ErrorResponseDTO("Erro interno do servidor", HttpStatus.INTERNAL_SERVER_ERROR.value());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
     }
     @GetMapping("/{id}")
-    public ResponseEntity<WorkspaceSummaryDTO> getWorkspaceSummary(@PathVariable Long id) {
+    public ResponseEntity<?> getWorkspaceSummary(@PathVariable Long id) {
         try {
             WorkspaceSummaryDTO workspaceSummaryDTO = workspaceService.getWorkspaceSummary(id);
             return ResponseEntity.ok(workspaceSummaryDTO);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            ErrorResponseDTO error = new ErrorResponseDTO(e.getMessage(), HttpStatus.BAD_REQUEST.value());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            ErrorResponseDTO error = new ErrorResponseDTO("Erro interno do servidor", HttpStatus.INTERNAL_SERVER_ERROR.value());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
     }
 
     // Workspace Sharing Endpoints
     @PostMapping("/{workspaceId}/join")
-    public ResponseEntity<WorkspaceResponseDTO> joinWorkspaceByInviteCode(@RequestBody JoinWorkspaceDTO joinWorkspaceDTO) {
+    public ResponseEntity<?> joinWorkspaceByInviteCode(@RequestBody JoinWorkspaceDTO joinWorkspaceDTO) {
         try {
             User currentUser = userService.getCurrentUser();
             workspaceService.joinWorkspaceByInviteCode(joinWorkspaceDTO.getInviteCode(), currentUser);
             return ResponseEntity.ok().build();
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            ErrorResponseDTO error = new ErrorResponseDTO(e.getMessage(), HttpStatus.BAD_REQUEST.value());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            ErrorResponseDTO error = new ErrorResponseDTO("Erro interno do servidor", HttpStatus.INTERNAL_SERVER_ERROR.value());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
     }
 
     @PostMapping("/{workspaceId}/invite")
-    public ResponseEntity<String> inviteUserByEmail(@PathVariable Long workspaceId, @RequestBody InviteUserDTO inviteUserDTO) {
+    public ResponseEntity<?> inviteUserByEmail(@PathVariable Long workspaceId, @RequestBody InviteUserDTO inviteUserDTO) {
         try {
             User currentUser = userService.getCurrentUser();
-            User userToInvite = userService.findByEmail(inviteUserDTO.getEmail());
+            User userToInvite = userService.findByEmail(inviteUserDTO.getEmail()).orElse(null);
             
             if (userToInvite == null) {
-                return ResponseEntity.badRequest().body("User not found");
+                ErrorResponseDTO error = new ErrorResponseDTO("Usuário não encontrado", HttpStatus.BAD_REQUEST.value());
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
             }
             
             workspaceService.addMemberToWorkspace(workspaceId, userToInvite, inviteUserDTO.getRole(), currentUser);
             return ResponseEntity.ok("User invited successfully");
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            ErrorResponseDTO error = new ErrorResponseDTO(e.getMessage(), HttpStatus.BAD_REQUEST.value());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            ErrorResponseDTO error = new ErrorResponseDTO("Erro interno do servidor", HttpStatus.INTERNAL_SERVER_ERROR.value());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
     }
 
     @GetMapping("/{workspaceId}/members")
-    public ResponseEntity<List<WorkspaceMembersResponseDTO>> getWorkspaceMembers(@PathVariable Long workspaceId) {
+    public ResponseEntity<?> getWorkspaceMembers(@PathVariable Long workspaceId) {
         try {
             List<WorkspaceMembersResponseDTO> members = workspaceService.getWorkspaceMembers(workspaceId);
             return ResponseEntity.ok(members);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            ErrorResponseDTO error = new ErrorResponseDTO("Erro interno do servidor", HttpStatus.INTERNAL_SERVER_ERROR.value());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
     }
 
     @PutMapping("/member/role")
-    public ResponseEntity<String> updateMemberRole(@RequestBody UpdateMemberRoleDTO updateMemberRoleDTO) {
+    public ResponseEntity<?> updateMemberRole(@RequestBody UpdateMemberRoleDTO updateMemberRoleDTO) {
         try {
             User currentUser = userService.getCurrentUser();
-            User userToUpdate = userService.findById(updateMemberRoleDTO.getUserId());
+            User userToUpdate = userService.findById(updateMemberRoleDTO.getUserId()).orElse(null);
+            
+            if (userToUpdate == null) {
+                ErrorResponseDTO error = new ErrorResponseDTO("Usuário não encontrado", HttpStatus.BAD_REQUEST.value());
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+            }
             
             workspaceService.updateMemberRole(
                 updateMemberRoleDTO.getWorkspaceId(), 
@@ -124,18 +158,25 @@ public class WorkspaceController {
                 currentUser
             );
             return ResponseEntity.ok("Member role updated successfully");
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            ErrorResponseDTO error = new ErrorResponseDTO(e.getMessage(), HttpStatus.BAD_REQUEST.value());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            ErrorResponseDTO error = new ErrorResponseDTO("Erro interno do servidor", HttpStatus.INTERNAL_SERVER_ERROR.value());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
     }
 
     @DeleteMapping("/member")
-    public ResponseEntity<String> removeMember(@RequestBody RemoveMemberDTO removeMemberDTO) {
+    public ResponseEntity<?> removeMember(@RequestBody RemoveMemberDTO removeMemberDTO) {
         try {
             User currentUser = userService.getCurrentUser();
-            User userToRemove = userService.findById(removeMemberDTO.getUserId());
+            User userToRemove = userService.findById(removeMemberDTO.getUserId()).orElse(null);
+            
+            if (userToRemove == null) {
+                ErrorResponseDTO error = new ErrorResponseDTO("Usuário não encontrado", HttpStatus.BAD_REQUEST.value());
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+            }
             
             workspaceService.removeMemberFromWorkspace(
                 removeMemberDTO.getWorkspaceId(), 
@@ -143,35 +184,41 @@ public class WorkspaceController {
                 currentUser
             );
             return ResponseEntity.ok("Member removed successfully");
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            ErrorResponseDTO error = new ErrorResponseDTO(e.getMessage(), HttpStatus.BAD_REQUEST.value());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            ErrorResponseDTO error = new ErrorResponseDTO("Erro interno do servidor", HttpStatus.INTERNAL_SERVER_ERROR.value());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
     }
 
     @PostMapping("/{workspaceId}/invite-code/regenerate")
-    public ResponseEntity<String> regenerateInviteCode(@PathVariable Long workspaceId) {
+    public ResponseEntity<?> regenerateInviteCode(@PathVariable Long workspaceId) {
         try {
             User currentUser = userService.getCurrentUser();
             String newInviteCode = workspaceService.generateNewInviteCode(workspaceId, currentUser);
             return ResponseEntity.ok(newInviteCode);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            ErrorResponseDTO error = new ErrorResponseDTO(e.getMessage(), HttpStatus.BAD_REQUEST.value());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            ErrorResponseDTO error = new ErrorResponseDTO("Erro interno do servidor", HttpStatus.INTERNAL_SERVER_ERROR.value());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
     }
 
     @GetMapping("/{workspaceId}/invite-code")
-    public ResponseEntity<String> getInviteCode(@PathVariable Long workspaceId) {
+    public ResponseEntity<?> getInviteCode(@PathVariable Long workspaceId) {
         try {
             String inviteCode = workspaceService.getWorkspaceInviteCode(workspaceId);
             return ResponseEntity.ok(inviteCode);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            ErrorResponseDTO error = new ErrorResponseDTO(e.getMessage(), HttpStatus.BAD_REQUEST.value());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            ErrorResponseDTO error = new ErrorResponseDTO("Erro interno do servidor", HttpStatus.INTERNAL_SERVER_ERROR.value());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
     }
 }

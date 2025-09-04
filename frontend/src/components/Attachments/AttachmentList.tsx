@@ -1,15 +1,18 @@
-import { useState } from 'react';
-import { 
-  DocumentIcon, 
-  EyeIcon, 
-  ArrowDownTrayIcon, 
+import { useState } from "react";
+import {
+  DocumentIcon,
+  EyeIcon,
+  ArrowDownTrayIcon,
   TrashIcon,
   ClockIcon,
-  UserIcon
-} from '@heroicons/react/24/outline';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { attachmentService } from '../../services/Attachments/attachment.service';
-import type {IAttachment, IAttachmentFilters} from '../../types/attachment.types';
+  UserIcon,
+} from "@heroicons/react/24/outline";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { attachmentService } from "../../services/Attachments/attachment.service";
+import type {
+  IAttachment,
+  IAttachmentFilters,
+} from "../../types/attachment.types";
 
 interface AttachmentListProps {
   taskId?: string;
@@ -18,37 +21,45 @@ interface AttachmentListProps {
   className?: string;
 }
 
-export function AttachmentList({ taskId, workspaceId, onPreview, className = '' }: AttachmentListProps) {
+export function AttachmentList({
+  taskId,
+  workspaceId,
+  onPreview,
+  className = "",
+}: AttachmentListProps) {
   const [filters, setFilters] = useState<IAttachmentFilters>({
     taskId,
     workspaceId,
     page: 0,
-    size: 20
+    size: 20,
   });
-  
+
   const queryClient = useQueryClient();
 
   // Query attachments
-  const { data: attachments, isLoading, error } = useQuery({
-    queryKey: ['attachments', filters],
+  const {
+    data: attachments,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["attachments", filters],
     queryFn: () => attachmentService.getAttachments(filters),
-    enabled: !!(taskId || workspaceId)
+    enabled: !!(taskId || workspaceId),
   });
 
   // Delete attachment mutation
   const deleteMutation = useMutation({
     mutationFn: attachmentService.deleteAttachment,
     onSuccess: () => {
-      // @ts-ignore
-        queryClient.invalidateQueries(['attachments']);
-    }
+      queryClient.invalidateQueries({ queryKey: ["attachments"] });
+    },
   });
 
   const handleDownload = async (attachment: IAttachment) => {
     try {
       await attachmentService.downloadAttachment(attachment.id);
     } catch (error) {
-      console.error('Download failed:', error);
+      console.error("Download failed:", error);
     }
   };
 
@@ -59,18 +70,18 @@ export function AttachmentList({ taskId, workspaceId, onPreview, className = '' 
   };
 
   const handleDelete = (attachmentId: string) => {
-    if (window.confirm('Are you sure you want to delete this attachment?')) {
+    if (window.confirm("Are you sure you want to delete this attachment?")) {
       deleteMutation.mutate(attachmentId);
     }
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
@@ -125,14 +136,14 @@ export function AttachmentList({ taskId, workspaceId, onPreview, className = '' 
                 alt={attachment.originalName}
                 className="h-10 w-10 object-cover rounded"
                 onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                  e.currentTarget.nextElementSibling?.removeAttribute('style');
+                  e.currentTarget.style.display = "none";
+                  e.currentTarget.nextElementSibling?.removeAttribute("style");
                 }}
               />
             ) : null}
-            <div 
+            <div
               className={`h-10 w-10 flex items-center justify-center text-2xl ${
-                attachment.thumbnailUrl ? 'hidden' : ''
+                attachment.thumbnailUrl ? "hidden" : ""
               }`}
             >
               {attachmentService.getFileTypeIcon(attachment.mimeType)}
@@ -144,24 +155,27 @@ export function AttachmentList({ taskId, workspaceId, onPreview, className = '' 
             <h4 className="text-sm font-medium text-gray-900 truncate">
               {attachment.originalName}
             </h4>
-            
+
             <div className="flex items-center space-x-4 mt-1 text-xs text-gray-500">
               <span className="flex items-center space-x-1">
                 <UserIcon className="h-3 w-3" />
                 <span>
-                  {attachment.uploadedBy.firstName} {attachment.uploadedBy.lastName}
+                  {attachment.uploadedBy.firstName}{" "}
+                  {attachment.uploadedBy.lastName}
                 </span>
               </span>
-              
+
               <span className="flex items-center space-x-1">
                 <ClockIcon className="h-3 w-3" />
                 <span>{formatDate(attachment.uploadedAt)}</span>
               </span>
-              
+
               <span>{attachmentService.formatFileSize(attachment.size)}</span>
-              
+
               {!attachment.isLatestVersion && (
-                <span className="text-orange-600 font-medium">v{attachment.version}</span>
+                <span className="text-orange-600 font-medium">
+                  v{attachment.version}
+                </span>
               )}
             </div>
           </div>
@@ -177,7 +191,7 @@ export function AttachmentList({ taskId, workspaceId, onPreview, className = '' 
                 <EyeIcon className="h-4 w-4" />
               </button>
             )}
-            
+
             <button
               onClick={() => handleDownload(attachment)}
               className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
@@ -185,10 +199,10 @@ export function AttachmentList({ taskId, workspaceId, onPreview, className = '' 
             >
               <ArrowDownTrayIcon className="h-4 w-4" />
             </button>
-            
+
             <button
               onClick={() => handleDelete(attachment.id)}
-              disabled={deleteMutation.isLoading}
+              disabled={deleteMutation.isPending}
               className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
               title="Delete"
             >
@@ -202,7 +216,9 @@ export function AttachmentList({ taskId, workspaceId, onPreview, className = '' 
       {!attachments.last && (
         <div className="text-center py-4">
           <button
-            onClick={() => setFilters(prev => ({ ...prev, page: prev.page + 1 }))}
+            onClick={() =>
+              setFilters((prev) => ({ ...prev, page: prev.page + 1 }))
+            }
             className="text-sm text-blue-600 hover:text-blue-800"
           >
             Load more attachments

@@ -20,5 +20,8 @@ public interface ChecklistItemRepository extends JpaRepository<ChecklistItem, Lo
     @Query("SELECT COUNT(ci) FROM ChecklistItem ci WHERE ci.task = :task AND ci.completed = true")
     Long countCompletedByTask(@Param("task") Task task);
     
+    @Query("SELECT COALESCE(MAX(ci.orderIndex), 0) FROM ChecklistItem ci WHERE ci.task = :task")
+    Integer getMaxOrderIndexForTask(@Param("task") Task task);
+    
     void deleteByTask(Task task);
 }

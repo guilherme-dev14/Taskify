@@ -46,12 +46,15 @@ public class User{
     private String profilePictureUrl;
 
     @OneToMany(mappedBy = "assignedTo", fetch = FetchType.LAZY)
+    @Builder.Default
     private List<Task> assignedTasks = new ArrayList<>();
 
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    @Builder.Default
     private List<WorkspaceMember> workspaceMemberships = new ArrayList<>();
 
     @OneToMany(mappedBy = "author", fetch = FetchType.LAZY)
+    @Builder.Default
     private List<TaskComment> comments = new ArrayList<>();
 
     @Column(name = "created_at", nullable = false)
