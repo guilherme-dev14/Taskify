@@ -2,10 +2,12 @@ import Cookies from "js-cookie";
 
 const TOKEN_KEY = "jwt_token";
 
-export const setToken = (token: string): void => {
+export const setToken = (token: string, rememberMe: boolean = false): void => {
+  const expires = rememberMe ? 30 : 1; // 30 days if remember me, otherwise 1 day
+  
   Cookies.set(TOKEN_KEY, token, {
-    expires: 7, // 7 dias
-    secure: window.location.protocol === 'https:', // só usa secure em HTTPS
+    expires,
+    secure: window.location.protocol === 'https:',
     sameSite: "strict",
   });
 };

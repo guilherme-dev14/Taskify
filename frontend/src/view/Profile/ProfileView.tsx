@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   CameraIcon,
@@ -12,6 +12,9 @@ import {
   Cog6ToothIcon,
 } from "@heroicons/react/24/outline";
 import { useAuthStore } from "../../services/auth.store";
+import userService from "../../services/User/user.service";
+import fileService from "../../services/File/file.service";
+import type { IUserStats } from "../../types/auth.types";
 
 interface ProfileData {
   firstName: string;
@@ -25,36 +28,70 @@ interface ProfileData {
   avatar: string;
 }
 
-interface ProfileStats {
-  tasksCompleted: number;
-  projectsActive: number;
-  teamMembers: number;
-  totalWorkspaces: number;
-}
-
 const ProfileView: React.FC = () => {
   const { user } = useAuthStore();
   const [activeTab, setActiveTab] = useState("general");
   const [isEditing, setIsEditing] = useState(false);
+  const [profileStats, setProfileStats] = useState<IUserStats | null>(null);
+  const [, setLoading] = useState(true);
+
+  // Password change state
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [passwordLoading, setPasswordLoading] = useState(false);
+
+  // Avatar upload state
+  const [avatarUploading, setAvatarUploading] = useState(false);
 
   const [profileData, setProfileData] = useState<ProfileData>({
-    firstName: user?.firstName || "John",
-    lastName: user?.lastName || "Doe",
-    email: user?.email || "john.doe@example.com",
-    username: user?.username || "johndoe",
-    bio: "Full-stack developer passionate about creating amazing user experiences. I love working with React, Node.js, and modern web technologies.",
-    location: "San Francisco, CA",
-    website: "https://johndoe.dev",
-    joinDate: "2024-01-15",
-    avatar: "",
+    firstName: user?.firstName || "",
+    lastName: user?.lastName || "",
+    email: user?.email || "",
+    username: user?.username || "",
+    bio: user?.bio || "",
+    location: user?.location || "",
+    website: user?.website || "",
+    joinDate: user?.createdAt
+      ? new Date(user.createdAt).toISOString().split("T")[0]
+      : "",
+    avatar: user?.avatar || "",
   });
 
-  const profileStats: ProfileStats = {
-    tasksCompleted: 142,
-    projectsActive: 8,
-    teamMembers: 12,
-    totalWorkspaces: 5,
-  };
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const stats = await userService.getUserStats();
+        setProfileStats(stats);
+      } catch (error) {
+        console.error("Failed to fetch user stats:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
+  useEffect(() => {
+    if (user) {
+      setProfileData({
+        firstName: user.firstName || "",
+        lastName: user.lastName || "",
+        email: user.email || "",
+        username: user.username || "",
+        bio: user.bio || "",
+        location: user.location || "",
+        website: user.website || "",
+        joinDate: user.createdAt
+          ? new Date(user.createdAt).toISOString().split("T")[0]
+          : "",
+        avatar: user.avatar || "",
+      });
+    }
+  }, [user]);
 
   const recentActivity = [
     {
@@ -87,8 +124,24 @@ const ProfileView: React.FC = () => {
     },
   ];
 
-  const handleSaveProfile = () => {
-    setIsEditing(false);
+  const handleSaveProfile = async () => {
+    try {
+      setLoading(true);
+      await userService.updateProfile({
+        firstName: profileData.firstName,
+        lastName: profileData.lastName,
+        username: profileData.username,
+        bio: profileData.bio,
+        location: profileData.location,
+        website: profileData.website,
+        avatar: profileData.avatar,
+      });
+      setIsEditing(false);
+    } catch (error) {
+      console.error("Failed to update profile:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleInputChange = (field: keyof ProfileData, value: string) => {
@@ -96,6 +149,79 @@ const ProfileView: React.FC = () => {
       ...prev,
       [field]: value,
     }));
+  };
+
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type and size
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File size must be less than 5MB');
+      return;
+    }
+
+    try {
+      setAvatarUploading(true);
+      await fileService.uploadAvatar(file);
+      
+      // Refresh user data to get new avatar
+      const updatedUser = await userService.getCurrentUser();
+      // Update the auth store with new user data
+      // You might need to add an updateUser method to your auth store
+      
+      alert('Avatar updated successfully!');
+    } catch (error) {
+      console.error('Failed to upload avatar:', error);
+      alert('Failed to upload avatar. Please try again.');
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
+
+  const handlePasswordChange = async () => {
+    if (
+      !passwordData.currentPassword ||
+      !passwordData.newPassword ||
+      !passwordData.confirmPassword
+    ) {
+      alert("Please fill in all password fields");
+      return;
+    }
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      alert("New passwords don't match");
+      return;
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      alert("New password must be at least 6 characters long");
+      return;
+    }
+
+    try {
+      setPasswordLoading(true);
+      await userService.changePassword(passwordData);
+      alert("Password changed successfully!");
+      setPasswordData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+    } catch (error: unknown) {
+      const errorMessage =
+        error && typeof error === "object" && "response" in error
+          ? (error as any).response?.data || "Failed to change password"
+          : "Failed to change password";
+      alert(errorMessage);
+    } finally {
+      setPasswordLoading(false);
+    }
   };
 
   const tabs = [
@@ -113,20 +239,40 @@ const ProfileView: React.FC = () => {
             {/* Profile Picture */}
             <div className="flex items-center space-x-6">
               <div className="relative">
-                <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
-                  {profileData.firstName[0]}
-                  {profileData.lastName[0]}
-                </div>
-                <button className="absolute bottom-0 right-0 w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white hover:bg-blue-700 transition-colors">
+                {user?.avatar ? (
+                  <img
+                    src={`http://localhost:8080${user.avatar}`}
+                    alt="Profile"
+                    className="w-24 h-24 rounded-full object-cover border-2 border-gray-200 dark:border-gray-600"
+                  />
+                ) : (
+                  <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                    {profileData.firstName[0]}
+                    {profileData.lastName[0]}
+                  </div>
+                )}
+                <input
+                  type="file"
+                  id="avatar-upload"
+                  accept="image/*"
+                  onChange={handleAvatarUpload}
+                  className="hidden"
+                />
+                <label
+                  htmlFor="avatar-upload"
+                  className={`absolute bottom-0 right-0 w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white hover:bg-blue-700 transition-colors cursor-pointer ${
+                    avatarUploading ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                >
                   <CameraIcon className="w-4 h-4" />
-                </button>
+                </label>
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                   Profile Picture
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400 text-sm">
-                  Update your profile picture to personalize your account
+                  {avatarUploading ? 'Uploading...' : 'Update your profile picture to personalize your account'}
                 </p>
               </div>
             </div>
@@ -278,7 +424,15 @@ const ProfileView: React.FC = () => {
                   </label>
                   <input
                     type="password"
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800"
+                    value={passwordData.currentPassword}
+                    onChange={(e) =>
+                      setPasswordData((prev) => ({
+                        ...prev,
+                        currentPassword: e.target.value,
+                      }))
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                    placeholder="Enter current password"
                   />
                 </div>
                 <div>
@@ -287,7 +441,15 @@ const ProfileView: React.FC = () => {
                   </label>
                   <input
                     type="password"
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800"
+                    value={passwordData.newPassword}
+                    onChange={(e) =>
+                      setPasswordData((prev) => ({
+                        ...prev,
+                        newPassword: e.target.value,
+                      }))
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                    placeholder="Enter new password (min 6 characters)"
                   />
                 </div>
                 <div>
@@ -296,11 +458,23 @@ const ProfileView: React.FC = () => {
                   </label>
                   <input
                     type="password"
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800"
+                    value={passwordData.confirmPassword}
+                    onChange={(e) =>
+                      setPasswordData((prev) => ({
+                        ...prev,
+                        confirmPassword: e.target.value,
+                      }))
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                    placeholder="Confirm new password"
                   />
                 </div>
-                <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium">
-                  Update Password
+                <button
+                  onClick={handlePasswordChange}
+                  disabled={passwordLoading}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg transition-colors font-medium"
+                >
+                  {passwordLoading ? "Updating..." : "Update Password"}
                 </button>
               </div>
             </div>
@@ -436,32 +610,60 @@ const ProfileView: React.FC = () => {
           transition={{ duration: 0.6, delay: 0.1 }}
           className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8"
         >
-          {[
-            {
-              label: "Tasks Completed",
-              value: profileStats.tasksCompleted,
-              icon: ChartBarIcon,
-              color: "blue",
-            },
-            {
-              label: "Active Projects",
-              value: profileStats.projectsActive,
-              icon: Cog6ToothIcon,
-              color: "green",
-            },
-            {
-              label: "Team Members",
-              value: profileStats.teamMembers,
-              icon: UserGroupIcon,
-              color: "purple",
-            },
-            {
-              label: "Workspaces",
-              value: profileStats.totalWorkspaces,
-              icon: GlobeAltIcon,
-              color: "orange",
-            },
-          ].map((stat) => (
+          {(profileStats
+            ? [
+                {
+                  label: "Tasks Completed",
+                  value: profileStats.tasksCompleted,
+                  icon: ChartBarIcon,
+                  color: "blue",
+                },
+                {
+                  label: "Active Projects",
+                  value: profileStats.projectsActive,
+                  icon: Cog6ToothIcon,
+                  color: "green",
+                },
+                {
+                  label: "Team Members",
+                  value: profileStats.teamMembers,
+                  icon: UserGroupIcon,
+                  color: "purple",
+                },
+                {
+                  label: "Workspaces",
+                  value: profileStats.totalWorkspaces,
+                  icon: GlobeAltIcon,
+                  color: "orange",
+                },
+              ]
+            : [
+                {
+                  label: "Tasks Completed",
+                  value: 0,
+                  icon: ChartBarIcon,
+                  color: "blue",
+                },
+                {
+                  label: "Active Projects",
+                  value: 0,
+                  icon: Cog6ToothIcon,
+                  color: "green",
+                },
+                {
+                  label: "Team Members",
+                  value: 0,
+                  icon: UserGroupIcon,
+                  color: "purple",
+                },
+                {
+                  label: "Workspaces",
+                  value: 0,
+                  icon: GlobeAltIcon,
+                  color: "orange",
+                },
+              ]
+          ).map((stat) => (
             <div
               key={stat.label}
               className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl p-6 border border-gray-200/50 dark:border-gray-700/50"

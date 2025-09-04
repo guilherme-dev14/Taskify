@@ -9,5 +9,9 @@ public class UserDTO {
     private String username;
     private String firstName;
     private String lastName;
+    private String bio;
+    private String location;
+    private String website;
+    private String avatar;
     private OffsetDateTime createdAt;
 }

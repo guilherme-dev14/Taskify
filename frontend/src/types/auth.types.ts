@@ -17,6 +17,11 @@ export interface IUser {
   username: string;
   firstName: string;
   lastName?: string;
+  bio?: string;
+  location?: string;
+  website?: string;
+  avatar?: string;
+  createdAt?: string;
 }
 
 export interface IAuthResponse {
@@ -28,4 +33,21 @@ export interface IUpdateProfileRequest {
   firstName?: string;
   lastName?: string;
   username?: string;
+  bio?: string;
+  location?: string;
+  website?: string;
+  avatar?: string;
+}
+
+export interface IUserStats {
+  tasksCompleted: number;
+  projectsActive: number;
+  teamMembers: number;
+  totalWorkspaces: number;
+}
+
+export interface IChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
 }

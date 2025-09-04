@@ -29,6 +29,18 @@ public class User{
 
     private String firstName;
     private String lastName;
+    
+    @Column(length = 500)
+    private String bio;
+    
+    @Column(length = 100)
+    private String location;
+    
+    @Column(length = 255)
+    private String website;
+    
+    @Column(length = 255)
+    private String avatar;
 
     @OneToMany(mappedBy = "assignedTo", fetch = FetchType.LAZY)
     private List<Task> assignedTasks = new ArrayList<>();

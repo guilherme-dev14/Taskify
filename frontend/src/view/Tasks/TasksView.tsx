@@ -25,6 +25,9 @@ import {
   type ErrorInfo,
 } from "../../utils/errorHandler";
 import { ErrorNotification } from "../../components/UI/ErrorNotification";
+import { UserAvatar } from "../../components/UI/UserAvatar";
+import { ShareWorkspaceModal } from "../../components/Modals/ShareWorkspace";
+import { JoinWorkspaceModal } from "../../components/Modals/JoinWorkspace";
 
 const TasksView: React.FC = () => {
   const [selectedWorkspace, setSelectedWorkspace] = useState<string | number>(
@@ -49,6 +52,8 @@ const TasksView: React.FC = () => {
   const [isWorkspaceDropdownOpen, setIsWorkspaceDropdownOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [taskToDelete, setTaskToDelete] = useState<ITask | null>(null);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
 
   useEffect(() => {
     loadWorkspaces();
@@ -269,80 +274,128 @@ const TasksView: React.FC = () => {
           transition={{ duration: 0.6, delay: 0.1 }}
           className="mb-8"
         >
-          <div className="relative max-w-xs">
-            <label className="flex items-center gap-2 text-sm font-semibold text-gray-800 dark:text-gray-200 mb-3">
-              <BuildingOfficeIcon className="w-4 h-4" />
-              Workspace
-            </label>
+          <div className="flex items-end justify-between">
+            <div className="relative max-w-xs">
+              <label className="flex items-center gap-2 text-sm font-semibold text-gray-800 dark:text-gray-200 mb-3">
+                <BuildingOfficeIcon className="w-4 h-4" />
+                Workspace
+              </label>
 
-            <div className="relative">
-              <button
-                onClick={() =>
-                  setIsWorkspaceDropdownOpen(!isWorkspaceDropdownOpen)
-                }
-                className="w-full px-4 py-3 bg-gradient-to-r from-white/90 to-gray-50/90 dark:from-gray-800/90 dark:to-gray-700/90 border-0 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 backdrop-blur-lg shadow-xl hover:shadow-2xl transition-all duration-300 flex items-center justify-between group"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 animate-pulse"></div>
-                  <span className="font-medium text-gray-900 dark:text-gray-100">
-                    {workspaces?.find((w) => w.id === selectedWorkspace)
-                      ?.name || "Select Workspace"}
-                  </span>
-                </div>
-                <ChevronDownIcon
-                  className={`w-5 h-5 text-gray-500 transition-transform duration-300 group-hover:text-gray-700 dark:group-hover:text-gray-300 ${
-                    isWorkspaceDropdownOpen ? "rotate-180" : ""
-                  }`}
-                />
-              </button>
+              <div className="relative">
+                <button
+                  onClick={() =>
+                    setIsWorkspaceDropdownOpen(!isWorkspaceDropdownOpen)
+                  }
+                  className="w-full px-4 py-3 bg-gradient-to-r from-white/90 to-gray-50/90 dark:from-gray-800/90 dark:to-gray-700/90 border-0 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 backdrop-blur-lg shadow-xl hover:shadow-2xl transition-all duration-300 flex items-center justify-between group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-2 h-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 animate-pulse"></div>
+                    <span className="font-medium text-gray-900 dark:text-gray-100">
+                      {workspaces?.find((w) => w.id === selectedWorkspace)
+                        ?.name || "Select Workspace"}
+                    </span>
+                  </div>
+                  <ChevronDownIcon
+                    className={`w-5 h-5 text-gray-500 transition-transform duration-300 group-hover:text-gray-700 dark:group-hover:text-gray-300 ${
+                      isWorkspaceDropdownOpen ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
 
-              <AnimatePresence>
-                {isWorkspaceDropdownOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                    transition={{ duration: 0.2 }}
-                    className="absolute top-full mt-2 w-full bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 py-2 z-50 overflow-hidden"
-                  >
-                    {workspaces?.map((workspace, index) => (
-                      <motion.button
-                        key={workspace.id}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.05 }}
-                        onClick={() => {
-                          setSelectedWorkspace(workspace.id);
-                          setIsWorkspaceDropdownOpen(false);
-                        }}
-                        className={`w-full px-4 py-3 text-left hover:bg-gray-100/80 dark:hover:bg-gray-700/80 transition-all duration-200 flex items-center gap-3 group ${
-                          selectedWorkspace === workspace.id
-                            ? "bg-blue-50/80 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300"
-                            : "text-gray-700 dark:text-gray-300"
-                        }`}
-                      >
-                        <div
-                          className={`w-2 h-2 rounded-full transition-all duration-200 ${
+                <AnimatePresence>
+                  {isWorkspaceDropdownOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                      transition={{ duration: 0.2 }}
+                      className="absolute top-full mt-2 w-full bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 py-2 z-50 overflow-hidden"
+                    >
+                      {workspaces?.map((workspace, index) => (
+                        <motion.button
+                          key={workspace.id}
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: index * 0.05 }}
+                          onClick={() => {
+                            setSelectedWorkspace(workspace.id);
+                            setIsWorkspaceDropdownOpen(false);
+                          }}
+                          className={`w-full px-4 py-3 text-left hover:bg-gray-100/80 dark:hover:bg-gray-700/80 transition-all duration-200 flex items-center gap-3 group ${
                             selectedWorkspace === workspace.id
-                              ? "bg-gradient-to-r from-blue-500 to-purple-500 scale-125"
-                              : "bg-gray-300 dark:bg-gray-600 group-hover:bg-blue-400"
+                              ? "bg-blue-50/80 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300"
+                              : "text-gray-700 dark:text-gray-300"
                           }`}
-                        ></div>
-                        <span className="font-medium">{workspace.name}</span>
-                        {selectedWorkspace === workspace.id && (
-                          <motion.div
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            className="ml-auto"
-                          >
-                            <CheckCircleIcon className="w-4 h-4 text-blue-500" />
-                          </motion.div>
-                        )}
-                      </motion.button>
-                    ))}
-                  </motion.div>
+                        >
+                          <div
+                            className={`w-2 h-2 rounded-full transition-all duration-200 ${
+                              selectedWorkspace === workspace.id
+                                ? "bg-gradient-to-r from-blue-500 to-purple-500 scale-125"
+                                : "bg-gray-300 dark:bg-gray-600 group-hover:bg-blue-400"
+                            }`}
+                          ></div>
+                          <span className="font-medium">{workspace.name}</span>
+                          {selectedWorkspace === workspace.id && (
+                            <motion.div
+                              initial={{ scale: 0 }}
+                              animate={{ scale: 1 }}
+                              className="ml-auto"
+                            >
+                              <CheckCircleIcon className="w-4 h-4 text-blue-500" />
+                            </motion.div>
+                          )}
+                        </motion.button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Collaboration Buttons */}
+              <div className="flex items-center gap-2 mb-3">
+                <button
+                  onClick={() => setIsJoinModalOpen(true)}
+                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2 text-sm"
+                  title="Join a shared workspace"
+                >
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
+                    />
+                  </svg>
+                  Join Workspace
+                </button>
+                {selectedWorkspace !== "all" && (
+                  <button
+                    onClick={() => setIsShareModalOpen(true)}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2 text-sm"
+                    title="Share this workspace"
+                  >
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"
+                      />
+                    </svg>
+                    Share
+                  </button>
                 )}
-              </AnimatePresence>
+              </div>
             </div>
           </div>
         </motion.div>
@@ -508,6 +561,43 @@ const TasksView: React.FC = () => {
                         Due {new Date(task.dueDate).toLocaleDateString()}
                       </span>
                     </div>
+
+                    {/* User Avatar and Attachments */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <UserAvatar
+                          user={task.assignedTo || task.creator}
+                          size="sm"
+                        />
+                        {(task.assignedTo || task.creator) && (
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            {task.assignedTo ? "Assigned to" : "Created by"}{" "}
+                            {(task.assignedTo || task.creator)?.firstName}{" "}
+                            {(task.assignedTo || task.creator)?.lastName}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Attachment indicator */}
+                      {task.attachments && task.attachments.length > 0 && (
+                        <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
+                            />
+                          </svg>
+                          <span>{task.attachments.length}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </motion.div>
               ))}
@@ -632,6 +722,28 @@ const TasksView: React.FC = () => {
             </div>
           )}
         </AnimatePresence>
+
+        {/* Share Workspace Modal */}
+        {selectedWorkspace !== "all" && (
+          <ShareWorkspaceModal
+            isOpen={isShareModalOpen}
+            onClose={() => setIsShareModalOpen(false)}
+            workspaceId={selectedWorkspace.toString()}
+            workspaceName={
+              workspaces?.find((w) => w.id === selectedWorkspace)?.name || ""
+            }
+          />
+        )}
+
+        {/* Join Workspace Modal */}
+        <JoinWorkspaceModal
+          isOpen={isJoinModalOpen}
+          onClose={() => setIsJoinModalOpen(false)}
+          onWorkspaceJoined={() => {
+            loadWorkspaces();
+            loadTasks();
+          }}
+        />
 
         {/* Error Notification */}
         <ErrorNotification

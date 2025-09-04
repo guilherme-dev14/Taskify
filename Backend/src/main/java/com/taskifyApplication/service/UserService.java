@@ -2,11 +2,17 @@ package com.taskifyApplication.service;
 
 import com.taskifyApplication.dto.UserDto.UpdateProfileDTO;
 import com.taskifyApplication.dto.UserDto.UserDTO;
+import com.taskifyApplication.dto.UserDto.UserStatsDTO;
+import com.taskifyApplication.dto.UserDto.UserSettingsDTO;
+import com.taskifyApplication.dto.UserDto.ChangePasswordDTO;
 import com.taskifyApplication.model.User;
+import com.taskifyApplication.model.UserSettings;
 import com.taskifyApplication.repository.UserRepository;
+import com.taskifyApplication.repository.UserSettingsRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -14,6 +20,12 @@ public class UserService {
     // region REPOSITORIES
     @Autowired
     private UserRepository userRepository;
+    
+    @Autowired
+    private UserSettingsRepository userSettingsRepository;
+    
+    @Autowired
+    private PasswordEncoder passwordEncoder;
     // endregion
 
     // region PUBLIC FUNCTIONS
@@ -49,15 +61,130 @@ public class UserService {
         user.setUsername(updateDTO.getUsername());
         user.setFirstName(updateDTO.getFirstName());
         user.setLastName(updateDTO.getLastName());
+        if (updateDTO.getBio() != null) user.setBio(updateDTO.getBio());
+        if (updateDTO.getLocation() != null) user.setLocation(updateDTO.getLocation());
+        if (updateDTO.getWebsite() != null) user.setWebsite(updateDTO.getWebsite());
+        if (updateDTO.getAvatar() != null) user.setAvatar(updateDTO.getAvatar());
 
         user = userRepository.save(user);
         return convertToProfileDTO(user);
+    }
+
+    public UserStatsDTO getCurrentUserStats() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        UserStatsDTO stats = new UserStatsDTO();
+        stats.setTasksCompleted((int) user.getAssignedTasks().stream()
+                .filter(task -> "COMPLETED".equals(task.getStatus()))
+                .count());
+        stats.setProjectsActive(user.getWorkspaceMemberships().size());
+        stats.setTeamMembers((int) user.getWorkspaceMemberships().stream()
+                .mapToInt(membership -> membership.getWorkspace().getMembers().size())
+                .sum());
+        stats.setTotalWorkspaces(user.getWorkspaceMemberships().size());
+        
+        return stats;
+    }
+
+    public UserSettingsDTO getCurrentUserSettings() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        UserSettings settings = userSettingsRepository.findByUser(user)
+                .orElseGet(() -> createDefaultSettings(user));
+
+        return convertToSettingsDTO(settings);
+    }
+
+    public UserSettingsDTO updateCurrentUserSettings(UserSettingsDTO settingsDTO) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        UserSettings settings = userSettingsRepository.findByUser(user)
+                .orElseGet(() -> createDefaultSettings(user));
+
+        // Update settings
+        if (settingsDTO.getTheme() != null) settings.setTheme(settingsDTO.getTheme());
+        if (settingsDTO.getLanguage() != null) settings.setLanguage(settingsDTO.getLanguage());
+        if (settingsDTO.getTimezone() != null) settings.setTimezone(settingsDTO.getTimezone());
+        if (settingsDTO.getEmailNotifications() != null) settings.setEmailNotifications(settingsDTO.getEmailNotifications());
+        if (settingsDTO.getPushNotifications() != null) settings.setPushNotifications(settingsDTO.getPushNotifications());
+        if (settingsDTO.getWeeklyReports() != null) settings.setWeeklyReports(settingsDTO.getWeeklyReports());
+        if (settingsDTO.getTaskReminders() != null) settings.setTaskReminders(settingsDTO.getTaskReminders());
+        if (settingsDTO.getTeamUpdates() != null) settings.setTeamUpdates(settingsDTO.getTeamUpdates());
+        if (settingsDTO.getAutoSave() != null) settings.setAutoSave(settingsDTO.getAutoSave());
+        if (settingsDTO.getCompactView() != null) settings.setCompactView(settingsDTO.getCompactView());
+        if (settingsDTO.getShowAvatars() != null) settings.setShowAvatars(settingsDTO.getShowAvatars());
+        if (settingsDTO.getDefaultWorkspace() != null) settings.setDefaultWorkspace(settingsDTO.getDefaultWorkspace());
+        if (settingsDTO.getTaskAutoAssign() != null) settings.setTaskAutoAssign(settingsDTO.getTaskAutoAssign());
+        if (settingsDTO.getWorkspacePrivacy() != null) settings.setWorkspacePrivacy(settingsDTO.getWorkspacePrivacy());
+
+        settings = userSettingsRepository.save(settings);
+        return convertToSettingsDTO(settings);
+    }
+
+    public void changeCurrentUserPassword(ChangePasswordDTO changePasswordDTO) {
+        // Validate password confirmation
+        if (!changePasswordDTO.getNewPassword().equals(changePasswordDTO.getConfirmPassword())) {
+            throw new IllegalArgumentException("Password confirmation does not match");
+        }
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        // Verify current password
+        if (!passwordEncoder.matches(changePasswordDTO.getCurrentPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("Current password is incorrect");
+        }
+
+        // Update password
+        user.setPassword(passwordEncoder.encode(changePasswordDTO.getNewPassword()));
+        userRepository.save(user);
     }
     // endregion
 
     // region PRIVATE FUNCTIONS
     private UserDTO convertToProfileDTO(User user) {
         return getUserDTO(user);
+    }
+
+    private UserSettings createDefaultSettings(User user) {
+        UserSettings settings = UserSettings.builder()
+                .user(user)
+                .build();
+        return userSettingsRepository.save(settings);
+    }
+
+    private UserSettingsDTO convertToSettingsDTO(UserSettings settings) {
+        UserSettingsDTO dto = new UserSettingsDTO();
+        dto.setTheme(settings.getTheme());
+        dto.setLanguage(settings.getLanguage());
+        dto.setTimezone(settings.getTimezone());
+        dto.setEmailNotifications(settings.getEmailNotifications());
+        dto.setPushNotifications(settings.getPushNotifications());
+        dto.setWeeklyReports(settings.getWeeklyReports());
+        dto.setTaskReminders(settings.getTaskReminders());
+        dto.setTeamUpdates(settings.getTeamUpdates());
+        dto.setAutoSave(settings.getAutoSave());
+        dto.setCompactView(settings.getCompactView());
+        dto.setShowAvatars(settings.getShowAvatars());
+        dto.setDefaultWorkspace(settings.getDefaultWorkspace());
+        dto.setTaskAutoAssign(settings.getTaskAutoAssign());
+        dto.setWorkspacePrivacy(settings.getWorkspacePrivacy());
+        return dto;
     }
 
     static UserDTO getUserDTO(User user) {
@@ -67,6 +194,10 @@ public class UserService {
         dto.setUsername(user.getUsername());
         dto.setFirstName(user.getFirstName());
         dto.setLastName(user.getLastName());
+        dto.setBio(user.getBio());
+        dto.setLocation(user.getLocation());
+        dto.setWebsite(user.getWebsite());
+        dto.setAvatar(user.getAvatar());
         dto.setCreatedAt(user.getCreatedAt().toOffsetDateTime());
         return dto;
     }

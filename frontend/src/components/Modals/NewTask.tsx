@@ -20,6 +20,7 @@ export interface NewTaskFormData {
   dueDate: string;
   categoryIds: string[];
   workspaceId: string;
+  attachments: File[];
 }
 
 export const NewTaskModal: React.FC<NewTaskModalProps> = ({
@@ -35,6 +36,7 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({
     dueDate: "",
     categoryIds: [],
     workspaceId: "",
+    attachments: [],
   });
 
   const [workspaces, setWorkspaces] = useState<IWorkspaceName[]>([]);
@@ -61,6 +63,7 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({
       workspaceId: parseInt(formData.workspaceId),
       categoryIds: formData.categoryIds.map((id) => parseInt(id)),
       status: initialStatus || "NEW",
+      attachments: formData.attachments,
     };
 
     onSubmit?.(taskData);
@@ -75,10 +78,34 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({
       dueDate: "",
       categoryIds: [],
       workspaceId: "",
+      attachments: [],
     });
     setNewCategoryName("");
     setShowNewCategoryForm(false);
     onClose();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    setFormData({
+      ...formData,
+      attachments: [...formData.attachments, ...files],
+    });
+  };
+
+  const removeAttachment = (index: number) => {
+    setFormData({
+      ...formData,
+      attachments: formData.attachments.filter((_, i) => i !== index),
+    });
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
   const createAndAddCategory = async () => {
@@ -468,6 +495,71 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({
                     )}
                   </div>
                 )}
+
+                {/* File Attachments */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Attachments
+                  </label>
+                  
+                  {/* File Upload Area */}
+                  <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center">
+                    <div className="space-y-2">
+                      <svg className="mx-auto h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                      <div>
+                        <label className="cursor-pointer">
+                          <span className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200">
+                            Click to upload files
+                          </span>
+                          <input
+                            type="file"
+                            multiple
+                            onChange={handleFileChange}
+                            className="sr-only"
+                            accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif,.zip,.rar"
+                          />
+                        </label>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          PDF, DOC, images, ZIP files up to 10MB each
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Attached Files List */}
+                  {formData.attachments.length > 0 && (
+                    <div className="mt-4 space-y-2">
+                      {formData.attachments.map((file, index) => (
+                        <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                          <div className="flex items-center gap-2">
+                            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <div>
+                              <p className="text-sm font-medium text-gray-900 dark:text-white truncate max-w-48">
+                                {file.name}
+                              </p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400">
+                                {formatFileSize(file.size)}
+                              </p>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeAttachment(index)}
+                            className="text-red-500 hover:text-red-700 p-1"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Footer */}

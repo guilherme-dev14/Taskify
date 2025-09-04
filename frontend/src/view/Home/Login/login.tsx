@@ -10,9 +10,10 @@ import LightRays from "../../../components/Background/lightRays";
 import type { ILoginRequest } from "../../../types/auth.types";
 import { useAuthStore } from "../../../services/auth.store";
 
-const validationSchema: yup.ObjectSchema<ILoginRequest> = yup.object().shape({
+const validationSchema = yup.object().shape({
   email: yup.string().required("Username is required"),
   password: yup.string().required("Password is required"),
+  rememberMe: yup.boolean(),
 });
 
 export const Login = () => {
@@ -40,7 +41,7 @@ export const Login = () => {
     try {
       setLoginError(null);
       const data = getValues();
-      await login(data);
+      await login(data, data.rememberMe);
       setIsLoginSuccessful(true);
       return true;
     } catch (error: any) {
@@ -282,6 +283,17 @@ export const Login = () => {
                     </div>
 
                     <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <input
+                          {...register("rememberMe")}
+                          type="checkbox"
+                          id="rememberMe"
+                          className="h-4 w-4 text-blue-600 bg-gray-800 border-gray-600 rounded focus:ring-blue-500 focus:ring-2"
+                        />
+                        <label htmlFor="rememberMe" className="text-sm text-gray-300">
+                          Remember me
+                        </label>
+                      </div>
                       <Link
                         to="/forgot-password"
                         className="text-sm text-blue-400 hover:text-blue-300 transition-colors"

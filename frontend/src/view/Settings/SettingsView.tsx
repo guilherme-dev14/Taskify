@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   Cog6ToothIcon,
@@ -13,6 +13,10 @@ import {
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { useAuthStore } from "../../services/auth.store";
+import settingsService, { type UserSettings } from "../../services/Settings/settings.service";
+import userService from "../../services/User/user.service";
+import { useTheme } from "../../context/ThemeContext";
+import { useLanguage } from "../../context/LanguageContext";
 
 interface Setting {
   id: string;
@@ -25,10 +29,12 @@ interface Setting {
 
 const SettingsView: React.FC = () => {
   const { logout } = useAuthStore();
+  const { theme, setTheme } = useTheme();
+  const { language, setLanguage } = useLanguage();
   const [activeTab, setActiveTab] = useState("general");
-  const [settings, setSettings] = useState<Record<string, any>>({
-    theme: "system",
-    language: "en",
+  const [settings, setSettings] = useState<UserSettings>({
+    theme: theme,
+    language: language,
     timezone: "UTC-3",
     emailNotifications: true,
     pushNotifications: false,
@@ -42,15 +48,60 @@ const SettingsView: React.FC = () => {
     taskAutoAssign: false,
     workspacePrivacy: "private",
   });
+  const [, setLoading] = useState(true);
+  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error'>('saved');
 
   const [showDangerZone, setShowDangerZone] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
 
-  const handleSettingChange = (settingId: string, value: any) => {
-    setSettings((prev) => ({
-      ...prev,
-      [settingId]: value,
-    }));
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const userSettings = await settingsService.getUserSettings();
+        setSettings(userSettings);
+        // Sync theme and language with context
+        setTheme(userSettings.theme as any);
+        setLanguage(userSettings.language as any);
+      } catch (error) {
+        console.error("Failed to load settings:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadSettings();
+  }, [setTheme, setLanguage]);
+
+  const handleSettingChange = async (settingId: string, value: any) => {
+    const newSettings = { ...settings, [settingId]: value };
+    setSettings(newSettings);
+    
+    // Handle theme changes immediately
+    if (settingId === 'theme') {
+      setTheme(value);
+    }
+    
+    // Handle language changes immediately
+    if (settingId === 'language') {
+      setLanguage(value);
+    }
+    
+    try {
+      setSaveStatus('saving');
+      await settingsService.updateUserSettings({ [settingId]: value });
+      setSaveStatus('saved');
+    } catch (error) {
+      console.error("Failed to save setting:", error);
+      setSaveStatus('error');
+      // Revert the setting change on error
+      setSettings(settings);
+      if (settingId === 'theme') {
+        setTheme(settings.theme as any);
+      }
+      if (settingId === 'language') {
+        setLanguage(settings.language as any);
+      }
+    }
   };
 
   const tabs = [
@@ -314,7 +365,21 @@ const SettingsView: React.FC = () => {
                 Download a copy of all your data including tasks, workspaces,
                 and settings.
               </p>
-              <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium">
+              <button 
+                onClick={async () => {
+                  try {
+                    const blob = await settingsService.exportUserData();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'taskify-data-export.json';
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                  } catch (error) {
+                    console.error("Failed to export data:", error);
+                  }
+                }}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium">
                 Export Data
               </button>
             </div>
@@ -328,7 +393,16 @@ const SettingsView: React.FC = () => {
                 Clear your browser's local cache to free up space and resolve
                 issues.
               </p>
-              <button className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors font-medium">
+              <button 
+                onClick={async () => {
+                  try {
+                    await settingsService.clearCache();
+                    alert("Cache cleared successfully!");
+                  } catch (error) {
+                    console.error("Failed to clear cache:", error);
+                  }
+                }}
+                className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors font-medium">
                 Clear Cache
               </button>
             </div>
@@ -377,9 +451,14 @@ const SettingsView: React.FC = () => {
                       </div>
                       <div className="flex gap-2">
                         <button
-                          onClick={() => {
+                          onClick={async () => {
                             if (deleteConfirmation === "DELETE") {
-                              console.log("Account deletion confirmed");
+                              try {
+                                await userService.deleteAccount();
+                                logout();
+                              } catch (error) {
+                                console.error("Failed to delete account:", error);
+                              }
                             }
                           }}
                           disabled={deleteConfirmation !== "DELETE"}
@@ -496,9 +575,16 @@ const SettingsView: React.FC = () => {
                     <p className="text-sm text-gray-600 dark:text-gray-400">
                       Changes are saved automatically
                     </p>
-                    <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+                    <div className={`flex items-center gap-2 ${
+                      saveStatus === 'saved' ? 'text-green-600 dark:text-green-400' :
+                      saveStatus === 'saving' ? 'text-blue-600 dark:text-blue-400' :
+                      'text-red-600 dark:text-red-400'
+                    }`}>
                       <CheckIcon className="w-4 h-4" />
-                      <span className="text-sm font-medium">Saved</span>
+                      <span className="text-sm font-medium">
+                        {saveStatus === 'saved' ? 'Saved' :
+                         saveStatus === 'saving' ? 'Saving...' : 'Error saving'}
+                      </span>
                     </div>
                   </div>
                 </div>
