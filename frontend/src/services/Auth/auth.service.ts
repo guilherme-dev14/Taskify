@@ -7,9 +7,12 @@ import type {
 import { setToken, removeToken } from "../../utils/token.utils";
 
 class AuthService {
-  async login(data: ILoginRequest): Promise<IAuthResponse> {
-    const response = await api.post<IAuthResponse>("/auth/login", data);
-    setToken(response.data.token);
+  async login(data: ILoginRequest & { rememberMe?: boolean }): Promise<IAuthResponse> {
+    const response = await api.post<IAuthResponse>("/auth/login", {
+      email: data.email,
+      password: data.password
+    });
+    setToken(response.data.token, data.rememberMe);
     return response.data;
   }
 
@@ -22,6 +25,14 @@ class AuthService {
   logout(): void {
     removeToken();
     window.location.href = "/login";
+  }
+
+  async forgotPassword(email: string): Promise<void> {
+    await api.post("/auth/forgot-password", { email });
+  }
+
+  async resetPassword(token: string, newPassword: string): Promise<void> {
+    await api.post("/auth/reset-password", { token, newPassword });
   }
 }
 

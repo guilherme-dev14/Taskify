@@ -17,7 +17,7 @@ interface AuthState {
   error: string | null;
 
   // Actions
-  login: (data: ILoginRequest) => Promise<void>;
+  login: (data: ILoginRequest & { rememberMe?: boolean }) => Promise<void>;
   signup: (data: IRegisterRequest) => Promise<void>;
   logout: () => void;
   checkAuth: () => Promise<void>;
