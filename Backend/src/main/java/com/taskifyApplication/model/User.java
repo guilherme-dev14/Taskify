@@ -75,4 +75,16 @@ public class User{
     protected void onUpdate() {
         this.updatedAt = ZonedDateTime.now();
     }
+    
+    public String getName() {
+        if (firstName != null && lastName != null) {
+            return firstName + " " + lastName;
+        } else if (firstName != null) {
+            return firstName;
+        } else if (lastName != null) {
+            return lastName;
+        } else {
+            return username;
+        }
+    }
 }

@@ -28,7 +28,10 @@ import { ErrorNotification } from "../../components/UI/ErrorNotification";
 import { UserAvatar } from "../../components/UI/UserAvatar";
 import { ShareWorkspaceModal } from "../../components/Modals/ShareWorkspace";
 import { JoinWorkspaceModal } from "../../components/Modals/JoinWorkspace";
-
+import { LiveCursors } from "../../components/Presence/LiveCursors";
+import { TypingIndicator } from "../../components/Presence/TypingIndicator";
+import { OnlineIndicator } from "../../components/Presence/OnlineIndicator";
+import { useWebSocketEvent } from "../../hooks/useWebSocket";
 const TasksView: React.FC = () => {
   const [selectedWorkspace, setSelectedWorkspace] = useState<string | number>(
     "all"
@@ -55,9 +58,61 @@ const TasksView: React.FC = () => {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
 
+  // Presence/Collaboration state
+  const [typingUsers, setTypingUsers] = useState<
+    Array<{ id: string; name: string }>
+  >([]);
+  const [onlineUsers, setOnlineUsers] = useState<
+    Array<{ id: string; name: string; lastSeen: string }>
+  >([]);
+
+  // View mode state
+  const [viewMode, setViewMode] = useState<"grid">("grid");
+
   useEffect(() => {
     loadWorkspaces();
   }, []);
+
+  // WebSocket events for presence
+  useWebSocketEvent(
+    "user:online",
+    (data: { userId: string; userName: string }) => {
+      setOnlineUsers((prev) => {
+        const existing = prev.find((user) => user.id === data.userId);
+        if (existing) return prev;
+        return [
+          ...prev,
+          {
+            id: data.userId,
+            name: data.userName,
+            lastSeen: new Date().toISOString(),
+          },
+        ];
+      });
+    }
+  );
+
+  useWebSocketEvent("user:offline", (userId: string) => {
+    setOnlineUsers((prev) => prev.filter((user) => user.id !== userId));
+  });
+
+  useWebSocketEvent(
+    "user:typing",
+    (data: { userId: string; userName: string; taskId?: string }) => {
+      setTypingUsers((prev) => {
+        const existing = prev.find((user) => user.id === data.userId);
+        if (existing) return prev;
+        return [...prev, { id: data.userId, name: data.userName }];
+      });
+
+      // Remove typing indicator after 3 seconds
+      setTimeout(() => {
+        setTypingUsers((prev) =>
+          prev.filter((user) => user.id !== data.userId)
+        );
+      }, 3000);
+    }
+  );
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -250,7 +305,14 @@ const TasksView: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen p-6 md:p-8 lg:p-12">
+    <div className="min-h-screen p-6 md:p-8 lg:p-12 relative">
+      {/* Live Cursors for real-time collaboration */}
+      <LiveCursors
+        workspaceId={
+          selectedWorkspace !== "all" ? selectedWorkspace.toString() : undefined
+        }
+      />
+
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <motion.div
@@ -259,12 +321,36 @@ const TasksView: React.FC = () => {
           transition={{ duration: 0.6 }}
           className="mb-8"
         >
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
-            Tasks
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Manage and organize your tasks efficiently
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
+                Tasks
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400">
+                Manage and organize your tasks efficiently
+              </p>
+            </div>
+
+            {/* Online Users Indicator */}
+            {selectedWorkspace !== "all" && onlineUsers.length > 0 && (
+              <div className="flex items-center gap-3 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl px-4 py-2 border border-gray-200/50 dark:border-gray-700/50">
+                <OnlineIndicator isOnline={true} size="md" />
+                <div className="text-sm">
+                  <span className="font-medium text-gray-900 dark:text-white">
+                    {onlineUsers.length} online
+                  </span>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                    {onlineUsers
+                      .slice(0, 3)
+                      .map((user) => user.name)
+                      .join(", ")}
+                    {onlineUsers.length > 3 &&
+                      ` +${onlineUsers.length - 3} more`}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </motion.div>
 
         {/* Modern Workspace Selector */}
@@ -487,7 +573,7 @@ const TasksView: React.FC = () => {
           )}
         </AnimatePresence>
 
-        {/* Loading State */}
+        {/* Main Content Area */}
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {Array.from({ length: 6 }).map((_, index) => (
@@ -728,7 +814,11 @@ const TasksView: React.FC = () => {
           <ShareWorkspaceModal
             isOpen={isShareModalOpen}
             onClose={() => setIsShareModalOpen(false)}
-            workspaceId={selectedWorkspace.toString()}
+            workspaceId={
+              typeof selectedWorkspace === "string"
+                ? parseInt(selectedWorkspace)
+                : selectedWorkspace
+            }
             workspaceName={
               workspaces?.find((w) => w.id === selectedWorkspace)?.name || ""
             }
@@ -739,9 +829,10 @@ const TasksView: React.FC = () => {
         <JoinWorkspaceModal
           isOpen={isJoinModalOpen}
           onClose={() => setIsJoinModalOpen(false)}
-          onWorkspaceJoined={() => {
+          onSubmit={async () => {
             loadWorkspaces();
             loadTasks();
+            setIsJoinModalOpen(false);
           }}
         />
 
@@ -750,6 +841,16 @@ const TasksView: React.FC = () => {
           errorInfo={errorInfo}
           onClose={() => setErrorInfo(null)}
         />
+
+        {/* Typing Indicator */}
+        {selectedWorkspace !== "all" && typingUsers.length > 0 && (
+          <div className="fixed bottom-20 left-6 z-30">
+            <TypingIndicator
+              users={typingUsers}
+              className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg px-3 py-2 border border-gray-200/50 dark:border-gray-700/50 shadow-lg"
+            />
+          </div>
+        )}
       </div>
     </div>
   );

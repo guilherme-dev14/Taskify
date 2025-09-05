@@ -45,6 +45,8 @@ public class TaskService {
     private NotificationService notificationService;
     @Autowired
     private WebSocketService webSocketService;
+    @Autowired
+    private ActivityService activityService;
     // endregion
 
     // region PUBLIC FUNCTIONS SERVICE
@@ -205,6 +207,9 @@ public class TaskService {
 
         task = taskRepository.save(task);
 
+        // Log activity
+        activityService.logTaskCreated(task, currentUser);
+
         // Create notification if task is assigned to someone other than creator
         if (task.getAssignedTo() != null && !task.getAssignedTo().equals(currentUser)) {
             notificationService.notifyTaskAssigned(task.getAssignedTo(), task, currentUser);
@@ -236,6 +241,9 @@ public class TaskService {
         if (!task.canEdit(currentUser)) {
             throw new IllegalArgumentException("You don't have permission to delete this task");
         }
+        
+        // Log activity before deletion
+        activityService.logTaskDeleted(task, currentUser);
         
         // Send WebSocket notification before deletion
         webSocketService.notifyWorkspaceTaskUpdate(
@@ -302,6 +310,17 @@ public class TaskService {
         }
         
         task = taskRepository.save(task);
+
+        // Log activity
+        activityService.logTaskUpdated(task, currentUser);
+        
+        // Check if task was completed and log that too
+        if (updateTaskDTO.getStatus() != null && 
+            (updateTaskDTO.getStatus().name().equals("DONE") || updateTaskDTO.getStatus().name().equals("COMPLETED"))) {
+            task.setCompletedAt(java.time.OffsetDateTime.now());
+            taskRepository.save(task);
+            activityService.logTaskCompleted(task, currentUser);
+        }
 
         // Create notifications for task updates
         User newAssignedUser = task.getAssignedTo();

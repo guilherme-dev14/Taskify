@@ -2,9 +2,9 @@ import React, { useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   DndContext,
-  DragEndEvent,
+  type DragEndEvent,
   DragOverlay,
-  DragStartEvent,
+  type DragStartEvent,
   useSensor,
   useSensors,
   PointerSensor,
@@ -25,7 +25,7 @@ import {
   ChevronUpIcon,
 } from '@heroicons/react/24/outline';
 import { useKanbanTasks, useUpdateTask } from '../../hooks/useTasks';
-import { Task } from '../../stores/task.store';
+import { type Task } from '../../stores/task.store';
 import EnhancedTaskCard from '../Tasks/EnhancedTaskCard';
 
 interface KanbanColumnProps {
@@ -80,8 +80,7 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
   const statusColors = {
     NEW: 'border-gray-300 bg-gray-50 dark:border-gray-600 dark:bg-gray-800',
     IN_PROGRESS: 'border-blue-300 bg-blue-50 dark:border-blue-600 dark:bg-blue-900/20',
-    REVIEW: 'border-purple-300 bg-purple-50 dark:border-purple-600 dark:bg-purple-900/20',
-    DONE: 'border-green-300 bg-green-50 dark:border-green-600 dark:bg-green-900/20',
+    COMPLETED: 'border-green-300 bg-green-50 dark:border-green-600 dark:bg-green-900/20',
     CANCELLED: 'border-red-300 bg-red-50 dark:border-red-600 dark:bg-red-900/20',
   };
 
@@ -200,19 +199,19 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ workspaceId }) => {
     const statusColumns: { status: Task['status']; title: string }[] = [
       { status: 'NEW', title: 'To Do' },
       { status: 'IN_PROGRESS', title: 'In Progress' },
-      { status: 'REVIEW', title: 'Review' },
-      { status: 'DONE', title: 'Done' },
+      { status: 'COMPLETED', title: 'Completed' },
+      { status: 'CANCELLED', title: 'Cancelled' },
     ];
 
     return statusColumns.map(column => ({
       ...column,
-      tasks: tasks?.filter(task => task.status === column.status) || [],
+      tasks: tasks?.filter((task: Task) => task.status === column.status) || [],
     }));
   }, [tasks]);
 
   const handleDragStart = useCallback((event: DragStartEvent) => {
     const taskId = parseInt(event.active.id as string);
-    const task = tasks?.find(t => t.id === taskId);
+    const task = tasks?.find((t: Task) => t.id === taskId);
     setActiveTask(task || null);
   }, [tasks]);
 
@@ -223,7 +222,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ workspaceId }) => {
     if (!over || active.id === over.id) return;
 
     const taskId = parseInt(active.id as string);
-    const task = tasks?.find(t => t.id === taskId);
+    const task = tasks?.find((t: Task) => t.id === taskId);
     
     if (!task) return;
 
@@ -232,7 +231,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ workspaceId }) => {
     
     // If dropped on another task, get the status from that column
     if (over.id !== active.id) {
-      const overTask = tasks?.find(t => t.id.toString() === over.id);
+      const overTask = tasks?.find((t: Task) => t.id.toString() === over.id);
       if (overTask) {
         newStatus = overTask.status;
       } else {

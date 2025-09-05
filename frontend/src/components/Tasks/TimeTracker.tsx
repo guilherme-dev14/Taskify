@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
   PlayIcon, 
-  PauseIcon, 
   StopIcon,
   ClockIcon,
   PencilIcon,
@@ -9,7 +8,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { advancedTaskService } from '../../services/Tasks/advancedTask.service';
-import { ITimeTracking, ITimeTrackingRequest } from '../../types/task.types';
+import { type ITimeTracking, type ITimeTrackingRequest } from '../../types/task.types';
 
 interface TimeTrackerProps {
   taskId: string;
@@ -113,7 +112,7 @@ export function TimeTracker({ taskId, className = '' }: TimeTrackerProps) {
       setCurrentEntry(entry);
       setIsTracking(true);
       setStartTime(new Date());
-      queryClient.invalidateQueries(['time-tracking', taskId]);
+      queryClient.invalidateQueries({ queryKey: ['time-tracking', taskId] });
     }
   });
 
@@ -126,8 +125,8 @@ export function TimeTracker({ taskId, className = '' }: TimeTrackerProps) {
       setStartTime(null);
       setElapsedTime(0);
       setDescription('');
-      queryClient.invalidateQueries(['time-tracking', taskId]);
-      queryClient.invalidateQueries(['total-time', taskId]);
+      queryClient.invalidateQueries({ queryKey: ['time-tracking', taskId] });
+      queryClient.invalidateQueries({ queryKey: ['total-time', taskId] });
     }
   });
 
@@ -136,8 +135,8 @@ export function TimeTracker({ taskId, className = '' }: TimeTrackerProps) {
     mutationFn: ({ entryId, updates }: { entryId: string; updates: Partial<ITimeTracking> }) =>
       advancedTaskService.updateTimeTracking(entryId, updates),
     onSuccess: () => {
-      queryClient.invalidateQueries(['time-tracking', taskId]);
-      queryClient.invalidateQueries(['total-time', taskId]);
+      queryClient.invalidateQueries({ queryKey: ['time-tracking', taskId] });
+      queryClient.invalidateQueries({ queryKey: ['total-time', taskId] });
     }
   });
 
@@ -145,14 +144,14 @@ export function TimeTracker({ taskId, className = '' }: TimeTrackerProps) {
   const deleteTrackingMutation = useMutation({
     mutationFn: advancedTaskService.deleteTimeTracking,
     onSuccess: () => {
-      queryClient.invalidateQueries(['time-tracking', taskId]);
-      queryClient.invalidateQueries(['total-time', taskId]);
+      queryClient.invalidateQueries({ queryKey: ['time-tracking', taskId] });
+      queryClient.invalidateQueries({ queryKey: ['total-time', taskId] });
     }
   });
 
   // Update elapsed time
   useEffect(() => {
-    let interval: NodeJS.Timeout | null = null;
+    let interval: ReturnType<typeof setInterval> | null = null;
     
     if (isTracking && startTime) {
       interval = setInterval(() => {
@@ -250,7 +249,7 @@ export function TimeTracker({ taskId, className = '' }: TimeTrackerProps) {
               />
               <button
                 onClick={handleStartTracking}
-                disabled={startTrackingMutation.isLoading}
+                disabled={startTrackingMutation.isPending}
                 className="flex items-center space-x-1 px-3 py-1 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <PlayIcon className="h-4 w-4" />
@@ -260,7 +259,7 @@ export function TimeTracker({ taskId, className = '' }: TimeTrackerProps) {
           ) : (
             <button
               onClick={handleStopTracking}
-              disabled={stopTrackingMutation.isLoading}
+              disabled={stopTrackingMutation.isPending}
               className="flex items-center space-x-1 px-3 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <StopIcon className="h-4 w-4" />

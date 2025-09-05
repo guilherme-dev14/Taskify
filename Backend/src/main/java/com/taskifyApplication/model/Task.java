@@ -85,11 +85,6 @@ public class Task {
     @Builder.Default
     private List<TaskDependency> dependentTasks = new ArrayList<>();
 
-    // Time tracking
-    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @Builder.Default
-    private List<TimeTracking> timeTrackingEntries = new ArrayList<>();
-
     // Tags
     @ElementCollection
     @CollectionTable(name = "task_tags", joinColumns = @JoinColumn(name = "task_id"))
@@ -100,11 +95,6 @@ public class Task {
     // Progress tracking
     @Builder.Default
     private Integer progress = 0; // 0-100
-
-    // Template reference
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "template_id")
-    private TaskTemplate template;
 
     // Checklist items
     @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -123,6 +113,9 @@ public class Task {
 
     @Column(name = "updated_at")
     private OffsetDateTime updatedAt;
+
+    @Column(name = "completed_at")
+    private OffsetDateTime completedAt;
 
     public boolean canEdit(User user) {
         return workspace.getUserRole(user) != null &&

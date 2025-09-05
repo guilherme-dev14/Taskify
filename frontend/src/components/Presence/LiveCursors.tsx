@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { useWebSocketEvent } from '../../hooks/useWebSocket';
+import { useEffect, useState } from "react";
+import { useWebSocketEvent } from "../../hooks/useWebSocket";
 
 interface CursorData {
   userId: string;
@@ -15,8 +15,16 @@ interface LiveCursorsProps {
 }
 
 const cursorColors = [
-  '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FECA57',
-  '#FF9FF3', '#54A0FF', '#5F27CD', '#00D2D3', '#FF9F43'
+  "#FF6B6B",
+  "#4ECDC4",
+  "#45B7D1",
+  "#96CEB4",
+  "#FECA57",
+  "#FF9FF3",
+  "#54A0FF",
+  "#5F27CD",
+  "#00D2D3",
+  "#FF9F43",
 ];
 
 export function LiveCursors({ workspaceId, taskId }: LiveCursorsProps) {
@@ -26,22 +34,24 @@ export function LiveCursors({ workspaceId, taskId }: LiveCursorsProps) {
   const assignColor = (userId: string) => {
     if (!colorMap.has(userId)) {
       const color = cursorColors[colorMap.size % cursorColors.length];
-      setColorMap(prev => new Map(prev).set(userId, color));
+      setColorMap((prev) => new Map(prev).set(userId, color));
       return color;
     }
     return colorMap.get(userId)!;
   };
 
-  useWebSocketEvent('user:cursor', (data) => {
+  useWebSocketEvent("user:cursor", (data) => {
     const color = assignColor(data.userId);
-    setCursors(prev => new Map(prev).set(data.userId, {
-      ...data,
-      color
-    }));
+    setCursors((prev) =>
+      new Map(prev).set(data.userId, {
+        ...data,
+        color,
+      })
+    );
 
     // Remove cursor after 3 seconds of inactivity
     setTimeout(() => {
-      setCursors(prev => {
+      setCursors((prev) => {
         const newCursors = new Map(prev);
         newCursors.delete(data.userId);
         return newCursors;
@@ -50,11 +60,14 @@ export function LiveCursors({ workspaceId, taskId }: LiveCursorsProps) {
   });
 
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
+    const handleMouseMove = () => {
       if (workspaceId || taskId) {
         // Throttle cursor updates to prevent spam
         const now = Date.now();
-        if (!handleMouseMove.lastUpdate || now - handleMouseMove.lastUpdate > 50) {
+        if (
+          !handleMouseMove.lastUpdate ||
+          now - handleMouseMove.lastUpdate > 50
+        ) {
           handleMouseMove.lastUpdate = now;
           // websocket.updateCursor(e.clientX, e.clientY, taskId);
         }
@@ -62,8 +75,8 @@ export function LiveCursors({ workspaceId, taskId }: LiveCursorsProps) {
     };
 
     handleMouseMove.lastUpdate = 0;
-    document.addEventListener('mousemove', handleMouseMove);
-    return () => document.removeEventListener('mousemove', handleMouseMove);
+    document.addEventListener("mousemove", handleMouseMove);
+    return () => document.removeEventListener("mousemove", handleMouseMove);
   }, [workspaceId, taskId]);
 
   return (
@@ -75,7 +88,7 @@ export function LiveCursors({ workspaceId, taskId }: LiveCursorsProps) {
           style={{
             left: cursor.x,
             top: cursor.y,
-            transform: 'translate(-2px, -2px)'
+            transform: "translate(-2px, -2px)",
           }}
         >
           {/* Cursor SVG */}
@@ -93,7 +106,7 @@ export function LiveCursors({ workspaceId, taskId }: LiveCursorsProps) {
               strokeWidth="1"
             />
           </svg>
-          
+
           {/* User name label */}
           <div
             className="absolute top-6 left-2 px-2 py-1 rounded text-xs text-white font-medium whitespace-nowrap pointer-events-none"

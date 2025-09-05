@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { io, Socket } from "socket.io-client";
+import io from "socket.io-client";
 
 export interface WebSocketMessage {
   type: 'TASK_UPDATED' | 'TASK_CREATED' | 'TASK_DELETED' | 
@@ -20,7 +20,7 @@ export interface ConnectionStatus {
 }
 
 interface WebSocketState {
-  socket: Socket | null;
+  socket: ReturnType<typeof io> | null;
   status: ConnectionStatus;
   subscribedChannels: Set<string>;
   messageHistory: WebSocketMessage[];
@@ -94,7 +94,7 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
       console.log('WebSocket connected');
     });
 
-    newSocket.on('disconnect', (reason) => {
+    newSocket.on('disconnect', (reason: string) => {
       set((state) => ({
         status: {
           ...state.status,
@@ -105,7 +105,7 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
       console.log('WebSocket disconnected:', reason);
     });
 
-    newSocket.on('connect_error', (error) => {
+    newSocket.on('connect_error', (error: Error) => {
       set((state) => ({
         status: {
           ...state.status,
@@ -118,7 +118,7 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
       console.error('WebSocket connection error:', error);
     });
 
-    newSocket.on('reconnect', (attemptNumber) => {
+    newSocket.on('reconnect', (attemptNumber: number) => {
       set((state) => ({
         status: {
           ...state.status,
@@ -142,7 +142,7 @@ export const useWebSocketStore = create<WebSocketState>((set, get) => ({
       newSocket.emit('ping', start);
     };
 
-    newSocket.on('pong', (timestamp) => {
+    newSocket.on('pong', (timestamp: number) => {
       const latency = Date.now() - timestamp;
       get().updateLatency(latency);
     });

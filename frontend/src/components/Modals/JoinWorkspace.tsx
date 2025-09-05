@@ -29,8 +29,8 @@ export const JoinWorkspaceModal: React.FC<JoinWorkspaceModalProps> = ({
     try {
       await onSubmit(formData);
       handleClose();
-    } catch (error: any) {
-      setError(error.message || "Failed to join workspace");
+    } catch (error: unknown) {
+      setError((error as Error).message || "Failed to join workspace");
     } finally {
       setIsJoining(false);
     }
@@ -182,11 +182,21 @@ export const JoinWorkspaceModal: React.FC<JoinWorkspaceModalProps> = ({
                       />
                     </svg>
                     <div className="text-blue-700 dark:text-blue-300 text-sm">
-                      <p className="font-medium mb-1">How to get an invite code:</p>
+                      <p className="font-medium mb-1">
+                        How to get an invite code:
+                      </p>
                       <ul className="list-disc list-inside space-y-1 text-xs">
-                        <li>Ask a workspace owner or admin to share the invite code</li>
-                        <li>They can find it in their workspace sharing settings</li>
-                        <li>Codes are unique to each workspace and can be regenerated</li>
+                        <li>
+                          Ask a workspace owner or admin to share the invite
+                          code
+                        </li>
+                        <li>
+                          They can find it in their workspace sharing settings
+                        </li>
+                        <li>
+                          Codes are unique to each workspace and can be
+                          regenerated
+                        </li>
                       </ul>
                     </div>
                   </div>

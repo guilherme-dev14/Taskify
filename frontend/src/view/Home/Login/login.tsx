@@ -41,7 +41,7 @@ export const Login = () => {
     try {
       setLoginError(null);
       const data = getValues();
-      await login(data, data.rememberMe);
+      await login(data);
       setIsLoginSuccessful(true);
       return true;
     } catch (error: any) {

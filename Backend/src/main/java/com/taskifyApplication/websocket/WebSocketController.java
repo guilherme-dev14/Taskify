@@ -184,6 +184,22 @@ public class WebSocketController {
         // Implementation handled by client subscription
     }
 
+    /**
+     * Subscribe to activities
+     */
+    @SubscribeMapping("/activities")
+    public void subscribeToActivities() {
+        // Implementation handled by client subscription
+    }
+
+    /**
+     * Subscribe to workspace activities
+     */
+    @SubscribeMapping("/workspace/{workspaceId}/activities")
+    public void subscribeToWorkspaceActivities() {
+        // Implementation handled by client subscription
+    }
+
     private User getCurrentUser(Principal principal) {
         if (principal == null) return null;
         

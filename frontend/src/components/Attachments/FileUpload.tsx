@@ -160,6 +160,7 @@ export function FileUpload({
         uploadMutation.mutate(valid);
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [uploadMutation, onUploadError]
   );
 

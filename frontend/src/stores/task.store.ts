@@ -2,12 +2,13 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 export interface Task {
+  comments: string;
   id: number;
   title: string;
   description?: string;
   notes?: string;
-  status: 'NEW' | 'IN_PROGRESS' | 'REVIEW' | 'DONE' | 'CANCELLED';
-  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+  status: "NEW" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
+  priority: "LOW" | "MEDIUM" | "HIGH" | "URGENT";
   dueDate?: string;
   createdAt: string;
   updatedAt: string;
@@ -21,7 +22,7 @@ export interface Task {
     email: string;
     firstName?: string;
     lastName?: string;
-    profilePictureUrl?: string;
+    avatar?: string;
   };
   workspace: {
     id: number;
@@ -70,8 +71,8 @@ export interface Task {
 
 export interface TaskFilters {
   workspaceId?: number;
-  status?: Task['status'];
-  priority?: Task['priority'];
+  status?: Task["status"];
+  priority?: Task["priority"];
   assignedTo?: number;
   dueDate?: {
     start?: string;
@@ -85,8 +86,8 @@ export interface TaskStats {
   totalTasks: number;
   completedTasks: number;
   overdueTasks: number;
-  tasksByStatus: Record<Task['status'], number>;
-  tasksByPriority: Record<Task['priority'], number>;
+  tasksByStatus: Record<Task["status"], number>;
+  tasksByPriority: Record<Task["priority"], number>;
   averageCompletionTime: number;
   productivityTrend: Array<{
     date: string;
@@ -100,9 +101,15 @@ interface TaskState {
   selectedTasks: number[];
   currentTask: Task | null;
   filters: TaskFilters;
-  viewType: 'list' | 'kanban' | 'calendar' | 'gantt' | 'tree';
-  sortBy: 'createdAt' | 'updatedAt' | 'dueDate' | 'priority' | 'status' | 'title';
-  sortOrder: 'asc' | 'desc';
+  viewType: "list" | "kanban" | "calendar" | "tree";
+  sortBy:
+    | "createdAt"
+    | "updatedAt"
+    | "dueDate"
+    | "priority"
+    | "status"
+    | "title";
+  sortOrder: "asc" | "desc";
   isLoading: boolean;
   error: string | null;
   lastUpdated: string | null;
@@ -119,8 +126,11 @@ interface TaskState {
   clearSelectedTasks: () => void;
   setFilters: (filters: Partial<TaskFilters>) => void;
   clearFilters: () => void;
-  setViewType: (viewType: TaskState['viewType']) => void;
-  setSorting: (sortBy: TaskState['sortBy'], sortOrder: TaskState['sortOrder']) => void;
+  setViewType: (viewType: TaskState["viewType"]) => void;
+  setSorting: (
+    sortBy: TaskState["sortBy"],
+    sortOrder: TaskState["sortOrder"]
+  ) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   setStats: (stats: TaskStats) => void;
@@ -134,9 +144,9 @@ interface TaskState {
 
   // Computed getters
   getFilteredTasks: () => Task[];
-  getTasksByStatus: (status: Task['status']) => Task[];
+  getTasksByStatus: (status: Task["status"]) => Task[];
   getOverdueTasks: () => Task[];
-  getTasksByPriority: (priority: Task['priority']) => Task[];
+  getTasksByPriority: (priority: Task["priority"]) => Task[];
   getSubtasks: (parentId: number) => Task[];
   getTaskDependencies: (taskId: number) => Task[];
 }
@@ -148,19 +158,19 @@ export const useTaskStore = create<TaskState>()(
       selectedTasks: [],
       currentTask: null,
       filters: {},
-      viewType: 'list',
-      sortBy: 'createdAt',
-      sortOrder: 'desc',
+      viewType: "list",
+      sortBy: "createdAt",
+      sortOrder: "desc",
       isLoading: false,
       error: null,
       lastUpdated: null,
       stats: null,
 
-      setTasks: (tasks) => 
-        set({ 
-          tasks, 
+      setTasks: (tasks) =>
+        set({
+          tasks,
           lastUpdated: new Date().toISOString(),
-          error: null 
+          error: null,
         }),
 
       addTask: (task) =>
@@ -174,9 +184,10 @@ export const useTaskStore = create<TaskState>()(
           tasks: state.tasks.map((task) =>
             task.id === id ? { ...task, ...updates } : task
           ),
-          currentTask: state.currentTask?.id === id 
-            ? { ...state.currentTask, ...updates }
-            : state.currentTask,
+          currentTask:
+            state.currentTask?.id === id
+              ? { ...state.currentTask, ...updates }
+              : state.currentTask,
           lastUpdated: new Date().toISOString(),
         })),
 
@@ -220,14 +231,15 @@ export const useTaskStore = create<TaskState>()(
 
       optimisticUpdate: (id, updates) => get().updateTask(id, updates),
 
-      revertOptimisticUpdate: (id, originalTask) => 
+      revertOptimisticUpdate: (id, originalTask) =>
         get().updateTask(id, originalTask),
 
       // Real-time update handlers
-      handleTaskUpdate: (updatedTask) => get().updateTask(updatedTask.id, updatedTask),
-      
+      handleTaskUpdate: (updatedTask) =>
+        get().updateTask(updatedTask.id, updatedTask),
+
       handleTaskDeleted: (taskId) => get().removeTask(taskId),
-      
+
       handleTaskCreated: (newTask) => get().addTask(newTask),
 
       // Computed getters
@@ -237,90 +249,101 @@ export const useTaskStore = create<TaskState>()(
 
         // Apply filters
         if (filters.workspaceId) {
-          filtered = filtered.filter(task => task.workspace.id === filters.workspaceId);
+          filtered = filtered.filter(
+            (task) => task.workspace.id === filters.workspaceId
+          );
         }
         if (filters.status) {
-          filtered = filtered.filter(task => task.status === filters.status);
+          filtered = filtered.filter((task) => task.status === filters.status);
         }
         if (filters.priority) {
-          filtered = filtered.filter(task => task.priority === filters.priority);
+          filtered = filtered.filter(
+            (task) => task.priority === filters.priority
+          );
         }
         if (filters.assignedTo) {
-          filtered = filtered.filter(task => task.assignedTo?.id === filters.assignedTo);
+          filtered = filtered.filter(
+            (task) => task.assignedTo?.id === filters.assignedTo
+          );
         }
         if (filters.search) {
           const search = filters.search.toLowerCase();
-          filtered = filtered.filter(task => 
-            task.title.toLowerCase().includes(search) ||
-            task.description?.toLowerCase().includes(search) ||
-            task.tags.some(tag => tag.toLowerCase().includes(search))
+          filtered = filtered.filter(
+            (task) =>
+              task.title.toLowerCase().includes(search) ||
+              task.description?.toLowerCase().includes(search) ||
+              task.tags.some((tag) => tag.toLowerCase().includes(search))
           );
         }
         if (filters.tags && filters.tags.length > 0) {
-          filtered = filtered.filter(task => 
-            filters.tags!.some(tag => task.tags.includes(tag))
+          filtered = filtered.filter((task) =>
+            filters.tags!.some((tag) => task.tags.includes(tag))
           );
         }
         if (filters.dueDate?.start) {
-          filtered = filtered.filter(task => 
-            task.dueDate && task.dueDate >= filters.dueDate!.start!
+          filtered = filtered.filter(
+            (task) => task.dueDate && task.dueDate >= filters.dueDate!.start!
           );
         }
         if (filters.dueDate?.end) {
-          filtered = filtered.filter(task => 
-            task.dueDate && task.dueDate <= filters.dueDate!.end!
+          filtered = filtered.filter(
+            (task) => task.dueDate && task.dueDate <= filters.dueDate!.end!
           );
         }
 
         // Apply sorting
         filtered.sort((a, b) => {
-          let aValue: any = a[sortBy];
-          let bValue: any = b[sortBy];
+          let aValue: string | number | undefined = a[sortBy];
+          let bValue: string | number | undefined = b[sortBy];
 
-          if (sortBy === 'priority') {
+          if (sortBy === "priority") {
             const priorityOrder = { LOW: 0, MEDIUM: 1, HIGH: 2, URGENT: 3 };
             aValue = priorityOrder[a.priority];
             bValue = priorityOrder[b.priority];
           }
 
-          if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
-          if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
+          if (aValue === undefined && bValue === undefined) return 0;
+          if (aValue === undefined) return sortOrder === "asc" ? 1 : -1;
+          if (bValue === undefined) return sortOrder === "asc" ? -1 : 1;
+          if (aValue < bValue) return sortOrder === "asc" ? -1 : 1;
+          if (aValue > bValue) return sortOrder === "asc" ? 1 : -1;
           return 0;
         });
 
         return filtered;
       },
 
-      getTasksByStatus: (status) => 
-        get().tasks.filter(task => task.status === status),
+      getTasksByStatus: (status) =>
+        get().tasks.filter((task) => task.status === status),
 
       getOverdueTasks: () => {
         const now = new Date().toISOString();
-        return get().tasks.filter(task => 
-          task.dueDate && 
-          task.dueDate < now && 
-          task.status !== 'DONE' && 
-          task.status !== 'CANCELLED'
+        return get().tasks.filter(
+          (task) =>
+            task.dueDate &&
+            task.dueDate < now &&
+            task.status !== "COMPLETED" &&
+            task.status !== "CANCELLED"
         );
       },
 
       getTasksByPriority: (priority) =>
-        get().tasks.filter(task => task.priority === priority),
+        get().tasks.filter((task) => task.priority === priority),
 
       getSubtasks: (parentId) =>
-        get().tasks.filter(task => task.parentTask?.id === parentId),
+        get().tasks.filter((task) => task.parentTask?.id === parentId),
 
       getTaskDependencies: (taskId) => {
-        const task = get().tasks.find(t => t.id === taskId);
+        const task = get().tasks.find((t) => t.id === taskId);
         if (!task) return [];
-        
-        return task.dependencies.map(dep => 
-          get().tasks.find(t => t.id === dep.dependsOnTask.id)
-        ).filter(Boolean) as Task[];
+
+        return task.dependencies
+          .map((dep) => get().tasks.find((t) => t.id === dep.dependsOnTask.id))
+          .filter(Boolean) as Task[];
       },
     }),
     {
-      name: 'task-store',
+      name: "task-store",
       partialize: (state) => ({
         filters: state.filters,
         viewType: state.viewType,

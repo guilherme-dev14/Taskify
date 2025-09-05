@@ -193,7 +193,9 @@ const HomeView: React.FC = () => {
           </div>
         </motion.div>
       </div>
-
+      <motion.div className="mt-14">
+        <DashboardContainer />
+      </motion.div>
       <NewTaskModal
         isOpen={isNewTaskModalOpen}
         onClose={() => setIsNewTaskModalOpen(false)}
@@ -207,7 +209,6 @@ const HomeView: React.FC = () => {
           }
         }}
       />
-      <DashboardContainer />
       <NewWorkspaceModal
         isOpen={isNewWorkspaceModalOpen}
         onClose={() => setIsNewWorkspaceModalOpen(false)}

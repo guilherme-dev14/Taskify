@@ -1,17 +1,16 @@
-import React from 'react';
-import { motion } from 'framer-motion';
+import React from "react";
+import { motion } from "framer-motion";
 import {
   ClockIcon,
-  UserIcon,
   PaperClipIcon,
   ChatBubbleLeftIcon,
   ExclamationTriangleIcon,
   PlayIcon,
   CheckCircleIcon,
   CalendarDaysIcon,
-} from '@heroicons/react/24/outline';
-import { Task } from '../../stores/task.store';
-import { formatDistanceToNow } from 'date-fns';
+} from "@heroicons/react/24/outline";
+import type { Task } from "../../stores/task.store";
+import { formatDistanceToNow } from "date-fns";
 
 interface EnhancedTaskCardProps {
   task: Task;
@@ -30,51 +29,61 @@ const EnhancedTaskCard: React.FC<EnhancedTaskCardProps> = ({
   onClick,
   onStartTimer,
   onMarkComplete,
-  className = '',
+  className = "",
 }) => {
-  const getPriorityColor = (priority: Task['priority']) => {
+  const getPriorityColor = (priority: Task["priority"]) => {
     switch (priority) {
-      case 'URGENT':
-        return 'border-red-500 bg-red-50 dark:bg-red-900/10';
-      case 'HIGH':
-        return 'border-orange-500 bg-orange-50 dark:bg-orange-900/10';
-      case 'MEDIUM':
-        return 'border-yellow-500 bg-yellow-50 dark:bg-yellow-900/10';
+      case "URGENT":
+        return "border-red-500 bg-red-50 dark:bg-red-900/10";
+      case "HIGH":
+        return "border-orange-500 bg-orange-50 dark:bg-orange-900/10";
+      case "MEDIUM":
+        return "border-yellow-500 bg-yellow-50 dark:bg-yellow-900/10";
       default:
-        return 'border-green-500 bg-green-50 dark:bg-green-900/10';
+        return "border-green-500 bg-green-50 dark:bg-green-900/10";
     }
   };
 
-  const getStatusColor = (status: Task['status']) => {
+  const getStatusColor = (status: Task["status"]) => {
     switch (status) {
-      case 'NEW':
-        return 'text-gray-600 bg-gray-100 dark:text-gray-400 dark:bg-gray-700';
-      case 'IN_PROGRESS':
-        return 'text-blue-600 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/20';
-      case 'REVIEW':
-        return 'text-purple-600 bg-purple-100 dark:text-purple-400 dark:bg-purple-900/20';
-      case 'DONE':
-        return 'text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-900/20';
-      case 'CANCELLED':
-        return 'text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/20';
+      case "NEW":
+        return "text-gray-600 bg-gray-100 dark:text-gray-400 dark:bg-gray-700";
+      case "IN_PROGRESS":
+        return "text-blue-600 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/20";
+      case "COMPLETED":
+        return "text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-900/20";
+      case "CANCELLED":
+        return "text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/20";
       default:
-        return 'text-gray-600 bg-gray-100 dark:text-gray-400 dark:bg-gray-700';
+        return "text-gray-600 bg-gray-100 dark:text-gray-400 dark:bg-gray-700";
     }
   };
 
-  const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'DONE';
-  const hasActiveTimer = task.timeTrackingEntries.some(entry => entry.isActive);
-  const completedChecklistItems = task.checklist.filter(item => item.completed).length;
-  const checklistProgress = task.checklist.length > 0 
-    ? Math.round((completedChecklistItems / task.checklist.length) * 100)
-    : 0;
+  const isOverdue =
+    task.dueDate &&
+    new Date(task.dueDate) < new Date() &&
+    task.status !== "COMPLETED";
+  const hasActiveTimer = task.timeTrackingEntries.some(
+    (entry) => entry.isActive
+  );
+  const completedChecklistItems = task.checklist.filter(
+    (item) => item.completed
+  ).length;
+  const checklistProgress =
+    task.checklist.length > 0
+      ? Math.round((completedChecklistItems / task.checklist.length) * 100)
+      : 0;
 
   return (
     <motion.div
       className={`
         relative bg-white dark:bg-gray-800 rounded-lg shadow-sm border-2 transition-all duration-200
         hover:shadow-md hover:scale-[1.02] cursor-pointer
-        ${isSelected ? 'border-blue-500 shadow-md' : 'border-gray-200 dark:border-gray-700'}
+        ${
+          isSelected
+            ? "border-blue-500 shadow-md"
+            : "border-gray-200 dark:border-gray-700"
+        }
         ${className}
       `}
       initial={{ opacity: 0, y: 20 }}
@@ -97,7 +106,11 @@ const EnhancedTaskCard: React.FC<EnhancedTaskCardProps> = ({
       )}
 
       {/* Priority Indicator */}
-      <div className={`absolute top-0 left-0 w-full h-1 rounded-t-lg ${getPriorityColor(task.priority).split(' ')[0]}`} />
+      <div
+        className={`absolute top-0 left-0 w-full h-1 rounded-t-lg ${
+          getPriorityColor(task.priority).split(" ")[0]
+        }`}
+      />
 
       {/* Active Timer Badge */}
       {hasActiveTimer && (
@@ -120,13 +133,21 @@ const EnhancedTaskCard: React.FC<EnhancedTaskCardProps> = ({
             <h3 className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-2 mb-1">
               {task.title}
             </h3>
-            
+
             <div className="flex items-center space-x-2">
-              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(task.status)}`}>
-                {task.status.replace('_', ' ')}
+              <span
+                className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                  task.status
+                )}`}
+              >
+                {task.status.replace("_", " ")}
               </span>
-              
-              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getPriorityColor(task.priority)}`}>
+
+              <span
+                className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getPriorityColor(
+                  task.priority
+                )}`}
+              >
                 {task.priority}
               </span>
             </div>
@@ -135,7 +156,10 @@ const EnhancedTaskCard: React.FC<EnhancedTaskCardProps> = ({
           {/* Progress Circle */}
           <div className="flex-shrink-0 ml-3">
             <div className="w-12 h-12 relative">
-              <svg className="w-12 h-12 transform -rotate-90" viewBox="0 0 48 48">
+              <svg
+                className="w-12 h-12 transform -rotate-90"
+                viewBox="0 0 48 48"
+              >
                 <circle
                   cx="24"
                   cy="24"
@@ -153,12 +177,16 @@ const EnhancedTaskCard: React.FC<EnhancedTaskCardProps> = ({
                   strokeWidth="4"
                   fill="none"
                   strokeDasharray={`${task.progress * 1.25} 125`}
-                  className={task.status === 'DONE' ? 'text-green-500' : 'text-blue-500'}
+                  className={
+                    task.status === "COMPLETED"
+                      ? "text-green-500"
+                      : "text-blue-500"
+                  }
                 />
               </svg>
-              
+
               <div className="absolute inset-0 flex items-center justify-center">
-                {task.status === 'DONE' ? (
+                {task.status === "COMPLETED" ? (
                   <CheckCircleIcon className="w-5 h-5 text-green-500" />
                 ) : (
                   <span className="text-xs font-medium text-gray-900 dark:text-white">
@@ -188,7 +216,7 @@ const EnhancedTaskCard: React.FC<EnhancedTaskCardProps> = ({
                 {completedChecklistItems}/{task.checklist.length}
               </span>
             </div>
-            
+
             <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
               <motion.div
                 className="bg-blue-500 h-2 rounded-full"
@@ -206,30 +234,41 @@ const EnhancedTaskCard: React.FC<EnhancedTaskCardProps> = ({
             {/* Assignee */}
             {task.assignedTo && (
               <div className="flex items-center space-x-1">
-                {task.assignedTo.profilePictureUrl ? (
+                {task.assignedTo.avatar ? (
                   <img
-                    src={task.assignedTo.profilePictureUrl}
+                    src={task.assignedTo.avatar}
                     alt={task.assignedTo.username}
                     className="w-4 h-4 rounded-full"
                   />
                 ) : (
                   <div className="w-4 h-4 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
                     <span className="text-xs text-gray-600 dark:text-gray-400">
-                      {task.assignedTo.firstName?.charAt(0) || task.assignedTo.username.charAt(0)}
+                      {task.assignedTo.firstName?.charAt(0) ||
+                        task.assignedTo.username.charAt(0)}
                     </span>
                   </div>
                 )}
-                <span>{task.assignedTo.firstName || task.assignedTo.username}</span>
+                <span>
+                  {task.assignedTo.firstName || task.assignedTo.username}
+                </span>
               </div>
             )}
 
             {/* Due Date */}
             {task.dueDate && (
-              <div className={`flex items-center space-x-1 ${isOverdue ? 'text-red-500' : ''}`}>
+              <div
+                className={`flex items-center space-x-1 ${
+                  isOverdue ? "text-red-500" : ""
+                }`}
+              >
                 <CalendarDaysIcon className="w-4 h-4" />
                 <span>
-                  {isOverdue && <ExclamationTriangleIcon className="w-3 h-3 inline mr-1" />}
-                  {formatDistanceToNow(new Date(task.dueDate), { addSuffix: true })}
+                  {isOverdue && (
+                    <ExclamationTriangleIcon className="w-3 h-3 inline mr-1" />
+                  )}
+                  {formatDistanceToNow(new Date(task.dueDate), {
+                    addSuffix: true,
+                  })}
                 </span>
               </div>
             )}
@@ -241,10 +280,12 @@ const EnhancedTaskCard: React.FC<EnhancedTaskCardProps> = ({
               <ClockIcon className="w-4 h-4" />
               <span>
                 {Math.round(
-                  task.timeTrackingEntries.reduce((total, entry) => 
-                    total + (entry.duration || 0), 0
+                  task.timeTrackingEntries.reduce(
+                    (total, entry) => total + (entry.duration || 0),
+                    0
                   ) / 60
-                )}h
+                )}
+                h
               </span>
             </div>
           )}
@@ -280,14 +321,19 @@ const EnhancedTaskCard: React.FC<EnhancedTaskCardProps> = ({
             {/* Subtasks Indicator */}
             {task.subtasks.length > 0 && (
               <div className="text-xs text-gray-500 dark:text-gray-400">
-                {task.subtasks.filter(subtask => subtask.status === 'DONE').length}/{task.subtasks.length} subtasks
+                {
+                  task.subtasks.filter(
+                    (subtask) => subtask.status === "COMPLETED"
+                  ).length
+                }
+                /{task.subtasks.length} subtasks
               </div>
             )}
           </div>
 
           {/* Action Buttons */}
           <div className="flex items-center space-x-1">
-            {task.status !== 'DONE' && onStartTimer && (
+            {task.status !== "COMPLETED" && onStartTimer && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -300,7 +346,7 @@ const EnhancedTaskCard: React.FC<EnhancedTaskCardProps> = ({
               </button>
             )}
 
-            {task.status !== 'DONE' && onMarkComplete && (
+            {task.status !== "COMPLETED" && onMarkComplete && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();

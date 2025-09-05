@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useAuthStore } from '../services/auth.store';
-import websocketService, { WebSocketEvents } from '../services/websocket.service';
+import websocketService, { type WebSocketEvents } from '../services/websocket.service';
 
 export function useWebSocket() {
   const { user } = useAuthStore();

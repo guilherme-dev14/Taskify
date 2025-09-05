@@ -2,6 +2,8 @@ import React from "react";
 import { motion, AnimatePresence, type Transition } from "framer-motion";
 import { Dock, type ViewType } from "../Dock";
 import { useNavigationStore } from "../../stores/navigation.store";
+import { NotificationCenter } from "../Notifications/NotificationCenter";
+// import ToastNotifications from "../Notifications/ToastNotifications";
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -34,6 +36,7 @@ const pageTransition: Transition = {
 
 export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const { currentView, setCurrentView } = useNavigationStore();
+  // Toast functionality will be implemented later
 
   const handleViewChange = (view: ViewType) => {
     setCurrentView(view);
@@ -41,8 +44,13 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 relative">
+      {/* Header with NotificationCenter */}
+      <div className="fixed top-0 right-0 z-40 p-4">
+        <NotificationCenter />
+      </div>
+
       {/* Main Content Area */}
-      <div className="pb-24">
+      <div className="pb-24 pt-16">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentView}
@@ -59,6 +67,13 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       </div>
 
       <Dock activeView={currentView} onViewChange={handleViewChange} />
+
+      {/* Global Toast Notifications - TODO: Implement toast store */}
+      {/* <ToastNotifications
+        toasts={toasts}
+        onRemove={removeToast}
+        position="top-right"
+      /> */}
     </div>
   );
 };

@@ -1,70 +1,69 @@
-import React, { useState, useEffect } from 'react';
-import { BellIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import { BellIcon as BellIconSolid } from '@heroicons/react/24/solid';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { notificationService } from '../../services/Notifications/notification.service';
-import { useWebSocketEvent } from '../../hooks/useWebSocket';
-import { INotification } from '../../types/notification.types';
+import React, { useState } from "react";
+import { BellIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { BellIcon as BellIconSolid } from "@heroicons/react/24/solid";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { notificationService } from "../../services/Notifications/notification.service";
+import { useWebSocketEvent } from "../../hooks/useWebSocket";
+import { type INotification } from "../../types/notification.types";
 
 export function NotificationCenter() {
   const [isOpen, setIsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const queryClient = useQueryClient();
 
-  // Query notifications
   const { data: notifications, isLoading } = useQuery({
-    queryKey: ['notifications', { page: 0, size: 20 }],
+    queryKey: ["notifications", { page: 0, size: 20 }],
     queryFn: () => notificationService.getNotifications({ page: 0, size: 20 }),
-    enabled: isOpen
+    enabled: isOpen,
   });
 
-  // Query unread count
   useQuery({
-    queryKey: ['notifications', 'unread-count'],
+    queryKey: ["notifications", "unread-count"],
     queryFn: notificationService.getUnreadCount,
-    onSuccess: (count) => setUnreadCount(count),
-    refetchInterval: 30000 // Refresh every 30 seconds
+    refetchInterval: 30000,
   });
 
-  // Mark as read mutation
   const markAsReadMutation = useMutation({
     mutationFn: notificationService.markAsRead,
     onSuccess: () => {
-      queryClient.invalidateQueries(['notifications']);
-      queryClient.invalidateQueries(['notifications', 'unread-count']);
-    }
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      queryClient.invalidateQueries({
+        queryKey: ["notifications", "unread-count"],
+      });
+    },
   });
 
-  // Mark all as read mutation
   const markAllAsReadMutation = useMutation({
     mutationFn: notificationService.markAllAsRead,
     onSuccess: () => {
-      queryClient.invalidateQueries(['notifications']);
-      queryClient.invalidateQueries(['notifications', 'unread-count']);
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      queryClient.invalidateQueries({
+        queryKey: ["notifications", "unread-count"],
+      });
       setUnreadCount(0);
-    }
+    },
   });
 
-  // Listen for new notifications via WebSocket
-  useWebSocketEvent('notification:new', (notification: INotification) => {
-    setUnreadCount(prev => prev + 1);
-    queryClient.invalidateQueries(['notifications']);
-    
-    // Show browser notification if permission granted
+  useWebSocketEvent("notification:new", (notification: INotification) => {
+    setUnreadCount((prev) => prev + 1);
+    queryClient.invalidateQueries({ queryKey: ["notifications"] });
+
     notificationService.sendPushNotification(notification.title, {
       body: notification.message,
-      icon: '/favicon.ico',
-      tag: notification.id
+      icon: "/favicon.ico",
+      tag: notification.id,
     });
   });
 
-  // Listen for read notifications via WebSocket
-  useWebSocketEvent('notification:read', (notificationId: string) => {
-    setUnreadCount(prev => Math.max(0, prev - 1));
-    queryClient.invalidateQueries(['notifications']);
+  useWebSocketEvent("notification:read", () => {
+    setUnreadCount((prev) => Math.max(0, prev - 1));
+    queryClient.invalidateQueries({ queryKey: ["notifications"] });
   });
 
-  const handleMarkAsRead = (notificationId: string, event: React.MouseEvent) => {
+  const handleMarkAsRead = (
+    notificationId: string,
+    event: React.MouseEvent
+  ) => {
     event.stopPropagation();
     markAsReadMutation.mutate(notificationId);
   };
@@ -73,30 +72,30 @@ export function NotificationCenter() {
     if (!notification.read) {
       markAsReadMutation.mutate(notification.id);
     }
-    
+
     if (notification.actionUrl) {
       window.location.href = notification.actionUrl;
     }
-    
+
     setIsOpen(false);
   };
 
-  const getNotificationIcon = (type: INotification['type']) => {
+  const getNotificationIcon = (type: INotification["type"]) => {
     switch (type) {
-      case 'TASK_ASSIGNED':
-        return '📋';
-      case 'TASK_UPDATED':
-        return '✏️';
-      case 'TASK_DUE':
-        return '⏰';
-      case 'WORKSPACE_INVITE':
-        return '👥';
-      case 'MEMBER_JOINED':
-        return '🎉';
-      case 'COMMENT_ADDED':
-        return '💬';
+      case "TASK_ASSIGNED":
+        return "📋";
+      case "TASK_UPDATED":
+        return "✏️";
+      case "TASK_DUE":
+        return "⏰";
+      case "WORKSPACE_INVITE":
+        return "👥";
+      case "MEMBER_JOINED":
+        return "🎉";
+      case "COMMENT_ADDED":
+        return "💬";
       default:
-        return '📢';
+        return "📢";
     }
   };
 
@@ -108,7 +107,7 @@ export function NotificationCenter() {
     const diffHours = Math.floor(diffMins / 60);
     const diffDays = Math.floor(diffHours / 24);
 
-    if (diffMins < 1) return 'Just now';
+    if (diffMins < 1) return "Just now";
     if (diffMins < 60) return `${diffMins}m ago`;
     if (diffHours < 24) return `${diffHours}h ago`;
     if (diffDays < 7) return `${diffDays}d ago`;
@@ -127,10 +126,10 @@ export function NotificationCenter() {
         ) : (
           <BellIcon className="h-6 w-6" />
         )}
-        
+
         {unreadCount > 0 && (
           <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
-            {unreadCount > 99 ? '99+' : unreadCount}
+            {unreadCount > 99 ? "99+" : unreadCount}
           </span>
         )}
       </button>
@@ -140,13 +139,15 @@ export function NotificationCenter() {
         <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50 max-h-96 flex flex-col">
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900">Notifications</h3>
+            <h3 className="text-lg font-semibold text-gray-900">
+              Notifications
+            </h3>
             <div className="flex items-center space-x-2">
               {unreadCount > 0 && (
                 <button
                   onClick={() => markAllAsReadMutation.mutate()}
                   className="text-sm text-blue-600 hover:text-blue-800"
-                  disabled={markAllAsReadMutation.isLoading}
+                  disabled={markAllAsReadMutation.isPending}
                 >
                   Mark all read
                 </button>
@@ -178,7 +179,7 @@ export function NotificationCenter() {
                     key={notification.id}
                     onClick={() => handleNotificationClick(notification)}
                     className={`p-4 hover:bg-gray-50 cursor-pointer transition-colors ${
-                      !notification.read ? 'bg-blue-50' : ''
+                      !notification.read ? "bg-blue-50" : ""
                     }`}
                   >
                     <div className="flex items-start space-x-3">
@@ -187,14 +188,18 @@ export function NotificationCenter() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
-                          <h4 className={`text-sm font-medium text-gray-900 ${
-                            !notification.read ? 'font-semibold' : ''
-                          }`}>
+                          <h4
+                            className={`text-sm font-medium text-gray-900 ${
+                              !notification.read ? "font-semibold" : ""
+                            }`}
+                          >
                             {notification.title}
                           </h4>
                           {!notification.read && (
                             <button
-                              onClick={(e) => handleMarkAsRead(notification.id, e)}
+                              onClick={(e) =>
+                                handleMarkAsRead(notification.id, e)
+                              }
                               className="text-xs text-blue-600 hover:text-blue-800 ml-2"
                             >
                               ✓

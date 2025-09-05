@@ -5,14 +5,51 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { taskService } from '../../services/Tasks/task.service';
 import { TaskCard } from '../../components/Tasks/TaskCard';
 import { UserAvatarGroup } from '../../components/UI/UserAvatarBubble';
-import { ITask, ITasksResponse } from '../../types/task.types';
-import { IUserSummary } from '../../types/user.types';
+import { type ITask, type ITasksResponse } from '../../types/task.types';
+import { type IUserSummary } from '../../types/user.types';
+import { type Task } from '../../stores/task.store';
 import { 
   MagnifyingGlassIcon,
   FunnelIcon,
   UserGroupIcon,
   PlusIcon
 } from '@heroicons/react/24/outline';
+
+// Mapper function to convert ITask to Task for TaskCard compatibility
+const mapITaskToTask = (iTask: ITask): Task => ({
+  id: parseInt(iTask.id),
+  title: iTask.title,
+  description: iTask.description,
+  notes: iTask.notes,
+  status: iTask.status,
+  priority: iTask.priority,
+  dueDate: iTask.dueDate,
+  createdAt: iTask.createdAt,
+  updatedAt: iTask.updatedAt,
+  comments: '', // ITask doesn't have comments, default to empty string
+  progress: 0, // ITask doesn't have progress, default to 0
+  completionPercentage: 0,
+  estimatedHours: undefined,
+  actualHours: undefined,
+  assignedTo: iTask.assignedTo ? {
+    id: iTask.assignedTo.id,
+    username: iTask.assignedTo.username,
+    email: iTask.assignedTo.email,
+    firstName: iTask.assignedTo.firstName,
+    lastName: iTask.assignedTo.lastName,
+    avatar: iTask.assignedTo.avatar
+  } : undefined,
+  workspace: {
+    id: parseInt(iTask.workspaceId),
+    name: 'Workspace' // ITask doesn't have workspace name
+  },
+  categories: [], // ITask has string[] but Task expects object[], convert later if needed
+  tags: [], // ITask doesn't have tags, default to empty array
+  parentTask: undefined,
+  subtasks: [],
+  dependencies: [],
+  attachments: []
+});
 
 interface WorkspaceTasksViewProps {
   workspaceId: number;
@@ -68,8 +105,7 @@ export const WorkspaceTasksView: React.FC<WorkspaceTasksViewProps> = ({
       task.title.toLowerCase().includes(query) ||
       task.description.toLowerCase().includes(query) ||
       task.assignedTo?.firstName?.toLowerCase().includes(query) ||
-      task.assignedTo?.lastName?.toLowerCase().includes(query) ||
-      task.tags?.some(tag => tag.toLowerCase().includes(query))
+      task.assignedTo?.lastName?.toLowerCase().includes(query)
     );
   }, [tasks, searchQuery]);
 
@@ -203,7 +239,7 @@ export const WorkspaceTasksView: React.FC<WorkspaceTasksViewProps> = ({
               transition={{ duration: 0.2 }}
             >
               <TaskCard
-                task={task}
+                task={mapITaskToTask(task)}
                 onStatusChange={handleTaskStatusChange}
                 onClick={() => console.log('Open task', task.id)}
               />

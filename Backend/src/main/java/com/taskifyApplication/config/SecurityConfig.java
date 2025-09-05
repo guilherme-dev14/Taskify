@@ -45,11 +45,15 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/error").permitAll()
+                        
+                        // WebSocket endpoints
+                        .requestMatchers("/ws/**").permitAll()
 
                         // Endpoints protegidos
                         .requestMatchers("/api/users/**").authenticated()
                         .requestMatchers("/api/workspaces/**").authenticated()
                         .requestMatchers("/api/tasks/**").authenticated()
+                        .requestMatchers("/api/time-tracking/**").authenticated()
 
                         // Qualquer outra requisição precisa estar autenticada
                         .anyRequest().authenticated()

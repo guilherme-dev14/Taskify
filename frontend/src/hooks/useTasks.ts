@@ -1,9 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useTaskStore, Task, TaskFilters } from '../stores/task.store';
+import { useTaskStore, type TaskFilters, type Task } from '../stores/task.store';
 import { useWebSocketStore } from '../stores/websocket.store';
-import axios from 'axios';
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+import api from '../services/api';
 
 // API functions
 const taskAPI = {
@@ -17,31 +15,31 @@ const taskAPI = {
     params.append('page', page.toString());
     params.append('size', size.toString());
 
-    const response = await axios.get(`${API_BASE}/api/tasks?${params.toString()}`);
+    const response = await api.get(`/tasks?${params.toString()}`);
     return response.data;
   },
 
   getTask: async (id: number): Promise<Task> => {
-    const response = await axios.get(`${API_BASE}/api/tasks/${id}`);
+    const response = await api.get(`/tasks/${id}`);
     return response.data;
   },
 
   createTask: async (task: Partial<Task>): Promise<Task> => {
-    const response = await axios.post(`${API_BASE}/api/tasks`, task);
+    const response = await api.post(`/tasks`, task);
     return response.data;
   },
 
   updateTask: async (id: number, updates: Partial<Task>): Promise<Task> => {
-    const response = await axios.put(`${API_BASE}/api/tasks/${id}`, updates);
+    const response = await api.put(`/tasks/${id}`, updates);
     return response.data;
   },
 
   deleteTask: async (id: number): Promise<void> => {
-    await axios.delete(`${API_BASE}/api/tasks/${id}`);
+    await api.delete(`/tasks/${id}`);
   },
 
   bulkUpdateTasks: async (taskIds: number[], updates: Partial<Task>): Promise<Task[]> => {
-    const response = await axios.put(`${API_BASE}/api/tasks/bulk-update`, {
+    const response = await api.put(`/tasks/bulk-update`, {
       taskIds,
       updates
     });
@@ -49,43 +47,43 @@ const taskAPI = {
   },
 
   bulkDeleteTasks: async (taskIds: number[]): Promise<void> => {
-    await axios.delete(`${API_BASE}/api/tasks/bulk-delete`, {
+    await api.delete(`/tasks/bulk-delete`, {
       data: taskIds
     });
   },
 
   getDashboardStats: async () => {
-    const response = await axios.get(`${API_BASE}/api/tasks/dashboard/stats`);
+    const response = await api.get(`/tasks/dashboard/stats`);
     return response.data;
   },
 
   getKanbanTasks: async (workspaceId: number) => {
-    const response = await axios.get(`${API_BASE}/api/tasks/workspace/${workspaceId}/list`);
+    const response = await api.get(`/tasks/workspace/${workspaceId}/list`);
     return response.data;
   },
 
   cloneTask: async (id: number): Promise<Task> => {
-    const response = await axios.post(`${API_BASE}/api/tasks/${id}/clone`);
+    const response = await api.post(`/tasks/${id}/clone`);
     return response.data;
   },
 
   // Subtask operations
   createSubtask: async (parentId: number, subtask: Partial<Task>): Promise<Task> => {
-    const response = await axios.post(`${API_BASE}/api/tasks/${parentId}/subtasks`, subtask);
+    const response = await api.post(`/tasks/${parentId}/subtasks`, subtask);
     return response.data;
   },
 
   getSubtasks: async (parentId: number): Promise<Task[]> => {
-    const response = await axios.get(`${API_BASE}/api/tasks/${parentId}/subtasks`);
+    const response = await api.get(`/tasks/${parentId}/subtasks`);
     return response.data;
   },
 
   convertToSubtask: async (taskId: number, parentId: number): Promise<void> => {
-    await axios.put(`${API_BASE}/api/tasks/${taskId}/convert-to-subtask/${parentId}`);
+    await api.put(`/tasks/${taskId}/convert-to-subtask/${parentId}`);
   },
 
   promoteToMainTask: async (subtaskId: number): Promise<void> => {
-    await axios.put(`${API_BASE}/api/tasks/${subtaskId}/promote-to-main-task`);
+    await api.put(`/tasks/${subtaskId}/promote-to-main-task`);
   },
 };
 

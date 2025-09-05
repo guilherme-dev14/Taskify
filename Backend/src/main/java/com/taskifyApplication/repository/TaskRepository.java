@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 @Repository
@@ -118,7 +119,6 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
            "AND (:estimatedHoursMax IS NULL OR t.estimatedHours <= :estimatedHoursMax) " +
            "AND (:progressMin IS NULL OR t.progress >= :progressMin) " +
            "AND (:progressMax IS NULL OR t.progress <= :progressMax) " +
-           "AND (:templateId IS NULL OR t.template.id = :templateId) " +
            "AND (:dueDateFrom IS NULL OR t.dueDate >= :dueDateFrom) " +
            "AND (:dueDateTo IS NULL OR t.dueDate <= :dueDateTo) " +
            "AND (:tags IS NULL OR tag IN :tags)")
@@ -131,7 +131,6 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
                                       @Param("estimatedHoursMax") Integer estimatedHoursMax,
                                       @Param("progressMin") Integer progressMin,
                                       @Param("progressMax") Integer progressMax,
-                                      @Param("templateId") Long templateId,
                                       @Param("dueDateFrom") LocalDateTime dueDateFrom,
                                       @Param("dueDateTo") LocalDateTime dueDateTo,
                                       @Param("tags") List<String> tags,
@@ -169,10 +168,6 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     @Query("SELECT t FROM Task t JOIN t.tags tag WHERE tag = :tag AND t.workspace.id = :workspaceId")
     List<Task> findByTagInWorkspace(@Param("tag") String tag, @Param("workspaceId") Long workspaceId);
 
-    // Template usage
-    @Query("SELECT COUNT(t) FROM Task t WHERE t.template.id = :templateId")
-    Long countTasksFromTemplate(@Param("templateId") Long templateId);
-
     // Dashboard statistics
     @Query("SELECT COUNT(t) FROM Task t WHERE t.workspace.id = :workspaceId")
     Long countTasksInWorkspace(@Param("workspaceId") Long workspaceId);
@@ -182,4 +177,25 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
 
     @Query("SELECT COUNT(t) FROM Task t WHERE t.workspace.id = :workspaceId AND t.assignedTo.id = :userId")
     Long countTasksAssignedToUserInWorkspace(@Param("workspaceId") Long workspaceId, @Param("userId") Long userId);
+
+    // Analytics support methods
+    @Query("SELECT t FROM Task t WHERE t.workspace.id = :workspaceId AND t.assignedTo.id = :userId AND t.createdAt BETWEEN :startDate AND :endDate")
+    List<Task> findByWorkspaceIdAndAssignedToIdAndCreatedAtBetween(@Param("workspaceId") Long workspaceId, 
+                                                                   @Param("userId") Long userId, 
+                                                                   @Param("startDate") OffsetDateTime startDate, 
+                                                                   @Param("endDate") OffsetDateTime endDate);
+
+    @Query("SELECT t FROM Task t WHERE t.workspace.id = :workspaceId AND t.createdAt BETWEEN :startDate AND :endDate")
+    List<Task> findByWorkspaceIdAndCreatedAtBetween(@Param("workspaceId") Long workspaceId, 
+                                                   @Param("startDate") OffsetDateTime startDate, 
+                                                   @Param("endDate") OffsetDateTime endDate);
+
+    @Query("SELECT t FROM Task t WHERE t.assignedTo.id = :userId AND t.createdAt BETWEEN :startDate AND :endDate")
+    List<Task> findByAssignedToIdAndCreatedAtBetween(@Param("userId") Long userId, 
+                                                    @Param("startDate") OffsetDateTime startDate, 
+                                                    @Param("endDate") OffsetDateTime endDate);
+
+    @Query("SELECT t FROM Task t WHERE t.createdAt BETWEEN :startDate AND :endDate")
+    List<Task> findByCreatedAtBetween(@Param("startDate") OffsetDateTime startDate, 
+                                     @Param("endDate") OffsetDateTime endDate);
 }

@@ -1,14 +1,14 @@
-import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface RouteTransitionLoaderProps {
   isLoading: boolean;
   message?: string;
 }
 
-const RouteTransitionLoader: React.FC<RouteTransitionLoaderProps> = ({ 
-  isLoading, 
-  message = "Loading..." 
+const RouteTransitionLoader: React.FC<RouteTransitionLoaderProps> = ({
+  isLoading,
+  message = "Loading...",
 }) => {
   return (
     <AnimatePresence>
@@ -33,27 +33,27 @@ const RouteTransitionLoader: React.FC<RouteTransitionLoaderProps> = ({
               <motion.div
                 className="relative"
                 animate={{ rotate: 360 }}
-                transition={{ 
-                  duration: 1.5, 
-                  repeat: Infinity, 
-                  ease: "linear" 
+                transition={{
+                  duration: 1.5,
+                  repeat: Infinity,
+                  ease: "linear",
                 }}
               >
                 <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
                   <span className="text-white font-bold text-lg">T</span>
                 </div>
-                
+
                 {/* Rotating border */}
                 <motion.div
                   className="absolute inset-0 border-2 border-blue-200 rounded-lg"
-                  animate={{ 
+                  animate={{
                     rotate: -360,
-                    borderColor: ['#dbeafe', '#3b82f6', '#dbeafe']
+                    borderColor: ["#dbeafe", "#3b82f6", "#dbeafe"],
                   }}
-                  transition={{ 
+                  transition={{
                     duration: 2,
                     repeat: Infinity,
-                    ease: "linear"
+                    ease: "linear",
                   }}
                 />
               </motion.div>
@@ -68,21 +68,21 @@ const RouteTransitionLoader: React.FC<RouteTransitionLoaderProps> = ({
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
                   {message}
                 </h3>
-                
+
                 {/* Animated dots */}
                 <div className="flex items-center justify-center space-x-1">
                   {[0, 1, 2].map((index) => (
                     <motion.div
                       key={index}
                       className="w-2 h-2 bg-blue-500 rounded-full"
-                      animate={{ 
+                      animate={{
                         scale: [1, 1.2, 1],
-                        opacity: [0.5, 1, 0.5]
+                        opacity: [0.5, 1, 0.5],
                       }}
                       transition={{
                         duration: 1,
                         repeat: Infinity,
-                        delay: index * 0.2
+                        delay: index * 0.2,
                       }}
                     />
                   ))}
@@ -93,12 +93,12 @@ const RouteTransitionLoader: React.FC<RouteTransitionLoaderProps> = ({
               <motion.div className="w-48 h-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                 <motion.div
                   className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full"
-                  initial={{ x: '-100%' }}
-                  animate={{ x: '100%' }}
+                  initial={{ x: "-100%" }}
+                  animate={{ x: "100%" }}
                   transition={{
                     duration: 1.5,
                     repeat: Infinity,
-                    ease: "easeInOut"
+                    ease: "easeInOut",
                   }}
                 />
               </motion.div>
@@ -112,37 +112,12 @@ const RouteTransitionLoader: React.FC<RouteTransitionLoaderProps> = ({
             animate={{ scaleX: 1 }}
             exit={{ scaleX: 1 }}
             transition={{ duration: 0.8, ease: "easeOut" }}
-            style={{ transformOrigin: 'left' }}
+            style={{ transformOrigin: "left" }}
           />
         </>
       )}
     </AnimatePresence>
   );
-};
-
-// Hook for route transitions
-export const useRouteTransition = () => {
-  const [isTransitioning, setIsTransitioning] = React.useState(false);
-
-  const startTransition = (message?: string) => {
-    setIsTransitioning(true);
-  };
-
-  const endTransition = () => {
-    // Add small delay to ensure smooth animation
-    setTimeout(() => {
-      setIsTransitioning(false);
-    }, 300);
-  };
-
-  return {
-    isTransitioning,
-    startTransition,
-    endTransition,
-    RouteTransitionLoader: ({ message }: { message?: string }) => (
-      <RouteTransitionLoader isLoading={isTransitioning} message={message} />
-    )
-  };
 };
 
 export default RouteTransitionLoader;

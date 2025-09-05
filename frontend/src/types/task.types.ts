@@ -1,5 +1,3 @@
-import { IUserSummary } from "./user.types";
-
 export interface ITask {
   id: string;
   title: string;
@@ -14,6 +12,7 @@ export interface ITask {
   categories: string[];
   assignedTo?: {
     id: number;
+    username: string;
     firstName: string;
     lastName: string;
     email: string;
@@ -133,7 +132,7 @@ export interface ITaskTemplate {
   defaultTags?: string[];
   defaultChecklist?: Omit<IChecklistItem, "id" | "completed">[];
   categoryIds?: number[];
-  customFields?: Record<string, any>;
+  customFields?: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
 }
@@ -180,7 +179,7 @@ export interface ITaskFromTemplateRequest {
   dueDate?: string;
   assigneeId?: number;
   workspaceId: number;
-  customFields?: Record<string, any>;
+  customFields?: Record<string, unknown>;
 }
 
 export interface IAdvancedTaskFilters extends ITaskFilters {

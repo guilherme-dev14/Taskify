@@ -1,22 +1,24 @@
-import api from '../api';
-import { 
-  INotification, 
-  INotificationFilters, 
+import api from "../api";
+import type {
+  INotificationFilters,
   INotificationsResponse,
-  INotificationPreferences 
-} from '../../types/notification.types';
+  INotificationPreferences,
+} from "../../types/notification.types";
 
 export const notificationService = {
   // Get notifications with pagination and filters
-  getNotifications: async (filters: INotificationFilters): Promise<INotificationsResponse> => {
+  getNotifications: async (
+    filters: INotificationFilters
+  ): Promise<INotificationsResponse> => {
     const params = new URLSearchParams({
       page: filters.page.toString(),
       size: filters.size.toString(),
     });
 
-    if (filters.read !== undefined) params.append('read', filters.read.toString());
-    if (filters.type) params.append('type', filters.type);
-    if (filters.workspaceId) params.append('workspaceId', filters.workspaceId);
+    if (filters.read !== undefined)
+      params.append("read", filters.read.toString());
+    if (filters.type) params.append("type", filters.type);
+    if (filters.workspaceId) params.append("workspaceId", filters.workspaceId);
 
     const response = await api.get(`/notifications?${params.toString()}`);
     return response.data;
@@ -29,7 +31,7 @@ export const notificationService = {
 
   // Mark all notifications as read
   markAllAsRead: async (): Promise<void> => {
-    await api.patch('/notifications/read-all');
+    await api.patch("/notifications/read-all");
   },
 
   // Delete notification
@@ -39,36 +41,38 @@ export const notificationService = {
 
   // Get unread count
   getUnreadCount: async (): Promise<number> => {
-    const response = await api.get('/notifications/unread-count');
+    const response = await api.get("/notifications/unread-count");
     return response.data.count;
   },
 
   // Get notification preferences
   getPreferences: async (): Promise<INotificationPreferences> => {
-    const response = await api.get('/notifications/preferences');
+    const response = await api.get("/notifications/preferences");
     return response.data;
   },
 
   // Update notification preferences
-  updatePreferences: async (preferences: Partial<INotificationPreferences>): Promise<INotificationPreferences> => {
-    const response = await api.patch('/notifications/preferences', preferences);
+  updatePreferences: async (
+    preferences: Partial<INotificationPreferences>
+  ): Promise<INotificationPreferences> => {
+    const response = await api.patch("/notifications/preferences", preferences);
     return response.data;
   },
 
   // Request push notification permission
   requestPushPermission: async (): Promise<NotificationPermission> => {
-    if ('Notification' in window) {
+    if ("Notification" in window) {
       const permission = await Notification.requestPermission();
       return permission;
     }
-    return 'denied';
+    return "denied";
   },
 
   // Send push notification
   sendPushNotification: (title: string, options?: NotificationOptions) => {
-    if ('Notification' in window && Notification.permission === 'granted') {
+    if ("Notification" in window && Notification.permission === "granted") {
       return new Notification(title, options);
     }
     return null;
-  }
+  },
 };

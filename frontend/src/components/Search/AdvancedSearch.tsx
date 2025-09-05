@@ -1,14 +1,13 @@
-import React, { useState } from 'react';
-import { 
+import { useState } from "react";
+import {
   MagnifyingGlassIcon,
   FunnelIcon,
   XMarkIcon,
-  ChevronDownIcon,
-  BookmarkIcon
-} from '@heroicons/react/24/outline';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { advancedTaskService } from '../../services/Tasks/advancedTask.service';
-import { IAdvancedTaskFilters, ITask } from '../../types/task.types';
+  BookmarkIcon,
+} from "@heroicons/react/24/outline";
+import { useQuery } from "@tanstack/react-query";
+import { advancedTaskService } from "../../services/Tasks/advancedTask.service";
+import type { IAdvancedTaskFilters, ITask } from "../../types/task.types";
 
 interface AdvancedSearchProps {
   workspaceId?: string;
@@ -24,61 +23,82 @@ interface SavedSearch {
 }
 
 const PRIORITY_OPTIONS = [
-  { value: 'LOW', label: 'Low', color: 'bg-green-100 text-green-800' },
-  { value: 'MEDIUM', label: 'Medium', color: 'bg-yellow-100 text-yellow-800' },
-  { value: 'HIGH', label: 'High', color: 'bg-orange-100 text-orange-800' },
-  { value: 'URGENT', label: 'Urgent', color: 'bg-red-100 text-red-800' }
+  { value: "LOW", label: "Low", color: "bg-green-100 text-green-800" },
+  { value: "MEDIUM", label: "Medium", color: "bg-yellow-100 text-yellow-800" },
+  { value: "HIGH", label: "High", color: "bg-orange-100 text-orange-800" },
+  { value: "URGENT", label: "Urgent", color: "bg-red-100 text-red-800" },
 ];
 
 const STATUS_OPTIONS = [
-  { value: 'NEW', label: 'New', color: 'bg-blue-100 text-blue-800' },
-  { value: 'IN_PROGRESS', label: 'In Progress', color: 'bg-purple-100 text-purple-800' },
-  { value: 'COMPLETED', label: 'Completed', color: 'bg-green-100 text-green-800' },
-  { value: 'CANCELLED', label: 'Cancelled', color: 'bg-gray-100 text-gray-800' }
+  { value: "NEW", label: "New", color: "bg-blue-100 text-blue-800" },
+  {
+    value: "IN_PROGRESS",
+    label: "In Progress",
+    color: "bg-purple-100 text-purple-800",
+  },
+  {
+    value: "COMPLETED",
+    label: "Completed",
+    color: "bg-green-100 text-green-800",
+  },
+  {
+    value: "CANCELLED",
+    label: "Cancelled",
+    color: "bg-gray-100 text-gray-800",
+  },
 ];
 
 const SORT_OPTIONS = [
-  { value: 'createdAt', label: 'Created Date' },
-  { value: 'updatedAt', label: 'Updated Date' },
-  { value: 'dueDate', label: 'Due Date' },
-  { value: 'priority', label: 'Priority' },
-  { value: 'title', label: 'Title' }
+  { value: "createdAt", label: "Created Date" },
+  { value: "updatedAt", label: "Updated Date" },
+  { value: "dueDate", label: "Due Date" },
+  { value: "priority", label: "Priority" },
+  { value: "title", label: "Title" },
 ];
 
-export function AdvancedSearch({ workspaceId, onSearchResults, className = '' }: AdvancedSearchProps) {
+export function AdvancedSearch({
+  workspaceId,
+  onSearchResults,
+  className = "",
+}: AdvancedSearchProps) {
   const [showFilters, setShowFilters] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [tags, setTags] = useState<string[]>([]);
-  const [tagInput, setTagInput] = useState('');
-  const [savedSearchName, setSavedSearchName] = useState('');
+  const [tagInput, setTagInput] = useState("");
+  const [savedSearchName, setSavedSearchName] = useState("");
   const [showSaveDialog, setShowSaveDialog] = useState(false);
-  
+
   const [filters, setFilters] = useState<IAdvancedTaskFilters>({
     page: 0,
     size: 50,
-    sortBy: 'updatedAt',
-    sortDir: 'desc',
-    workspaceId: workspaceId ? parseInt(workspaceId) : undefined
+    sortBy: "updatedAt",
+    sortDir: "desc",
+    workspaceId: workspaceId ? parseInt(workspaceId) : undefined,
   });
 
-  const queryClient = useQueryClient();
-
-  // Search tasks query
-  const { data: searchResults, isLoading, refetch } = useQuery({
-    queryKey: ['advanced-search', filters, searchQuery],
-    queryFn: () => advancedTaskService.searchTasks({
-      ...filters,
-      // Add text search to filters if supported by backend
-      ...(searchQuery && { query: searchQuery })
-    }),
-    enabled: false // Only run when triggered
+  const {
+    data: searchResults,
+    isLoading,
+    refetch,
+  } = useQuery({
+    queryKey: ["advanced-search", filters, searchQuery],
+    queryFn: () =>
+      advancedTaskService.searchTasks({
+        ...filters,
+        // Add text search to filters if supported by backend
+        ...(searchQuery && { query: searchQuery }),
+      }),
+    enabled: false, // Only run when triggered
   });
 
   // Get popular tags
   const { data: popularTags = [] } = useQuery({
-    queryKey: ['popular-tags', workspaceId],
-    queryFn: () => workspaceId ? advancedTaskService.getPopularTags(workspaceId) : Promise.resolve([]),
-    enabled: !!workspaceId
+    queryKey: ["popular-tags", workspaceId],
+    queryFn: () =>
+      workspaceId
+        ? advancedTaskService.getPopularTags(workspaceId)
+        : Promise.resolve([]),
+    enabled: !!workspaceId,
   });
 
   // Mock saved searches (replace with actual API)
@@ -92,11 +112,14 @@ export function AdvancedSearch({ workspaceId, onSearchResults, className = '' }:
     });
   };
 
-  const handleFilterChange = (key: keyof IAdvancedTaskFilters, value: any) => {
-    setFilters(prev => ({
+  const handleFilterChange = (
+    key: keyof IAdvancedTaskFilters,
+    value: number[] | string[] | string | number | undefined
+  ) => {
+    setFilters((prev) => ({
       ...prev,
       [key]: value,
-      page: 0 // Reset to first page when filters change
+      page: 0, // Reset to first page when filters change
     }));
   };
 
@@ -104,27 +127,27 @@ export function AdvancedSearch({ workspaceId, onSearchResults, className = '' }:
     if (tag && !tags.includes(tag)) {
       const newTags = [...tags, tag];
       setTags(newTags);
-      handleFilterChange('tags', newTags);
-      setTagInput('');
+      handleFilterChange("tags", newTags);
+      setTagInput("");
     }
   };
 
   const removeTag = (tag: string) => {
-    const newTags = tags.filter(t => t !== tag);
+    const newTags = tags.filter((t) => t !== tag);
     setTags(newTags);
-    handleFilterChange('tags', newTags.length > 0 ? newTags : undefined);
+    handleFilterChange("tags", newTags.length > 0 ? newTags : undefined);
   };
 
   const clearAllFilters = () => {
     setFilters({
       page: 0,
       size: 50,
-      sortBy: 'updatedAt',
-      sortDir: 'desc',
-      workspaceId: workspaceId ? parseInt(workspaceId) : undefined
+      sortBy: "updatedAt",
+      sortDir: "desc",
+      workspaceId: workspaceId ? parseInt(workspaceId) : undefined,
     });
     setTags([]);
-    setSearchQuery('');
+    setSearchQuery("");
   };
 
   const saveSearch = () => {
@@ -134,11 +157,11 @@ export function AdvancedSearch({ workspaceId, onSearchResults, className = '' }:
       id: Date.now().toString(),
       name: savedSearchName.trim(),
       filters: { ...filters, tags },
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
     };
 
-    setSavedSearches(prev => [...prev, newSavedSearch]);
-    setSavedSearchName('');
+    setSavedSearches((prev) => [...prev, newSavedSearch]);
+    setSavedSearchName("");
     setShowSaveDialog(false);
   };
 
@@ -171,7 +194,7 @@ export function AdvancedSearch({ workspaceId, onSearchResults, className = '' }:
             placeholder="Search tasks, descriptions, comments..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+            onKeyPress={(e) => e.key === "Enter" && handleSearch()}
             className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
@@ -180,8 +203,8 @@ export function AdvancedSearch({ workspaceId, onSearchResults, className = '' }:
           onClick={() => setShowFilters(!showFilters)}
           className={`flex items-center space-x-2 px-4 py-3 rounded-lg border transition-colors ${
             showFilters || getActiveFiltersCount() > 0
-              ? 'bg-blue-50 border-blue-200 text-blue-700'
-              : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+              ? "bg-blue-50 border-blue-200 text-blue-700"
+              : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
           }`}
         >
           <FunnelIcon className="h-5 w-5" />
@@ -198,14 +221,16 @@ export function AdvancedSearch({ workspaceId, onSearchResults, className = '' }:
           disabled={isLoading}
           className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isLoading ? 'Searching...' : 'Search'}
+          {isLoading ? "Searching..." : "Search"}
         </button>
       </div>
 
       {/* Saved Searches */}
       {savedSearches.length > 0 && (
         <div className="flex items-center space-x-2 overflow-x-auto pb-2">
-          <span className="text-sm text-gray-600 whitespace-nowrap">Saved:</span>
+          <span className="text-sm text-gray-600 whitespace-nowrap">
+            Saved:
+          </span>
           {savedSearches.map((savedSearch) => (
             <button
               key={savedSearch.id}
@@ -226,14 +251,18 @@ export function AdvancedSearch({ workspaceId, onSearchResults, className = '' }:
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {/* Status Filter */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Status
+              </label>
               <select
-                value={filters.status || ''}
-                onChange={(e) => handleFilterChange('status', e.target.value || undefined)}
+                value={filters.status || ""}
+                onChange={(e) =>
+                  handleFilterChange("status", e.target.value || undefined)
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">Any Status</option>
-                {STATUS_OPTIONS.map(option => (
+                {STATUS_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
                   </option>
@@ -243,14 +272,18 @@ export function AdvancedSearch({ workspaceId, onSearchResults, className = '' }:
 
             {/* Priority Filter */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Priority</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Priority
+              </label>
               <select
-                value={filters.priority || ''}
-                onChange={(e) => handleFilterChange('priority', e.target.value || undefined)}
+                value={filters.priority || ""}
+                onChange={(e) =>
+                  handleFilterChange("priority", e.target.value || undefined)
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">Any Priority</option>
-                {PRIORITY_OPTIONS.map(option => (
+                {PRIORITY_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
                   </option>
@@ -260,14 +293,16 @@ export function AdvancedSearch({ workspaceId, onSearchResults, className = '' }:
 
             {/* Sort By */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Sort By
+              </label>
               <div className="flex space-x-2">
                 <select
                   value={filters.sortBy}
-                  onChange={(e) => handleFilterChange('sortBy', e.target.value)}
+                  onChange={(e) => handleFilterChange("sortBy", e.target.value)}
                   className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
-                  {SORT_OPTIONS.map(option => (
+                  {SORT_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
                     </option>
@@ -275,7 +310,12 @@ export function AdvancedSearch({ workspaceId, onSearchResults, className = '' }:
                 </select>
                 <select
                   value={filters.sortDir}
-                  onChange={(e) => handleFilterChange('sortDir', e.target.value as 'asc' | 'desc')}
+                  onChange={(e) =>
+                    handleFilterChange(
+                      "sortDir",
+                      e.target.value as "asc" | "desc"
+                    )
+                  }
                   className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="desc">Descending</option>
@@ -286,18 +326,27 @@ export function AdvancedSearch({ workspaceId, onSearchResults, className = '' }:
 
             {/* Due Date Range */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Due Date</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Due Date
+              </label>
               <div className="flex space-x-2">
                 <input
                   type="date"
-                  value={filters.dueDateFrom || ''}
-                  onChange={(e) => handleFilterChange('dueDateFrom', e.target.value || undefined)}
+                  value={filters.dueDateFrom || ""}
+                  onChange={(e) =>
+                    handleFilterChange(
+                      "dueDateFrom",
+                      e.target.value || undefined
+                    )
+                  }
                   className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
                 <input
                   type="date"
-                  value={filters.dueDateTo || ''}
-                  onChange={(e) => handleFilterChange('dueDateTo', e.target.value || undefined)}
+                  value={filters.dueDateTo || ""}
+                  onChange={(e) =>
+                    handleFilterChange("dueDateTo", e.target.value || undefined)
+                  }
                   className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
@@ -305,20 +354,32 @@ export function AdvancedSearch({ workspaceId, onSearchResults, className = '' }:
 
             {/* Estimated Hours Range */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Estimated Hours</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Estimated Hours
+              </label>
               <div className="flex space-x-2">
                 <input
                   type="number"
                   placeholder="Min"
-                  value={filters.estimatedHoursMin || ''}
-                  onChange={(e) => handleFilterChange('estimatedHoursMin', e.target.value ? parseInt(e.target.value) : undefined)}
+                  value={filters.estimatedHoursMin || ""}
+                  onChange={(e) =>
+                    handleFilterChange(
+                      "estimatedHoursMin",
+                      e.target.value ? parseInt(e.target.value) : undefined
+                    )
+                  }
                   className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
                 <input
                   type="number"
                   placeholder="Max"
-                  value={filters.estimatedHoursMax || ''}
-                  onChange={(e) => handleFilterChange('estimatedHoursMax', e.target.value ? parseInt(e.target.value) : undefined)}
+                  value={filters.estimatedHoursMax || ""}
+                  onChange={(e) =>
+                    handleFilterChange(
+                      "estimatedHoursMax",
+                      e.target.value ? parseInt(e.target.value) : undefined
+                    )
+                  }
                   className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
@@ -326,15 +387,22 @@ export function AdvancedSearch({ workspaceId, onSearchResults, className = '' }:
 
             {/* Progress Range */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Progress (%)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Progress (%)
+              </label>
               <div className="flex space-x-2">
                 <input
                   type="number"
                   min="0"
                   max="100"
                   placeholder="Min"
-                  value={filters.progressMin || ''}
-                  onChange={(e) => handleFilterChange('progressMin', e.target.value ? parseInt(e.target.value) : undefined)}
+                  value={filters.progressMin || ""}
+                  onChange={(e) =>
+                    handleFilterChange(
+                      "progressMin",
+                      e.target.value ? parseInt(e.target.value) : undefined
+                    )
+                  }
                   className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
                 <input
@@ -342,8 +410,13 @@ export function AdvancedSearch({ workspaceId, onSearchResults, className = '' }:
                   min="0"
                   max="100"
                   placeholder="Max"
-                  value={filters.progressMax || ''}
-                  onChange={(e) => handleFilterChange('progressMax', e.target.value ? parseInt(e.target.value) : undefined)}
+                  value={filters.progressMax || ""}
+                  onChange={(e) =>
+                    handleFilterChange(
+                      "progressMax",
+                      e.target.value ? parseInt(e.target.value) : undefined
+                    )
+                  }
                   className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
@@ -352,7 +425,9 @@ export function AdvancedSearch({ workspaceId, onSearchResults, className = '' }:
 
           {/* Tags */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Tags</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Tags
+            </label>
             <div className="space-y-2">
               <div className="flex items-center space-x-2">
                 <input
@@ -361,7 +436,7 @@ export function AdvancedSearch({ workspaceId, onSearchResults, className = '' }:
                   value={tagInput}
                   onChange={(e) => setTagInput(e.target.value)}
                   onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
+                    if (e.key === "Enter") {
                       e.preventDefault();
                       addTag(tagInput);
                     }
@@ -379,7 +454,7 @@ export function AdvancedSearch({ workspaceId, onSearchResults, className = '' }:
               {/* Selected Tags */}
               {tags.length > 0 && (
                 <div className="flex flex-wrap gap-2">
-                  {tags.map(tag => (
+                  {tags.map((tag) => (
                     <span
                       key={tag}
                       className="flex items-center space-x-1 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
@@ -398,7 +473,7 @@ export function AdvancedSearch({ workspaceId, onSearchResults, className = '' }:
                 <div>
                   <p className="text-xs text-gray-500 mb-1">Popular tags:</p>
                   <div className="flex flex-wrap gap-1">
-                    {popularTags.slice(0, 10).map(tag => (
+                    {popularTags.slice(0, 10).map((tag) => (
                       <button
                         key={tag}
                         onClick={() => addTag(tag)}
@@ -422,7 +497,7 @@ export function AdvancedSearch({ workspaceId, onSearchResults, className = '' }:
               >
                 Clear all filters
               </button>
-              
+
               <button
                 onClick={() => setShowSaveDialog(true)}
                 className="text-sm text-blue-600 hover:text-blue-800"
@@ -452,7 +527,7 @@ export function AdvancedSearch({ workspaceId, onSearchResults, className = '' }:
               <XMarkIcon className="h-5 w-5" />
             </button>
           </div>
-          
+
           <div className="flex items-center space-x-3">
             <input
               type="text"

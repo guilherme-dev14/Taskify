@@ -4,7 +4,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { Link } from 'react-router-dom';
 import LightRays from '../../../components/Background/lightRays';
-import { authService } from '../../../services/Auth/auth.service';
+import authService from '../../../services/Auth/auth.service';
 
 const validationSchema = yup.object().shape({
   email: yup.string().email('Invalid email').required('Email is required'),

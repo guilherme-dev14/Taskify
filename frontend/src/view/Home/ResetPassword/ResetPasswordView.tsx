@@ -4,7 +4,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import LightRays from '../../../components/Background/lightRays';
-import { authService } from '../../../services/Auth/auth.service';
+import authService from '../../../services/Auth/auth.service';
 
 const validationSchema = yup.object().shape({
   password: yup

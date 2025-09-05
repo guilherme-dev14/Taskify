@@ -1,16 +1,16 @@
 import api from '../api';
 import { 
-  ITask,
-  ITaskDependency,
-  ITimeTracking,
-  ITaskTemplate,
-  ICreateSubtaskRequest,
-  ICreateDependencyRequest,
-  ITimeTrackingRequest,
-  IUpdateChecklistRequest,
-  ITaskFromTemplateRequest,
-  IAdvancedTaskFilters,
-  ITasksResponse
+  type ITask,
+  type ITaskDependency,
+  type ITimeTracking,
+  type ITaskTemplate,
+  type ICreateSubtaskRequest,
+  type ICreateDependencyRequest,
+  type ITimeTrackingRequest,
+  type IUpdateChecklistRequest,
+  type ITaskFromTemplateRequest,
+  type IAdvancedTaskFilters,
+  type ITasksResponse
 } from '../../types/task.types';
 
 export const advancedTaskService = {

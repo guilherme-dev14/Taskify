@@ -1,5 +1,5 @@
 import React from 'react';
-import { IUserSummary } from '../../types/user.types';
+import { type IUserSummary } from '../../types/user.types';
 
 interface UserAvatarBubbleProps {
   user: IUserSummary;
