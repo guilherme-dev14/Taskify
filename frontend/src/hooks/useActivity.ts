@@ -1,51 +1,63 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { activityService, type IActivityFilters, type IActivityItem } from '../services/Activity/activity.service';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  activityService,
+  type IActivityFilters,
+  type IActivityItem,
+} from "../services/Activity/activity.service";
 
 export const useActivities = (filters: IActivityFilters = {}) => {
   return useQuery({
-    queryKey: ['activities', filters],
+    queryKey: ["activities", filters],
     queryFn: () => activityService.getActivities(filters),
-    staleTime: 1000 * 60 * 2, // 2 minutes
-    refetchInterval: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 2,
+    refetchInterval: 1000 * 60 * 5,
   });
 };
 
 export const useRecentActivities = (limit: number = 20) => {
   return useQuery({
-    queryKey: ['activities', 'recent', limit],
+    queryKey: ["activities", "recent", limit],
     queryFn: () => activityService.getRecentActivities(limit),
-    staleTime: 1000 * 60 * 1, // 1 minute
-    refetchInterval: 1000 * 60 * 2, // 2 minutes
+    staleTime: 1000 * 60 * 1,
+    refetchInterval: 1000 * 60 * 2,
   });
 };
 
-export const useUserActivities = (userId: number, filters: IActivityFilters = {}) => {
+export const useUserActivities = (
+  userId: number,
+  filters: IActivityFilters = {}
+) => {
   return useQuery({
-    queryKey: ['activities', 'user', userId, filters],
+    queryKey: ["activities", "user", userId, filters],
     queryFn: () => activityService.getUserActivities(userId, filters),
     enabled: !!userId,
-    staleTime: 1000 * 60 * 2, // 2 minutes
+    staleTime: 1000 * 60 * 2,
   });
 };
 
-export const useWorkspaceActivities = (workspaceId: number, filters: IActivityFilters = {}) => {
+export const useWorkspaceActivities = (
+  workspaceId: number,
+  filters: IActivityFilters = {}
+) => {
   return useQuery({
-    queryKey: ['activities', 'workspace', workspaceId, filters],
+    queryKey: ["activities", "workspace", workspaceId, filters],
     queryFn: () => activityService.getWorkspaceActivities(workspaceId, filters),
     enabled: !!workspaceId,
-    staleTime: 1000 * 60 * 2, // 2 minutes
+    staleTime: 1000 * 60 * 2,
   });
 };
 
-export const useActivityStats = (filters: {
-  startDate?: string;
-  endDate?: string;
-  workspaceId?: number;
-} = {}) => {
+export const useActivityStats = (
+  filters: {
+    startDate?: string;
+    endDate?: string;
+    workspaceId?: number;
+  } = {}
+) => {
   return useQuery({
-    queryKey: ['activities', 'stats', filters],
+    queryKey: ["activities", "stats", filters],
     queryFn: () => activityService.getActivityStats(filters),
-    staleTime: 1000 * 60 * 10, // 10 minutes
+    staleTime: 1000 * 60 * 10,
   });
 };
 
@@ -55,29 +67,28 @@ export const useMarkActivityAsRead = () => {
   return useMutation({
     mutationFn: activityService.markAsRead,
     onSuccess: () => {
-      // Invalidate all activity queries
-      queryClient.invalidateQueries({ queryKey: ['activities'] });
+      queryClient.invalidateQueries({ queryKey: ["activities"] });
     },
   });
 };
 
-// Custom hook for real-time activity updates
-export const useActivityUpdates = (onNewActivity?: (activity: IActivityItem) => void) => {
+export const useActivityUpdates = (
+  onNewActivity?: (activity: IActivityItem) => void
+) => {
   const queryClient = useQueryClient();
 
-  // This would be connected to WebSocket events
   const addActivity = (newActivity: IActivityItem) => {
-    // Update the recent activities cache
-    queryClient.setQueryData(['activities', 'recent'], (oldData: IActivityItem[] | undefined) => {
-      if (!oldData) return [newActivity];
-      return [newActivity, ...oldData.slice(0, 19)]; // Keep only latest 20
-    });
+    queryClient.setQueryData(
+      ["activities", "recent"],
+      (oldData: IActivityItem[] | undefined) => {
+        if (!oldData) return [newActivity];
+        return [newActivity, ...oldData.slice(0, 19)];
+      }
+    );
 
-    // Call callback if provided
     onNewActivity?.(newActivity);
 
-    // Invalidate activities queries to refetch
-    queryClient.invalidateQueries({ queryKey: ['activities'] });
+    queryClient.invalidateQueries({ queryKey: ["activities"] });
   };
 
   return { addActivity };
