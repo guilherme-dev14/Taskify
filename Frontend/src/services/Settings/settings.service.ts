@@ -1,0 +1,64 @@
+import api from "../api";
+
+interface UserSettings {
+  theme: string;
+  language: string;
+  timezone: string;
+  emailNotifications: boolean;
+  pushNotifications: boolean;
+  weeklyReports: boolean;
+  taskReminders: boolean;
+  teamUpdates: boolean;
+  autoSave: boolean;
+  compactView: boolean;
+  showAvatars: boolean;
+  defaultWorkspace: string;
+  taskAutoAssign: boolean;
+  workspacePrivacy: string;
+}
+
+class SettingsService {
+  async getUserSettings(): Promise<UserSettings> {
+    try {
+      const response = await api.get<UserSettings>("/users/settings");
+      return response.data;
+    } catch {
+      return {
+        theme: "system",
+        language: "en",
+        timezone: "UTC-3",
+        emailNotifications: true,
+        pushNotifications: false,
+        weeklyReports: true,
+        taskReminders: true,
+        teamUpdates: false,
+        autoSave: true,
+        compactView: false,
+        showAvatars: true,
+        defaultWorkspace: "personal",
+        taskAutoAssign: false,
+        workspacePrivacy: "private",
+      };
+    }
+  }
+
+  async updateUserSettings(
+    settings: Partial<UserSettings>
+  ): Promise<UserSettings> {
+    const response = await api.put<UserSettings>("/users/settings", settings);
+    return response.data;
+  }
+
+  async exportUserData(): Promise<Blob> {
+    const response = await api.get("/users/export", { responseType: "blob" });
+    return response.data;
+  }
+
+  async clearCache(): Promise<void> {
+    localStorage.clear();
+    sessionStorage.clear();
+  }
+}
+
+export default new SettingsService();
+export type { UserSettings };
