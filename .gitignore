@@ -1,0 +1,18 @@
+# Arquivos de Ambiente - O MAIS IMPORTANTE
+.env
+*/.env
+
+# Logs
+logs
+*.log
+
+# --- Frontend (React/Vite) ---
+Frontend/node_modules/
+Frontend/dist/
+Frontend/.DS_Store
+
+# --- Backend (Java/Maven) ---
+Backend/target/
+Backend/.idea/
+Backend/*.iml
+Backend/*.class

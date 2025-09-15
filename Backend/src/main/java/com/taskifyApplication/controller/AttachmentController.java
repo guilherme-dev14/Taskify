@@ -1,0 +1,76 @@
+// taskifyApplication/controller/AttachmentController.java
+
+package com.taskifyApplication.controller;
+
+import com.taskifyApplication.model.Attachment;
+import com.taskifyApplication.model.User;
+import com.taskifyApplication.service.AttachmentService;
+import com.taskifyApplication.service.UserService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/attachments")
+public class AttachmentController {
+
+    @Autowired
+    private AttachmentService attachmentService;
+
+    @Autowired
+    private UserService userService;
+
+    @PostMapping("/upload")
+    public ResponseEntity<Attachment> uploadAttachment(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "taskId", required = false) Long taskId,
+            @RequestParam(value = "workspaceId", required = false) Long workspaceId,
+            @RequestParam(value = "description", required = false) String description,
+            Authentication authentication) {
+
+        User currentUser = getCurrentUser(authentication);
+
+        Attachment attachment = attachmentService.uploadAttachment(
+                file, taskId, workspaceId, description, currentUser);
+
+        return ResponseEntity.ok(attachment);
+    }
+
+    @GetMapping("/{id}/download")
+    public ResponseEntity<ByteArrayResource> downloadAttachment(@PathVariable Long id) {
+        AttachmentService.FileDownloadInfo downloadInfo = attachmentService.getFileForDownload(id);
+
+        ByteArrayResource resource = new ByteArrayResource(downloadInfo.getContent());
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(downloadInfo.getContentType()))
+                .contentLength(downloadInfo.getContent().length)
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        STR."attachment; filename=\"\{downloadInfo.getFilename()}\"")
+                .body(resource);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteAttachment(@PathVariable Long id, Authentication authentication) {
+        User currentUser = getCurrentUser(authentication);
+        attachmentService.deleteAttachment(id, currentUser);
+        return ResponseEntity.noContent().build();
+    }
+
+    private User getCurrentUser(Authentication authentication) {
+        return userService.getUserFromAuthentication(authentication);
+    }
+}

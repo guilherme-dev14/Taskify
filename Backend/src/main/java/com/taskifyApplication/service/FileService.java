@@ -1,0 +1,143 @@
+package com.taskifyApplication.service;
+
+import com.taskifyApplication.model.User;
+import com.taskifyApplication.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.List;
+import java.util.UUID;
+
+@Service
+public class FileService {
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Value("${app.upload.dir:${user.home}/taskify-uploads}")
+    private String uploadDir;
+
+    private final List<String> allowedImageTypes = Arrays.asList(
+            "image/jpeg", "image/jpg", "image/png", "image/gif"
+    );
+
+    private final List<String> allowedFileTypes = Arrays.asList(
+            "image/jpeg", "image/jpg", "image/png", "image/gif",
+            "application/pdf", "text/plain", "application/msword",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+
+    public String saveAvatar(MultipartFile file) throws IOException {
+        validateImageFile(file);
+        
+        String fileName = generateFileName(file.getOriginalFilename());
+        String avatarDir = uploadDir + "/avatars";
+        
+        createDirectoryIfNotExists(avatarDir);
+        
+        Path filePath = Paths.get(avatarDir, fileName);
+        Files.write(filePath, file.getBytes());
+        
+        // Update user avatar in database
+        updateUserAvatar(fileName);
+        
+        return fileName;
+    }
+
+    public String saveAttachment(MultipartFile file) throws IOException {
+        validateFile(file);
+        
+        String fileName = generateFileName(file.getOriginalFilename());
+        String attachmentDir = uploadDir + "/attachments";
+        
+        createDirectoryIfNotExists(attachmentDir);
+        
+        Path filePath = Paths.get(attachmentDir, fileName);
+        Files.write(filePath, file.getBytes());
+        
+        return fileName;
+    }
+
+    public byte[] getAvatar(String filename) throws IOException {
+        Path filePath = Paths.get(uploadDir + "/avatars", filename);
+        if (!Files.exists(filePath)) {
+            throw new IOException("File not found");
+        }
+        return Files.readAllBytes(filePath);
+    }
+
+    public byte[] getAttachment(String filename) throws IOException {
+        Path filePath = Paths.get(uploadDir + "/attachments", filename);
+        if (!Files.exists(filePath)) {
+            throw new IOException("File not found");
+        }
+        return Files.readAllBytes(filePath);
+    }
+
+    private void validateImageFile(MultipartFile file) {
+        if (file.isEmpty()) {
+            throw new IllegalArgumentException("File is empty");
+        }
+        
+        if (!allowedImageTypes.contains(file.getContentType())) {
+            throw new IllegalArgumentException("Invalid file type. Only images are allowed");
+        }
+        
+        if (file.getSize() > 5 * 1024 * 1024) { // 5MB limit
+            throw new IllegalArgumentException("File size too large. Maximum 5MB allowed");
+        }
+    }
+
+    private void validateFile(MultipartFile file) {
+        if (file.isEmpty()) {
+            throw new IllegalArgumentException("File is empty");
+        }
+        
+        if (!allowedFileTypes.contains(file.getContentType())) {
+            throw new IllegalArgumentException("Invalid file type");
+        }
+        
+        if (file.getSize() > 10 * 1024 * 1024) { // 10MB limit
+            throw new IllegalArgumentException("File size too large. Maximum 10MB allowed");
+        }
+    }
+
+    private String generateFileName(String originalFilename) {
+        String extension = "";
+        if (originalFilename != null && originalFilename.contains(".")) {
+            extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+        }
+        return UUID.randomUUID().toString() + extension;
+    }
+
+    private void createDirectoryIfNotExists(String dir) throws IOException {
+        File directory = new File(dir);
+        if (!directory.exists()) {
+            if (!directory.mkdirs()) {
+                throw new IOException("Failed to create directory: " + dir);
+            }
+        }
+    }
+
+    private void updateUserAvatar(String fileName) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+        
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        
+        user.setAvatar("/api/files/avatar/" + fileName);
+        userRepository.save(user);
+    }
+}
