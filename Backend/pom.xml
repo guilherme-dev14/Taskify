@@ -38,7 +38,8 @@
 	<dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-data-jpa</artifactId>
-    </dependency>	<dependency>
+    </dependency>
+        <dependency>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-web</artifactId>
 	</dependency>
@@ -59,6 +60,11 @@
             <groupId>com.googlecode.owasp-java-html-sanitizer</groupId>
             <artifactId>owasp-java-html-sanitizer</artifactId>
             <version>20220608.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
         </dependency>
     <dependency>
         <groupId>io.github.cdimascio</groupId>
