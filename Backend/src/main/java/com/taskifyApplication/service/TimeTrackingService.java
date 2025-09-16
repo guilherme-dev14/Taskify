@@ -1,8 +1,10 @@
 package com.taskifyApplication.service;
 
+import com.taskifyApplication.dto.TaskStatusDto.TaskStatusDTO;
 import com.taskifyApplication.dto.TimeTrackingDto.*;
 import com.taskifyApplication.dto.TaskDto.TaskResponseDTO;
 import com.taskifyApplication.dto.UserDto.UserDTO;
+import com.taskifyApplication.model.TaskStatus;
 import com.taskifyApplication.model.TimeTracking;
 import com.taskifyApplication.model.Task;
 import com.taskifyApplication.model.User;
@@ -215,7 +217,13 @@ public class TimeTrackingService {
             timeTrackingRepository.save(session);
         }
     }
-
+    public TaskStatusDTO convertToTaskStatusDto(TaskStatus status) {
+        TaskStatusDTO taskStatusDTO = new TaskStatusDTO();
+        taskStatusDTO.setColor(status.getColor());
+        taskStatusDTO.setName(status.getName());
+        taskStatusDTO.setId(status.getId());
+        return taskStatusDTO;
+    }
     private boolean hasAccessToWorkspace(User user, Long workspaceId) {
         return user.getWorkspaceMemberships().stream()
                 .anyMatch(membership -> membership.getWorkspace().getId().equals(workspaceId));
@@ -238,7 +246,7 @@ public class TimeTrackingService {
         TaskResponseDTO taskDto = new TaskResponseDTO();
         taskDto.setId(timeTracking.getTask().getId());
         taskDto.setTitle(timeTracking.getTask().getTitle());
-        taskDto.setStatus(timeTracking.getTask().getStatus());
+        taskDto.setStatus(convertToTaskStatusDto(timeTracking.getTask().getStatus()));
         taskDto.setPriority(timeTracking.getTask().getPriority());
         dto.setTask(taskDto);
 

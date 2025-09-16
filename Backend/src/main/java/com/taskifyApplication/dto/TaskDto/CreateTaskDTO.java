@@ -1,7 +1,6 @@
 package com.taskifyApplication.dto.TaskDto;
 
 import com.taskifyApplication.model.PriorityEnum;
-import com.taskifyApplication.model.StatusTaskEnum;
 import lombok.Data;
 import jakarta.validation.constraints.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -27,7 +26,7 @@ public class CreateTaskDTO {
 
     private PriorityEnum priority;
 
-    private StatusTaskEnum status;
+    private Long statusId;
 
     private LocalDateTime dueDate;
 

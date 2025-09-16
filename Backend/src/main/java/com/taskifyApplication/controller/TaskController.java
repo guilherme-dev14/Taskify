@@ -3,7 +3,6 @@ package com.taskifyApplication.controller;
 import com.taskifyApplication.dto.TaskDto.*;
 import com.taskifyApplication.dto.TimeTrackingDto.TimeTrackingSummaryDTO;
 import com.taskifyApplication.dto.common.PageResponse;
-import com.taskifyApplication.model.StatusTaskEnum;
 import com.taskifyApplication.model.PriorityEnum;
 import com.taskifyApplication.service.TaskService;
 import com.taskifyApplication.service.TimeTrackingService;
@@ -38,15 +37,15 @@ public class TaskController {
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir,
             @RequestParam(required = false) Long workspaceId,
-            @RequestParam(required = false) StatusTaskEnum status,
+            @RequestParam(required = false) Long statusId,
             @RequestParam(required = false) PriorityEnum priority) {
 
-        Sort sort = sortDir.equalsIgnoreCase("desc") ? 
-            Sort.by(sortBy).descending() : 
-            Sort.by(sortBy).ascending();
-            
+        Sort sort = sortDir.equalsIgnoreCase("desc") ?
+                Sort.by(sortBy).descending() :
+                Sort.by(sortBy).ascending();
+
         Pageable pageable = PageRequest.of(page, size, sort);
-        PageResponse<TaskSummaryDTO> tasks = taskService.getAllTasksFromUser(pageable, workspaceId, status, priority);
+        PageResponse<TaskSummaryDTO> tasks = taskService.getAllTasksFromUser(pageable, workspaceId, statusId, priority);
         return ResponseEntity.ok(tasks);
     }
 
@@ -62,13 +61,14 @@ public class TaskController {
     }
     @GetMapping("/kanban")
     public ResponseEntity<List<TaskSummaryDTO>> getTasksByStatus(
-            @RequestParam StatusTaskEnum status,
+            @RequestParam Long statusId, // Alterado
             @RequestParam(required = false) Long workspaceId,
             @RequestParam(required = false) Integer year,
             @RequestParam(required = false) Integer month) {
-        List<TaskSummaryDTO> tasks = taskService.getAllTasksByStatus(status, workspaceId, year, month);
+        List<TaskSummaryDTO> tasks = taskService.getAllTasksByStatus(statusId, workspaceId, year, month);
         return ResponseEntity.ok(tasks);
     }
+
 
     @PostMapping
     public ResponseEntity<TaskResponseDTO> createTask(
@@ -109,13 +109,13 @@ public class TaskController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt") String sort,
             @RequestParam(defaultValue = "DESC") String direction,
-            @RequestParam(required = false) StatusTaskEnum status,
+            @RequestParam(required = false) Long statusId,
             @RequestParam(required = false) PriorityEnum priority) {
         try {
             Sort.Direction sortDirection = Sort.Direction.fromString(direction);
             Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sort));
             
-            PageResponse<TaskSummaryDTO> tasks = taskService.getAllTasksInWorkspace(workspaceId, status, priority, pageable);
+            PageResponse<TaskSummaryDTO> tasks = taskService.getAllTasksInWorkspace(workspaceId, statusId, priority, pageable);
             return ResponseEntity.ok(tasks);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
@@ -127,10 +127,10 @@ public class TaskController {
     @GetMapping("/workspace/{workspaceId}/list")
     public ResponseEntity<List<TaskSummaryDTO>> getAllTasksInWorkspaceList(
             @PathVariable Long workspaceId,
-            @RequestParam(required = false) StatusTaskEnum status,
+            @RequestParam(required = false) Long statusId,
             @RequestParam(required = false) PriorityEnum priority) {
         try {
-            List<TaskSummaryDTO> tasks = taskService.getAllTasksInWorkspaceList(workspaceId, status, priority);
+            List<TaskSummaryDTO> tasks = taskService.getAllTasksInWorkspaceList(workspaceId, statusId, priority);
             return ResponseEntity.ok(tasks);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
@@ -253,9 +253,9 @@ public class TaskController {
             @RequestParam String startDate,
             @RequestParam String endDate,
             @RequestParam(required = false) Long workspaceId,
-            @RequestParam(required = false) StatusTaskEnum status) {
+            @RequestParam(required = false) Long statusId) {
         try {
-            List<TaskSummaryDTO> tasks = taskService.getTasksForDateRange(startDate, endDate, workspaceId, status);
+            List<TaskSummaryDTO> tasks = taskService.getTasksForDateRange(startDate, endDate, workspaceId, statusId);
             return ResponseEntity.ok(tasks);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();

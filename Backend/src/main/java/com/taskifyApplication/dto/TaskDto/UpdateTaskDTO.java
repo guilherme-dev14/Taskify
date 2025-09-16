@@ -1,7 +1,6 @@
 package com.taskifyApplication.dto.TaskDto;
 
 import com.taskifyApplication.model.PriorityEnum;
-import com.taskifyApplication.model.StatusTaskEnum;
 import lombok.Data;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
@@ -21,7 +20,7 @@ public class UpdateTaskDTO {
     private List<Long> categoryIds;
     private Long assignedToId;
     private PriorityEnum priority;
-    private StatusTaskEnum status;
+    private Long statusId;
     private LocalDateTime dueDate;
     private Integer estimatedHours;
     private Integer actualHours;

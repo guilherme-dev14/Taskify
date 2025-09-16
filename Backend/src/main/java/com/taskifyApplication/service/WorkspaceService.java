@@ -95,6 +95,7 @@ public class WorkspaceService {
                 .inviteCode(generateInviteCode())
                 .build();
 
+        workspace.addDefaultStatuses();
         workspace = workspaceRepository.save(workspace);
 
         WorkspaceMember ownerMember = WorkspaceMember.builder()

@@ -1,6 +1,7 @@
 package com.taskifyApplication.service;
 
 import com.taskifyApplication.dto.TaskDependencyDto.*;
+import com.taskifyApplication.dto.TaskStatusDto.TaskStatusDTO;
 import com.taskifyApplication.model.*;
 import com.taskifyApplication.repository.*;
 import com.taskifyApplication.service.TaskService;
@@ -122,7 +123,7 @@ public class TaskDependencyService {
         
         // Check if all dependencies are completed
         return dependencies.stream()
-                .allMatch(dep -> dep.getStatus() == StatusTaskEnum.COMPLETED);
+                .allMatch(dep -> dep.getStatus().getName().equalsIgnoreCase("COMPLETED"));
     }
     
     public List<Task> getBlockingTasks(Long taskId) {
@@ -132,7 +133,7 @@ public class TaskDependencyService {
         List<Task> dependencies = taskDependencyRepository.findDependenciesForTask(task);
         
         return dependencies.stream()
-                .filter(dep -> dep.getStatus() != StatusTaskEnum.COMPLETED)
+                .filter(dep -> dep.getStatus().getName().equalsIgnoreCase("COMPLETED"))
                 .collect(Collectors.toList());
     }
     
@@ -177,8 +178,8 @@ public class TaskDependencyService {
         dto.setCreatedAt(dependency.getCreatedAt());
         
         // Determine dependency status
-        StatusTaskEnum dependsOnStatus = dependency.getDependsOnTask().getStatus();
-        if (dependsOnStatus == StatusTaskEnum.COMPLETED) {
+        TaskStatus dependsOnStatus = dependency.getDependsOnTask().getStatus();
+        if (dependsOnStatus.getName().equalsIgnoreCase("COMPLETED")) {
             dto.setDependencyStatus("SATISFIED");
             dto.setIsBlocking(false);
         } else {

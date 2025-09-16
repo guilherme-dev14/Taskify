@@ -1,7 +1,6 @@
 package com.taskifyApplication.dto.TaskDto;
 
 import com.taskifyApplication.model.PriorityEnum;
-import com.taskifyApplication.model.StatusTaskEnum;
 import lombok.Data;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -10,7 +9,7 @@ import java.util.List;
 public class AdvancedSearchDTO {
     private String searchTerm; // For title and description
     private List<Long> workspaceIds;
-    private List<StatusTaskEnum> statuses;
+    private List<Long> statusesId;
     private List<PriorityEnum> priorities;
     private List<Long> assignedToIds;
     private List<Long> categoryIds;

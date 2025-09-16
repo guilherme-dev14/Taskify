@@ -1,8 +1,8 @@
 package com.taskifyApplication.dto.TaskDto;
 
+import com.taskifyApplication.dto.TaskStatusDto.TaskStatusDTO;
 import com.taskifyApplication.dto.UserDto.UserSummaryDTO;
 import com.taskifyApplication.model.PriorityEnum;
-import com.taskifyApplication.model.StatusTaskEnum;
 import lombok.Data;
 import com.taskifyApplication.dto.WorkspaceDto.WorkspaceNameDTO;
 import java.time.LocalDateTime;
@@ -13,7 +13,7 @@ public class TaskSummaryDTO {
     private Long id;
     private String title;
     private String description;
-    private StatusTaskEnum status;
+    private TaskStatusDTO status;
     private PriorityEnum priority;
     private LocalDateTime dueDate;
     private String assignedToName;

@@ -24,6 +24,7 @@ public class Workspace {
 
     @Column(nullable = false, updatable = false)
     private OffsetDateTime createdAt;
+
     @Column(nullable = false)
     private OffsetDateTime updatedAt;
 
@@ -37,6 +38,12 @@ public class Workspace {
 
     @Column(name = "invite_code", length = 50, unique = true)
     private String inviteCode;
+
+    @OneToMany(mappedBy = "workspace", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    @Builder.Default
+    @OrderBy("order ASC")
+    private List<TaskStatus> taskStatuses = new ArrayList<>();
+
     @PrePersist
     protected void onCreate() {
         createdAt = updatedAt = OffsetDateTime.now();
@@ -46,12 +53,23 @@ public class Workspace {
         updatedAt = OffsetDateTime.now();
     }
 
+    public void addDefaultStatuses() {
+        if (this.taskStatuses == null) {
+            this.taskStatuses = new ArrayList<>();
+        }
+        if (this.taskStatuses.isEmpty()) {
+            this.taskStatuses.add(TaskStatus.builder().workspace(this).name("To Do").color("#3B82F6").order(0).build());
+            this.taskStatuses.add(TaskStatus.builder().workspace(this).name("In Progress").color("#F59E0B").order(1).build());
+            this.taskStatuses.add(TaskStatus.builder().workspace(this).name("Completed").color("#10B981").order(2).build());
+            this.taskStatuses.add(TaskStatus.builder().workspace(this).name("Cancelled").color("#EF4444").order(3).build());
+        }
+    }
+
     public boolean isMember(User user) {
-         if (this.owner != null && this.owner.getId().equals(user.getId())) {
+        if (this.owner != null && this.owner.getId().equals(user.getId())) {
             return true;
         }
-
-         return members.stream()
+        return members.stream()
                 .anyMatch(member -> member.getUser() != null && member.getUser().getId().equals(user.getId()));
     }
 
@@ -59,11 +77,9 @@ public class Workspace {
         if (user == null || members == null) {
             return null;
         }
-        // Check if user is the owner
         if (owner != null && owner.equals(user)) {
             return RoleEnum.OWNER;
         }
-        // Check member role
         return members.stream()
                 .filter(member -> member.getUser() != null && member.getUser().equals(user))
                 .map(WorkspaceMember::getRole)

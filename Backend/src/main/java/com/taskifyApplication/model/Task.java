@@ -23,17 +23,16 @@ public class Task {
 
     @Column(columnDefinition = "TEXT")
     private String description;
-    
+
     @Column(columnDefinition = "LONGTEXT")
     private String notes;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 
-    @Enumerated(EnumType.STRING)
-    @Column(length = 30)
-    @Builder.Default
-    private StatusTaskEnum status = StatusTaskEnum.NEW;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "status_id")
+    private TaskStatus status;
 
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
@@ -60,14 +59,13 @@ public class Task {
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
-        name = "task_categories",
-        joinColumns = @JoinColumn(name = "task_id"),
-        inverseJoinColumns = @JoinColumn(name = "category_id")
+            name = "task_categories",
+            joinColumns = @JoinColumn(name = "task_id"),
+            inverseJoinColumns = @JoinColumn(name = "category_id")
     )
     @Builder.Default
     private List<Category> categories = new ArrayList<>();
 
-    // Subtask relationship
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_task_id")
     private Task parentTask;
@@ -76,7 +74,6 @@ public class Task {
     @Builder.Default
     private List<Task> subtasks = new ArrayList<>();
 
-    // Dependencies
     @OneToMany(mappedBy = "task", cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE}, fetch = FetchType.LAZY, orphanRemoval = true)
     @Builder.Default
     private List<TaskDependency> dependencies = new ArrayList<>();
@@ -85,29 +82,24 @@ public class Task {
     @Builder.Default
     private List<TaskDependency> dependentTasks = new ArrayList<>();
 
-    // Tags
     @ElementCollection
     @CollectionTable(name = "task_tags", joinColumns = @JoinColumn(name = "task_id"))
     @Column(name = "tag")
     @Builder.Default
     private List<String> tags = new ArrayList<>();
 
-    // Progress tracking
     @Builder.Default
-    private Integer progress = 0; // 0-100
+    private Integer progress = 0;
 
-    // Checklist items
     @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("orderIndex ASC")
     @Builder.Default
     private List<ChecklistItem> checklist = new ArrayList<>();
 
-    // Attachments
     @OneToMany(mappedBy = "task", cascade = {CascadeType.REMOVE}, fetch = FetchType.LAZY, orphanRemoval = true)
     @Builder.Default
     private List<Attachment> attachments = new ArrayList<>();
 
-    // Custom fields (JSON storage)
     @Column(columnDefinition = "TEXT")
     private String customFieldsJson;
 
@@ -118,14 +110,11 @@ public class Task {
     private OffsetDateTime completedAt;
 
     public boolean canEdit(User user) {
-        if (workspace == null || user == null)
-        {
+        if (workspace == null || user == null) {
             return false;
         }
-        return workspace.getUserRole(user) != null &&
-                (assignedTo == null || assignedTo.equals(user) ||
-                        workspace.getUserRole(user) == RoleEnum.ADMIN ||
-                        workspace.getUserRole(user) == RoleEnum.OWNER);
+        RoleEnum userRole = workspace.getUserRole(user);
+        return userRole != null && (user.equals(assignedTo) || userRole == RoleEnum.ADMIN || userRole == RoleEnum.OWNER);
     }
 
     @PrePersist
@@ -133,9 +122,6 @@ public class Task {
         OffsetDateTime now = OffsetDateTime.now();
         this.createdAt = now;
         this.updatedAt = now;
-        if (this.status == null) {
-            this.status = StatusTaskEnum.NEW;
-        }
         if (this.priority == null) {
             this.priority = PriorityEnum.LOW;
         }
@@ -147,6 +133,7 @@ public class Task {
         }
         return workspace.isMember(user);
     }
+
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = OffsetDateTime.now();

@@ -37,7 +37,7 @@ public class AnalyticsService {
         List<Task> tasks = getFilteredTasks(workspaceId, userId, start, end);
         List<Task> completedTasks = tasks.stream()
                 .filter(task -> task.getStatus() != null && 
-                       (task.getStatus().name().equals("DONE") || task.getStatus().name().equals("COMPLETED")))
+                       (task.getStatus().getName().equals("DONE") || task.getStatus().getName().equals("COMPLETED")))
                 .collect(Collectors.toList());
 
         // Calculate today's metrics
@@ -53,7 +53,7 @@ public class AnalyticsService {
         int weeklyStreak = calculateWeeklyStreak(userId, workspaceId);
         
         // Calculate focus time (mock data for now)
-        double focusTime = completedTasks.size() * 2.5; // Average 2.5 hours per completed task
+        double focusTime = completedTasks.size() * 2.5;
         
         // Calculate efficiency
         double efficiency = tasks.isEmpty() ? 0 : (double) completedTasks.size() / tasks.size() * 100;
@@ -88,7 +88,7 @@ public class AnalyticsService {
         List<Task> tasks = getFilteredTasks(workspaceId, userId, start, end);
         List<Task> completedTasks = tasks.stream()
                 .filter(task -> task.getStatus() != null && 
-                       (task.getStatus().name().equals("DONE") || task.getStatus().name().equals("COMPLETED")))
+                       (task.getStatus().getName().equals("DONE") || task.getStatus().getName().equals("COMPLETED")))
                 .collect(Collectors.toList());
 
         int totalTasks = tasks.size();
@@ -135,7 +135,7 @@ public class AnalyticsService {
 
         // Tasks by status
         Map<String, Long> statusCounts = tasks.stream()
-                .collect(Collectors.groupingBy(task -> task.getStatus().name(), Collectors.counting()));
+                .collect(Collectors.groupingBy(task -> task.getStatus().getName(), Collectors.counting()));
         
         DistributionDataDto.TaskDistribution tasksByStatus = createTaskDistribution(
                 Arrays.asList("TO_DO", "IN_PROGRESS", "DONE", "CANCELLED"),

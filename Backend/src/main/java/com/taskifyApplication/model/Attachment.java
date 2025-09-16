@@ -17,7 +17,7 @@ public class Attachment {
     private Long id;
 
     @Lob
-    @Column(nullable = false, columnDefinition = "LONGBLOB")
+    @Column(nullable = false, columnDefinition = "BYTEA")
     private byte[] data;
 
     @Column(nullable = false)

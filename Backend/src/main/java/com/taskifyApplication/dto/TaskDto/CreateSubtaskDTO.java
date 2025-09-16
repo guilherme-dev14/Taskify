@@ -1,7 +1,7 @@
 package com.taskifyApplication.dto.TaskDto;
 
+import com.taskifyApplication.dto.TaskStatusDto.TaskStatusDTO;
 import com.taskifyApplication.model.PriorityEnum;
-import com.taskifyApplication.model.StatusTaskEnum;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -19,7 +19,7 @@ public class CreateSubtaskDTO {
     private String title;
     
     private String description;
-    private StatusTaskEnum status = StatusTaskEnum.NEW;
+    private TaskStatusDTO status;
     private PriorityEnum priority = PriorityEnum.MEDIUM;
     private LocalDateTime dueDate;
     private Long assignedToId;

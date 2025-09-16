@@ -2,14 +2,12 @@ package com.taskifyApplication.dto.TaskDto;
 
 
 import com.taskifyApplication.dto.CategoryDto.CategoryResponseDTO;
+import com.taskifyApplication.dto.TaskStatusDto.TaskStatusDTO;
 import com.taskifyApplication.dto.UserDto.UserSummaryDTO;
 import com.taskifyApplication.dto.WorkspaceDto.WorkspaceNameDTO;
-import com.taskifyApplication.dto.WorkspaceDto.WorkspaceResponseDTO;
-import com.taskifyApplication.dto.WorkspaceDto.WorkspaceSummaryDTO;
 import com.taskifyApplication.dto.AttachmentDto.AttachmentResponseDTO;
 import com.taskifyApplication.model.ChecklistItem;
 import com.taskifyApplication.model.PriorityEnum;
-import com.taskifyApplication.model.StatusTaskEnum;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -27,7 +25,7 @@ public class TaskResponseDTO {
     private Long id;
     private String title;
     private String description;
-    private StatusTaskEnum status;
+    private TaskStatusDTO status;
     private PriorityEnum priority;
     private LocalDateTime dueDate;
     private OffsetDateTime createdAt;

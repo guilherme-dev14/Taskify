@@ -4,6 +4,7 @@ import com.taskifyApplication.dto.AttachmentDto.AttachmentResponseDTO;
 import com.taskifyApplication.dto.CategoryDto.CategoryResponseDTO;
 import com.taskifyApplication.dto.TaskDto.*;
 import com.taskifyApplication.dto.TaskDto.TaskSummaryDTO;
+import com.taskifyApplication.dto.TaskStatusDto.TaskStatusDTO;
 import com.taskifyApplication.dto.UserDto.UserDTO;
 import com.taskifyApplication.dto.UserDto.UserSummaryDTO;
 import com.taskifyApplication.dto.WorkspaceDto.WorkspaceNameDTO;
@@ -54,6 +55,8 @@ public class TaskService {
     private AttachmentService attachmentService;
     @Autowired
     private TimeTrackingRepository timeTrackingRepository;
+    @Autowired
+    private TaskStatusRepository taskStatusRepository;
     @PersistenceContext
     private EntityManager entityManager;
     // endregion
@@ -63,13 +66,13 @@ public class TaskService {
         return getAllTasksFromUser(pageable, null);
     }
 
-    public PageResponse<TaskSummaryDTO> getAllTasksFromUser(Pageable pageable, Long workspaceId, StatusTaskEnum status, PriorityEnum priority) {
+    public PageResponse<TaskSummaryDTO> getAllTasksFromUser(Pageable pageable, Long workspaceId, Long statusId, PriorityEnum priority) {
         User currentUser = getCurrentUser();
         
         Page<Task> taskPage;
         
-        if (workspaceId != null || status != null || priority != null) {
-            taskPage = taskRepository.findTasksWithFilters(currentUser, workspaceId, status, priority, pageable);
+        if (workspaceId != null || statusId != null || priority != null) {
+            taskPage = taskRepository.findTasksWithFilters(currentUser, workspaceId, statusId, priority, pageable);
         } else {
             taskPage = taskRepository.findByAssignedTo(currentUser, pageable);
         }
@@ -94,7 +97,7 @@ public class TaskService {
         return getAllTasksFromUser(pageable, workspaceId, null, null);
     }
 
-    public PageResponse<TaskSummaryDTO> getAllTasksFromWorkspace(Long workspaceId, Pageable pageable, StatusTaskEnum status, PriorityEnum priority) {
+    public PageResponse<TaskSummaryDTO> getAllTasksFromWorkspace(Long workspaceId, Pageable pageable, Long statusId, PriorityEnum priority) {
         User currentUser = getCurrentUser();
         Workspace workspace = workspaceRepository.findById(workspaceId)
                 .orElseThrow(() -> new IllegalArgumentException("Workspace not found"));
@@ -104,8 +107,8 @@ public class TaskService {
         }
         
         Page<Task> taskPage;
-        if (status != null || priority != null) {
-            taskPage = taskRepository.findByWorkspaceWithFiltersPageable(workspace, status, priority, pageable);
+        if (statusId != null || priority != null) {
+            taskPage = taskRepository.findByWorkspaceWithFiltersPageable(workspace, statusId, priority, pageable);
         } else {
             taskPage = taskRepository.findByWorkspace(workspace, pageable);
         }
@@ -173,9 +176,10 @@ public class TaskService {
             dto.getAssignedTo().setCreatedAt(task.getAssignedTo().getCreatedAt().toOffsetDateTime());
         }
         dto.setCommentsCount(task.getComments() != null ? task.getComments().size() : 0);
+        // CORRIGIDO: Lógica de verificação de status para usar o nome do objeto TaskStatus
         dto.setIsOverdue(task.getDueDate() != null &&
                 task.getDueDate().isBefore(LocalDateTime.now()) &&
-                task.getStatus() != StatusTaskEnum.COMPLETED);
+                (task.getStatus() != null && !task.getStatus().getName().equalsIgnoreCase("COMPLETED")));
         if (task.getDueDate() != null) {
             dto.setDaysUntilDue((int) ChronoUnit.DAYS.between(LocalDateTime.now(), task.getDueDate()));
         }
@@ -192,23 +196,34 @@ public class TaskService {
         List<Category> categories = new ArrayList<>();
         if (createTaskDTO.getCategoryIds() != null && !createTaskDTO.getCategoryIds().isEmpty()) {
             categories = categoryRepository.findAllById(createTaskDTO.getCategoryIds());
-            if (categories.size() != createTaskDTO.getCategoryIds().size()) {
-                throw new IllegalArgumentException("Some categories not found");
-            }
         }
 
         if (taskRepository.existsByTitleAndWorkspace(createTaskDTO.getTitle(), workspace)) {
             throw new IllegalStateException("Task with this title already exists in the workspace!");
         }
 
-        StatusTaskEnum finalStatus = createTaskDTO.getStatus() != null ? createTaskDTO.getStatus() : StatusTaskEnum.NEW;
+        // CORRIGIDO: Busca o status padrão do workspace ou o status fornecido
+        TaskStatus status;
+        if (createTaskDTO.getStatusId() != null) {
+            status = taskStatusRepository.findById(createTaskDTO.getStatusId())
+                    .orElseThrow(() -> new IllegalArgumentException("Status not found"));
+            if (!status.getWorkspace().getId().equals(workspace.getId())) {
+                throw new IllegalArgumentException("The provided status does not belong to this workspace.");
+            }
+        } else {
+            // Se nenhum status for fornecido, usa o primeiro status padrão do workspace
+            status = workspace.getTaskStatuses().stream()
+                    .min((s1, s2) -> Integer.compare(s1.getOrder(), s2.getOrder()))
+                    .orElseThrow(() -> new IllegalStateException("Workspace does not have any default statuses."));
+        }
+
         String sanitizedTitle = validationService.sanitizeString(createTaskDTO.getTitle());
         String sanitizedDescription = validationService.sanitizeHtml(createTaskDTO.getDescription());
 
         Task task = Task.builder()
                 .title(sanitizedTitle)
                 .description(sanitizedDescription)
-                .status(finalStatus)
+                .status(status) // Define o objeto TaskStatus
                 .priority(createTaskDTO.getPriority() != null ? createTaskDTO.getPriority() : PriorityEnum.MEDIUM)
                 .dueDate(createTaskDTO.getDueDate())
                 .assignedTo(currentUser)
@@ -220,37 +235,25 @@ public class TaskService {
 
         if (createTaskDTO.getAttachments() != null && !createTaskDTO.getAttachments().isEmpty()) {
             final Task savedTask = task;
-            List<Attachment> savedAttachments = createTaskDTO.getAttachments().stream()
-                    .map(file -> attachmentService.uploadAttachment(file, savedTask.getId(), savedTask.getWorkspace().getId(), null, currentUser))
-                    .collect(Collectors.toList());
-            
-            // Refresh task to get the updated attachments from database
+            createTaskDTO.getAttachments().forEach(file ->
+                    attachmentService.uploadAttachment(file, savedTask.getId(), savedTask.getWorkspace().getId(), null, currentUser));
             entityManager.refresh(task);
         }
-        // Log activity
+
         activityService.logTaskCreated(task, currentUser);
 
-        // Create notification if task is assigned to someone other than creator
         if (task.getAssignedTo() != null && !task.getAssignedTo().equals(currentUser)) {
             notificationService.notifyTaskAssigned(task.getAssignedTo(), task, currentUser);
         }
 
-        // Send WebSocket notification for real-time updates
         webSocketService.notifyWorkspaceTaskUpdate(
-            workspace.getId(), 
-            convertToTaskSummaryDto(task), 
-            "CREATED", 
-            currentUser
+                workspace.getId(),
+                convertToTaskSummaryDto(task),
+                "CREATED",
+                currentUser
         );
 
-        TaskResponseDTO dto = convertToTaskResponseDto(task);
-        dto.setCommentsCount(0);
-        dto.setIsOverdue(false);
-        if (task.getDueDate() != null) {
-            dto.setDaysUntilDue((int) ChronoUnit.DAYS.between(LocalDateTime.now(), task.getDueDate()));
-        }
-
-        return dto;
+        return convertToTaskResponseDto(task);
     }
 
     @Transactional
@@ -314,8 +317,13 @@ public class TaskService {
             task.setNotes(validationService.sanitizeHtml(updateTaskDTO.getNotes()));
         }
 
-        if (updateTaskDTO.getStatus() != null) {
-            task.setStatus(updateTaskDTO.getStatus());
+        if (updateTaskDTO.getStatusId() != null) {
+            TaskStatus newStatus = taskStatusRepository.findById(updateTaskDTO.getStatusId())
+                    .orElseThrow(() -> new IllegalArgumentException("Status not found"));
+            if (!newStatus.getWorkspace().getId().equals(task.getWorkspace().getId())) {
+                throw new IllegalArgumentException("The provided status does not belong to this task's workspace.");
+            }
+            task.setStatus(newStatus);
         }
 
         if (updateTaskDTO.getPriority() != null) {
@@ -372,12 +380,12 @@ public class TaskService {
         activityService.logTaskUpdated(task, currentUser);
         
         // Check if task was completed and log that too
-        if (updateTaskDTO.getStatus() != null && 
-            (updateTaskDTO.getStatus().name().equals("DONE") || updateTaskDTO.getStatus().name().equals("COMPLETED"))) {
+        if (task.getStatus() != null && task.getStatus().getName().equalsIgnoreCase("COMPLETED")) {
             task.setCompletedAt(java.time.OffsetDateTime.now());
             taskRepository.save(task);
             activityService.logTaskCompleted(task, currentUser);
         }
+
 
         // Create notifications for task updates
         User newAssignedUser = task.getAssignedTo();
@@ -404,7 +412,7 @@ public class TaskService {
         }
         
         // Notify about task completion
-        if (updateTaskDTO.getStatus() == StatusTaskEnum.COMPLETED && 
+        if (task.getStatus().getName().equalsIgnoreCase("COMPLETED") &&
             newAssignedUser != null && 
             !newAssignedUser.equals(currentUser)) {
             notificationService.notifyTaskCompleted(newAssignedUser, task, currentUser);
@@ -423,7 +431,7 @@ public class TaskService {
         dto.setCommentsCount(task.getComments() != null ? task.getComments().size() : 0);
         dto.setIsOverdue(task.getDueDate() != null &&
                 task.getDueDate().isBefore(LocalDateTime.now()) &&
-                task.getStatus() != StatusTaskEnum.COMPLETED);
+                task.getStatus().getName().equalsIgnoreCase("COMPLETED"));
         if (task.getDueDate() != null) {
             dto.setDaysUntilDue((int) ChronoUnit.DAYS.between(LocalDateTime.now(), task.getDueDate()));
         }
@@ -439,44 +447,44 @@ public class TaskService {
         LocalDateTime startOfDay = today.atStartOfDay();
         LocalDateTime endOfDay = today.plusDays(1).atStartOfDay();
 
-        // Get all tasks assigned to current user
+        // Nomes de status que consideramos como "concluídos" para as contagens
+        List<String> completedStatusNames = List.of("COMPLETED", "DONE", "CONCLUÍDO");
+
         List<Task> userTasks = taskRepository.findByAssignedTo(currentUser);
-        
-        // Basic stats
+
         dashboardStats.setTotalTasks(userTasks.size());
-        dashboardStats.setToDoToday(taskRepository.countTasksDueToday(currentUser, startOfDay, endOfDay, StatusTaskEnum.COMPLETED));
-        dashboardStats.setOverdue(taskRepository.countOverdueTasks(currentUser, LocalDateTime.now(), StatusTaskEnum.COMPLETED));
-        dashboardStats.setInProgress(taskRepository.countByStatus(StatusTaskEnum.IN_PROGRESS));
-        
-        // Hours calculations
-        int totalEstimated = userTasks.stream()
-            .mapToInt(task -> task.getEstimatedHours() != null ? task.getEstimatedHours() : 0)
-            .sum();
-        
-        int totalActual = userTasks.stream()
-            .mapToInt(task -> task.getActualHours() != null ? task.getActualHours() : 0)
-            .sum();
-        
+        dashboardStats.setToDoToday(taskRepository.countTasksDueToday(currentUser, startOfDay, endOfDay, completedStatusNames));
+        dashboardStats.setOverdue(taskRepository.countOverdueTasks(currentUser, LocalDateTime.now(), completedStatusNames));
+
+        // Contar tarefas "Em Progresso" pelo nome
+        Integer inProgressCount = taskRepository.countByUserAndStatusName(currentUser, "In Progress");
+        if (inProgressCount == null) {
+            inProgressCount = taskRepository.countByUserAndStatusName(currentUser, "EM PROGRESSO");
+        }
+        dashboardStats.setInProgress(inProgressCount != null ? inProgressCount : 0);
+
+        int totalEstimated = userTasks.stream().mapToInt(task -> task.getEstimatedHours() != null ? task.getEstimatedHours() : 0).sum();
+        int totalActual = userTasks.stream().mapToInt(task -> task.getActualHours() != null ? task.getActualHours() : 0).sum();
+
         int completedEstimated = userTasks.stream()
-            .filter(task -> task.getStatus() == StatusTaskEnum.COMPLETED)
-            .mapToInt(task -> task.getEstimatedHours() != null ? task.getEstimatedHours() : 0)
-            .sum();
-        
+                .filter(task -> task.getStatus() != null && completedStatusNames.contains(task.getStatus().getName().toUpperCase()))
+                .mapToInt(task -> task.getEstimatedHours() != null ? task.getEstimatedHours() : 0)
+                .sum();
+
         dashboardStats.setTotalEstimatedHours(totalEstimated);
         dashboardStats.setTotalActualHours(totalActual);
         dashboardStats.setCompletedTasksEstimatedHours(completedEstimated);
-        
-        // Calculate ratio - avoid division by zero
+
         if (totalEstimated > 0) {
             dashboardStats.setEstimatedVsActualRatio((double) totalActual / totalEstimated);
         } else {
             dashboardStats.setEstimatedVsActualRatio(0.0);
         }
-        
+
         return dashboardStats;
     }
 
-    public List<TaskSummaryDTO> getAllTasksByStatus(StatusTaskEnum status, Long workspaceId, Integer year, Integer month) {
+    public List<TaskSummaryDTO> getAllTasksByStatus(Long statusId, Long workspaceId, Integer year, Integer month) {
         User currentUser = getCurrentUser();
 
         LocalDateTime startDate;
@@ -499,15 +507,15 @@ public class TaskService {
                     throw new IllegalArgumentException("You don't have access to this workspace");
                 }
                 
-                tasks = taskRepository.findByWorkspaceWithFilters(workspace, status, null);
+                tasks = taskRepository.findByWorkspaceWithFilters(workspace, statusId, null);
             } else {
                 // If no workspace specified, get only user's assigned tasks with the given status
-                tasks = taskRepository.findByStatusWorkspaceAndAssignedTo(status, currentUser, null);
+                tasks = taskRepository.findByStatusWorkspaceAndAssignedTo(statusId, currentUser, null);
             }
             return tasks.stream().map(this::convertToTaskSummaryDto).collect(Collectors.toList());
         }
 
-        List<Task> tasks = taskRepository.findByStatusAndDueDateBetween(status, workspaceId, startDate, endDate);
+        List<Task> tasks = taskRepository.findByStatusAndDueDateBetween(statusId, workspaceId, startDate, endDate);
 
         return tasks.stream()
                 .filter(task -> task.canView(currentUser)) // Garante a permissão de visualização
@@ -527,12 +535,20 @@ public class TaskService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
     }
 
+    public TaskStatusDTO convertToTaskStatusDto(TaskStatus status) {
+        TaskStatusDTO taskStatusDTO = new TaskStatusDTO();
+        taskStatusDTO.setColor(status.getColor());
+        taskStatusDTO.setName(status.getName());
+        taskStatusDTO.setId(status.getId());
+        return taskStatusDTO;
+    }
+
     public TaskSummaryDTO convertToTaskSummaryDto(Task task) {
         TaskSummaryDTO dto = new TaskSummaryDTO();
         dto.setId(task.getId());
         dto.setTitle(task.getTitle());
         dto.setDescription(task.getDescription());
-        dto.setStatus(task.getStatus());
+        dto.setStatus(convertToTaskStatusDto(task.getStatus()));
         dto.setPriority(task.getPriority());
         dto.setDueDate(task.getDueDate());
         dto.setProgress(task.getProgress());
@@ -569,7 +585,7 @@ public class TaskService {
         dto.setTitle(task.getTitle());
         dto.setDescription(task.getDescription());
         dto.setNotes(task.getNotes());
-        dto.setStatus(task.getStatus());
+        dto.setStatus(convertToTaskStatusDto(task.getStatus()));
         dto.setPriority(task.getPriority());
         dto.setDueDate(task.getDueDate());
         dto.setCreatedAt(task.getCreatedAt());
@@ -612,7 +628,7 @@ public class TaskService {
 
         if (task.getDueDate() != null) {
             dto.setIsOverdue(task.getDueDate().isBefore(LocalDateTime.now())
-                    && task.getStatus() != StatusTaskEnum.COMPLETED);
+                    && task.getStatus().getName().equalsIgnoreCase("COMPLETED"));
             dto.setDaysUntilDue((int) ChronoUnit.DAYS.between(LocalDateTime.now(), task.getDueDate()));
         } else {
             dto.setIsOverdue(false);
@@ -655,7 +671,7 @@ public class TaskService {
         dto.setId(task.getId());
         dto.setTitle(task.getTitle());
         dto.setDescription(task.getDescription());
-        dto.setStatus(task.getStatus());
+        dto.setStatus(convertToTaskStatusDto(task.getStatus()));
         dto.setPriority(task.getPriority());
         dto.setDueDate(task.getDueDate());
         dto.setCreatedAt(task.getCreatedAt());
@@ -692,7 +708,7 @@ public class TaskService {
 
         if (task.getDueDate() != null) {
             dto.setIsOverdue(task.getDueDate().isBefore(LocalDateTime.now())
-                    && task.getStatus() != StatusTaskEnum.COMPLETED);
+                    && task.getStatus().getName().equalsIgnoreCase("COMPLETED"));
             dto.setDaysUntilDue((int) ChronoUnit.DAYS.between(LocalDateTime.now(), task.getDueDate()));
         } else {
             dto.setIsOverdue(false);
@@ -723,7 +739,7 @@ public class TaskService {
         return getAllTasksInWorkspace(workspaceId, null, null, pageable);
     }
 
-    public PageResponse<TaskSummaryDTO> getAllTasksInWorkspace(Long workspaceId, StatusTaskEnum status, 
+    public PageResponse<TaskSummaryDTO> getAllTasksInWorkspace(Long workspaceId, Long statusId,
                                                               PriorityEnum priority, Pageable pageable) {
         User currentUser = getCurrentUser();
         
@@ -736,8 +752,8 @@ public class TaskService {
         }
 
         Page<Task> taskPage;
-        if (status != null || priority != null) {
-            taskPage = taskRepository.findByWorkspaceWithFiltersPageable(workspace, status, priority, pageable);
+        if (statusId != null || priority != null) {
+            taskPage = taskRepository.findByWorkspaceWithFiltersPageable(workspace, statusId, priority, pageable);
         } else {
             taskPage = taskRepository.findByWorkspace(workspace, pageable);
         }
@@ -762,7 +778,7 @@ public class TaskService {
         return getAllTasksInWorkspaceList(workspaceId, null, null);
     }
 
-    public List<TaskSummaryDTO> getAllTasksInWorkspaceList(Long workspaceId, StatusTaskEnum status, PriorityEnum priority) {
+    public List<TaskSummaryDTO> getAllTasksInWorkspaceList(Long workspaceId, Long statusId, PriorityEnum priority) {
         User currentUser = getCurrentUser();
         
         Workspace workspace = workspaceRepository.findById(workspaceId)
@@ -774,8 +790,8 @@ public class TaskService {
         }
 
         List<Task> tasks;
-        if (status != null || priority != null) {
-            tasks = taskRepository.findByWorkspaceWithFilters(workspace, status, priority);
+        if (statusId != null || priority != null) {
+            tasks = taskRepository.findByWorkspaceWithFilters(workspace, statusId, priority);
         } else {
             tasks = taskRepository.findByWorkspace(workspace);
         }
@@ -797,41 +813,57 @@ public class TaskService {
                 .anyMatch(member -> member.getUser().equals(user));
     }
 
-    // BULK OPERATIONS
     public List<TaskResponseDTO> bulkUpdateTasks(BulkTaskOperationDTO bulkUpdateDTO) {
         User currentUser = getCurrentUser();
-        
+
         List<Task> tasks = taskRepository.findAllById(bulkUpdateDTO.getTaskIds());
-        
+
         if (tasks.size() != bulkUpdateDTO.getTaskIds().size()) {
             throw new IllegalArgumentException("Some tasks were not found");
         }
-        
-        // Verify permissions for all tasks
-        for (Task task : tasks) {
-            if (!task.canEdit(currentUser)) {
-                throw new IllegalArgumentException("You don't have permission to edit task: " + task.getTitle());
+
+        // Validar permissões e consistência do workspace
+        if (!tasks.isEmpty()) {
+            Long firstWorkspaceId = tasks.get(0).getWorkspace().getId();
+            for (Task task : tasks) {
+                if (!task.canEdit(currentUser)) {
+                    throw new IllegalArgumentException("You don't have permission to edit task: " + task.getTitle());
+                }
+                if (!task.getWorkspace().getId().equals(firstWorkspaceId)) {
+                    throw new IllegalArgumentException("Bulk operations can only be performed on tasks within the same workspace.");
+                }
             }
         }
-        
+
         User assignedUser = null;
         if (bulkUpdateDTO.getAssignedToId() != null) {
             assignedUser = userRepository.findById(bulkUpdateDTO.getAssignedToId())
                     .orElseThrow(() -> new IllegalArgumentException("Assigned user not found"));
         }
-        
+
         List<Category> categories = null;
         if (bulkUpdateDTO.getCategoryIds() != null && !bulkUpdateDTO.getCategoryIds().isEmpty()) {
             categories = categoryRepository.findAllById(bulkUpdateDTO.getCategoryIds());
-            if (categories.size() != bulkUpdateDTO.getCategoryIds().size()) {
-                throw new IllegalArgumentException("Some categories not found");
+        }
+
+        TaskStatus newStatus = null;
+        if (bulkUpdateDTO.getStatusId() != null) {
+            newStatus = taskStatusRepository.findById(bulkUpdateDTO.getStatusId())
+                    .orElseThrow(() -> new IllegalArgumentException("Status not found with id: " + bulkUpdateDTO.getStatusId()));
+
+            // Valida se o status pertence ao workspace das tarefas
+            if (!tasks.isEmpty() && !newStatus.getWorkspace().getId().equals(tasks.get(0).getWorkspace().getId())) {
+                throw new IllegalArgumentException("The selected status does not belong to the tasks' workspace.");
             }
         }
-        
-        // Apply bulk updates
+
+        // Aplicar as atualizações em todas as tarefas
         for (Task task : tasks) {
-            if (bulkUpdateDTO.getStatus() != null) {
-                task.setStatus(bulkUpdateDTO.getStatus());
+            if (newStatus != null) {
+                task.setStatus(newStatus);
+                if ("Completed".equalsIgnoreCase(newStatus.getName())) {
+                    task.setCompletedAt(java.time.OffsetDateTime.now());
+                }
             }
             if (bulkUpdateDTO.getPriority() != null) {
                 task.setPriority(bulkUpdateDTO.getPriority());
@@ -843,19 +875,19 @@ public class TaskService {
                 task.setCategories(new ArrayList<>(categories));
             }
         }
-        
+
         List<Task> updatedTasks = taskRepository.saveAll(tasks);
-        
-        // Send WebSocket notifications for each task
+
+        // Enviar notificações via WebSocket para cada tarefa atualizada
         for (Task task : updatedTasks) {
             webSocketService.notifyWorkspaceTaskUpdate(
-                task.getWorkspace().getId(),
-                convertToTaskSummaryDto(task),
-                "UPDATED",
-                currentUser
+                    task.getWorkspace().getId(),
+                    convertToTaskSummaryDto(task),
+                    "UPDATED",
+                    currentUser
             );
         }
-        
+
         return updatedTasks.stream()
                 .map(this::convertToTaskResponseDto)
                 .collect(Collectors.toList());
@@ -885,59 +917,59 @@ public class TaskService {
         
         taskRepository.deleteAll(tasks);
     }
-    
+
     public TaskResponseDTO cloneTask(Long taskId) {
         User currentUser = getCurrentUser();
-        
+
         Task originalTask = taskRepository.findById(taskId)
                 .orElseThrow(() -> new IllegalArgumentException("Task not found"));
-        
+
         if (!originalTask.canEdit(currentUser)) {
             throw new IllegalArgumentException("You don't have permission to clone this task");
         }
-        
+      TaskStatus initialStatus = originalTask.getWorkspace().getTaskStatuses().stream()
+                .min((s1, s2) -> Integer.compare(s1.getOrder(), s2.getOrder()))
+                .orElseThrow(() -> new IllegalStateException("Cannot clone task: The workspace does not have any statuses configured."));
+
         // Create clone with "Copy of" prefix
         Task clonedTask = Task.builder()
                 .title("Copy of " + originalTask.getTitle())
                 .description(originalTask.getDescription())
-                .status(StatusTaskEnum.NEW) // Always start as NEW
+                .status(initialStatus) // <-- MUDANÇA APLICADA AQUI
                 .priority(originalTask.getPriority())
                 .assignedTo(currentUser) // Assign to current user
                 .workspace(originalTask.getWorkspace())
                 .categories(new ArrayList<>(originalTask.getCategories()))
                 .estimatedHours(originalTask.getEstimatedHours())
                 .build();
-        
+
         clonedTask = taskRepository.save(clonedTask);
-        
-        // Send WebSocket notification
         webSocketService.notifyWorkspaceTaskUpdate(
-            originalTask.getWorkspace().getId(),
-            convertToTaskSummaryDto(clonedTask),
-            "CREATED",
-            currentUser
+                originalTask.getWorkspace().getId(),
+                convertToTaskSummaryDto(clonedTask),
+                "CREATED",
+                currentUser
         );
-        
         return convertToTaskResponseDto(clonedTask);
     }
     
     // SUBTASK MANAGEMENT
     public TaskResponseDTO createSubtask(CreateSubtaskDTO createSubtaskDTO) {
         User currentUser = getCurrentUser();
-        
+
         Task parentTask = taskRepository.findById(createSubtaskDTO.getParentTaskId())
                 .orElseThrow(() -> new IllegalArgumentException("Parent task not found"));
-        
+
         if (!parentTask.canEdit(currentUser)) {
             throw new IllegalArgumentException("You don't have permission to create subtasks for this task");
         }
-        
+
         User assignedUser = currentUser;
         if (createSubtaskDTO.getAssignedToId() != null) {
             assignedUser = userRepository.findById(createSubtaskDTO.getAssignedToId())
                     .orElseThrow(() -> new IllegalArgumentException("Assigned user not found"));
         }
-        
+
         List<Category> categories = new ArrayList<>();
         if (createSubtaskDTO.getCategoryIds() != null && !createSubtaskDTO.getCategoryIds().isEmpty()) {
             categories = categoryRepository.findAllById(createSubtaskDTO.getCategoryIds());
@@ -945,11 +977,14 @@ public class TaskService {
                 throw new IllegalArgumentException("Some categories not found");
             }
         }
-        
+        TaskStatus initialStatus = parentTask.getWorkspace().getTaskStatuses().stream()
+                .min((s1, s2) -> Integer.compare(s1.getOrder(), s2.getOrder()))
+                .orElseThrow(() -> new IllegalStateException("Cannot create subtask: The workspace does not have any statuses configured."));
+
         Task subtask = Task.builder()
                 .title(createSubtaskDTO.getTitle())
                 .description(createSubtaskDTO.getDescription())
-                .status(createSubtaskDTO.getStatus())
+                .status(initialStatus) // <-- MUDANÇA APLICADA AQUI
                 .priority(createSubtaskDTO.getPriority())
                 .dueDate(createSubtaskDTO.getDueDate())
                 .assignedTo(assignedUser)
@@ -958,20 +993,17 @@ public class TaskService {
                 .categories(categories)
                 .estimatedHours(createSubtaskDTO.getEstimatedHours())
                 .build();
-        
         subtask = taskRepository.save(subtask);
-        
-        // Notify workspace members
+
         webSocketService.notifyWorkspaceTaskUpdate(
-            parentTask.getWorkspace().getId(),
-            convertToTaskSummaryDto(subtask),
-            "CREATED",
-            currentUser
+                parentTask.getWorkspace().getId(),
+                convertToTaskSummaryDto(subtask),
+                "CREATED",
+                currentUser
         );
-        
         return convertToTaskResponseDto(subtask);
     }
-    
+
     public List<TaskSummaryDTO> getSubtasks(Long parentTaskId) {
         Task parentTask = taskRepository.findById(parentTaskId)
                 .orElseThrow(() -> new IllegalArgumentException("Parent task not found"));
@@ -1099,12 +1131,12 @@ public class TaskService {
         }
 
         // Status filter
-        if (searchDTO.getStatuses() != null && !searchDTO.getStatuses().isEmpty()) {
+        if (searchDTO.getStatusesId() != null && !searchDTO.getStatusesId().isEmpty()) {
             whereBuilder.append("AND t.status IN (");
-            for (int i = 0; i < searchDTO.getStatuses().size(); i++) {
+            for (int i = 0; i < searchDTO.getStatusesId().size(); i++) {
                 if (i > 0) whereBuilder.append(", ");
                 whereBuilder.append("?").append(paramIndex);
-                parameters.add(searchDTO.getStatuses().get(i));
+                parameters.add(searchDTO.getStatusesId().get(i));
                 paramIndex++;
             }
             whereBuilder.append(") ");
@@ -1222,7 +1254,7 @@ public class TaskService {
     }
 
     // Calendar View
-    public List<TaskSummaryDTO> getTasksForDateRange(String startDate, String endDate, Long workspaceId, StatusTaskEnum status) {
+    public List<TaskSummaryDTO> getTasksForDateRange(String startDate, String endDate, Long workspaceId, Long statusId) {
         User currentUser = getCurrentUser();
         
         LocalDateTime startDateTime = LocalDateTime.parse(startDate + "T00:00:00");
@@ -1258,9 +1290,9 @@ public class TaskService {
         }
 
         // Status filter
-        if (status != null) {
+        if (statusId != null) {
             whereBuilder.append("AND t.status = ?").append(paramIndex).append(" ");
-            parameters.add(status);
+            parameters.add(statusId);
             paramIndex++;
         }
 
