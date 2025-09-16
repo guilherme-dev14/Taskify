@@ -5,14 +5,12 @@ import {
   MagnifyingGlassIcon,
   FunnelIcon,
   CheckCircleIcon,
-  ClockIcon,
-  ExclamationTriangleIcon,
   TrashIcon,
   ChevronDownIcon,
   BuildingOfficeIcon,
 } from "@heroicons/react/24/outline";
 import { CheckCircleIcon as CheckCircleIconSolid } from "@heroicons/react/24/solid";
-import type { ITask, ITaskFilters } from "../../types/task.types";
+import type { ITask, ITaskFilters, ITaskStatus } from "../../types/task.types";
 
 type WorkspaceOption = { id: string | number; name: string };
 import { taskService } from "../../services/Tasks/task.service";
@@ -62,6 +60,7 @@ const TasksView: React.FC = () => {
   const [taskToDelete, setTaskToDelete] = useState<ITask | null>(null);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
+  const [workspaceStatuses, setWorkspaceStatuses] = useState<ITaskStatus[]>([]);
 
   const [typingUsers, setTypingUsers] = useState<
     Array<{ id: string; name: string }>
@@ -178,7 +177,7 @@ const TasksView: React.FC = () => {
         sortDir: "desc",
       };
 
-      const response = workspaceIdValue 
+      const response = workspaceIdValue
         ? await taskService.getWorkspaceTasks(workspaceIdValue, {
             page: filters.page,
             size: filters.size,
@@ -254,39 +253,30 @@ const TasksView: React.FC = () => {
     setTaskToDelete(null);
   };
 
-  const getStatusIcon = (status: ITask["status"]) => {
-    switch (status) {
-      case "COMPLETED":
-        return <CheckCircleIconSolid className="w-5 h-5 text-green-500" />;
-      case "IN_PROGRESS":
-        return <ClockIcon className="w-5 h-5 text-blue-500" />;
-      case "CANCELLED":
-        return <ExclamationTriangleIcon className="w-5 h-5 text-red-500" />;
-      default:
-        return <CheckCircleIcon className="w-5 h-5 text-gray-400" />;
+  const getStatusIcon = (status: ITaskStatus) => {
+    const statusName = status.name.toUpperCase();
+    if (statusName === "COMPLETED" || statusName === "DONE") {
+      return <CheckCircleIconSolid className="w-5 h-5 text-green-500" />;
     }
+    return (
+      <div
+        className="w-4 h-4 rounded-full"
+        style={{ backgroundColor: status.color }}
+      />
+    );
   };
 
-  const getStatusText = (status: ITask["status"]) => {
-    switch (status) {
-      case "NEW":
-        return "To Do";
-      case "IN_PROGRESS":
-        return "In Progress";
-      case "COMPLETED":
-        return "Completed";
-      case "CANCELLED":
-        return "Cancelled";
-      default:
-        return status;
-    }
+  const getStatusText = (status: ITaskStatus) => {
+    return status.name;
   };
 
   const filteredTasks = useMemo(() => {
     let filtered = allTasks;
 
     if (statusFilter !== "all") {
-      filtered = filtered.filter((task) => task.status === statusFilter);
+      filtered = filtered.filter(
+        (task) => task.status?.id.toString() === statusFilter
+      );
     }
 
     if (priorityFilter !== "all") {
@@ -560,13 +550,15 @@ const TasksView: React.FC = () => {
                     <select
                       value={statusFilter}
                       onChange={(e) => setStatusFilter(e.target.value)}
-                      className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      disabled={selectedWorkspace === "all"}
+                      className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 dark:disabled:bg-gray-700"
                     >
-                      <option value="all">All Status</option>
-                      <option value="NEW">To Do</option>
-                      <option value="IN_PROGRESS">In Progress</option>
-                      <option value="COMPLETED">Completed</option>
-                      <option value="CANCELLED">Cancelled</option>
+                      <option value="all">All Statuses</option>
+                      {workspaceStatuses.map((status) => (
+                        <option key={status.id} value={status.id}>
+                          {status.name}
+                        </option>
+                      ))}
                     </select>
                   </div>
                   <div>

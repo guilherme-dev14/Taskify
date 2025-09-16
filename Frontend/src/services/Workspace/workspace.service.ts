@@ -12,7 +12,7 @@ import type {
   IRemoveMemberRequest,
 } from "../../types/workspace.types";
 import { categoryService } from "../Category/category.service";
-
+import type { ITaskStatus } from "../../types/task.types";
 export interface IWorkspacesResponse {
   content: IWorkspaceName[];
   totalPages: number;
@@ -139,7 +139,12 @@ export const workspaceService = {
     const response = await api.get(`/workspace/${workspaceId}/members`);
     return response.data;
   },
-
+  async getWorkspaceStatuses(
+    workspaceId: string | number
+  ): Promise<ITaskStatus[]> {
+    const response = await api.get(`/workspaces/${workspaceId}/statuses`);
+    return response.data;
+  },
   async updateMemberRole(data: IUpdateMemberRoleRequest): Promise<void> {
     await api.put("/workspace/member/role", data);
   },

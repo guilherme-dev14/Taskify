@@ -61,7 +61,7 @@ public class TaskController {
     }
     @GetMapping("/kanban")
     public ResponseEntity<List<TaskSummaryDTO>> getTasksByStatus(
-            @RequestParam Long statusId, // Alterado
+            @RequestParam Long statusId,
             @RequestParam(required = false) Long workspaceId,
             @RequestParam(required = false) Integer year,
             @RequestParam(required = false) Integer month) {

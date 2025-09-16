@@ -10,7 +10,7 @@ import java.util.List;
 import static org.springframework.data.jpa.domain.AbstractAuditable_.createdBy;
 
 @Entity
-@Table(name = "Categories",
+@Table(name = "categories",
         uniqueConstraints = @UniqueConstraint(columnNames = {"name", "workspace_id"}))
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor

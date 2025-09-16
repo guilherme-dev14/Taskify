@@ -62,7 +62,7 @@ export interface IInviteUserRequest {
 export interface IUpdateMemberRoleRequest {
   workspaceId: number;
   userId: number;
-  newRole: "ADMIN" | "MEMBER";
+  newRole: "OWNER" | "ADMIN" | "MEMBER";
 }
 
 export interface IRemoveMemberRequest {

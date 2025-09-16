@@ -8,7 +8,7 @@ import lombok.*;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "Tasks")
+@Table(name = "tasks")
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter @Setter
@@ -24,7 +24,7 @@ public class Task {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Column(columnDefinition = "LONGTEXT")
+    @Column(columnDefinition = "TEXT")
     private String notes;
 
     @Column(name = "created_at", nullable = false, updatable = false)

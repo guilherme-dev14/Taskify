@@ -75,7 +75,7 @@ export const useWorkspaceSharing = (
   }, [workspaceId]);
 
   const updateMemberRole = useCallback(
-    async (memberId: number, newRole: "ADMIN" | "MEMBER") => {
+    async (memberId: number, newRole: "OWNER" | "ADMIN" | "MEMBER") => {
       try {
         const updateData: IUpdateMemberRoleRequest = {
           workspaceId,

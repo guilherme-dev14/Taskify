@@ -3,7 +3,7 @@ export interface ITask {
   title: string;
   description: string;
   notes?: string;
-  status: "NEW" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
+  status: ITaskStatus;
   priority: "LOW" | "MEDIUM" | "HIGH" | "URGENT";
   dueDate: string;
   estimatedHours?: number;
@@ -12,6 +12,7 @@ export interface ITask {
   updatedAt: string;
   workspace: { id: number; name: string };
   categories: string[];
+  progress: number;
   assignedTo?: {
     id: number;
     username: string;
@@ -49,7 +50,11 @@ export interface ITask {
     dueDate?: string;
   }[];
 }
-
+export interface ITaskStatus {
+  id: number;
+  name: string;
+  color: string;
+}
 export interface ICreateTaskRequest {
   title: string;
   description: string;
@@ -60,7 +65,7 @@ export interface ICreateTaskRequest {
   workspaceId: number;
   assigneeId?: number;
   categoryIds: number[];
-  status?: "NEW" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
+  statusId?: number;
   attachments?: File[];
 }
 
@@ -68,7 +73,7 @@ export interface IUpdateTaskRequest {
   title?: string;
   description?: string;
   notes?: string;
-  status?: "NEW" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
+  statusId?: number;
   priority?: "LOW" | "MEDIUM" | "HIGH" | "URGENT";
   dueDate?: string | null;
   estimatedHours?: number | null;
@@ -81,7 +86,7 @@ export interface ITaskFilters {
   page: number;
   size: number;
   workspaceId?: number;
-  status?: "NEW" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
+  statusId?: number;
   priority?: "LOW" | "MEDIUM" | "HIGH" | "URGENT";
   sortBy: "createdAt" | "updatedAt";
   sortDir: "asc" | "desc";

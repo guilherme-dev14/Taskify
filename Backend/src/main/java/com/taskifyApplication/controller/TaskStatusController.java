@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/workspaces/{workspaceId}/status")
+@RequestMapping("/api/workspaces/{workspaceId}/statuses")
 @CrossOrigin(origins = "http://localhost:5173")
 @SecurityRequirement(name = "bearerAuth")
 public class TaskStatusController {

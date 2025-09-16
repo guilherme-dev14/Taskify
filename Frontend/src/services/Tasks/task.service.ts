@@ -56,8 +56,9 @@ export const taskService = {
     task.categoryIds.forEach((id) =>
       formData.append("categoryIds", id.toString())
     );
-    if (task.status) {
-      formData.append("status", task.status);
+
+    if (task.statusId) {
+      formData.append("statusId", task.statusId.toString());
     }
 
     if (task.attachments) {
@@ -74,22 +75,22 @@ export const taskService = {
 
     return response.data;
   },
+
   async updateTask(id: string, updates: IUpdateTaskRequest): Promise<ITask> {
     const response = await api.put(`/tasks/${id}`, updates);
     return response.data;
   },
-
   async deleteTask(id: string): Promise<void> {
     await api.delete(`/tasks/${id}`);
   },
 
   async getTasksByStatus(
-    status: string,
+    statusId: string,
     workspaceId?: string,
     year?: number,
     month?: number
   ): Promise<ITask[]> {
-    const params: Record<string, string> = { status };
+    const params: Record<string, string> = { statusId };
     if (workspaceId) {
       params.workspaceId = workspaceId;
     }
@@ -100,9 +101,7 @@ export const taskService = {
       params.month = month.toString();
     }
 
-    const response = await api.get(`/tasks/kanban`, {
-      params,
-    });
+    const response = await api.get(`/tasks/kanban`, { params });
     return response.data;
   },
 
@@ -113,7 +112,7 @@ export const taskService = {
       size?: number;
       sort?: string;
       direction?: "ASC" | "DESC";
-      status?: ITask["status"];
+      statusId?: number;
       priority?: ITask["priority"];
     }
   ): Promise<ITasksResponse> {
@@ -124,7 +123,7 @@ export const taskService = {
       direction: filters?.direction ?? "DESC",
     });
 
-    if (filters?.status) params.append("status", filters.status);
+    if (filters?.statusId) params.append("status", filters.statusId.toString());
     if (filters?.priority) params.append("priority", filters.priority);
 
     const url = `/tasks/workspace/${workspaceId}?${params.toString()}`;
@@ -135,12 +134,12 @@ export const taskService = {
   async getWorkspaceTasksList(
     workspaceId: number,
     filters?: {
-      status?: ITask["status"];
+      statusId?: number;
       priority?: ITask["priority"];
     }
   ): Promise<ITask[]> {
     const params = new URLSearchParams();
-    if (filters?.status) params.append("status", filters.status);
+    if (filters?.statusId) params.append("status", filters.statusId.toString());
     if (filters?.priority) params.append("priority", filters.priority);
 
     const url = `/tasks/workspace/${workspaceId}/list?${params.toString()}`;
@@ -204,7 +203,7 @@ export const taskService = {
     startDate: string,
     endDate: string,
     workspaceId?: number,
-    status?: ITask["status"]
+    statusId?: number
   ): Promise<ITask[]> {
     const params = new URLSearchParams({
       startDate,
@@ -212,7 +211,7 @@ export const taskService = {
     });
 
     if (workspaceId) params.append("workspaceId", workspaceId.toString());
-    if (status) params.append("status", status);
+    if (statusId) params.append("status", statusId.toString());
 
     const response = await api.get(`/tasks/calendar?${params.toString()}`);
     return response.data;
