@@ -1,6 +1,7 @@
 package com.taskifyApplication.service;
 
 import com.taskifyApplication.dto.TaskStatusDto.CreateTaskStatusDTO;
+import com.taskifyApplication.dto.TaskStatusDto.StatusOrderUpdateDTO;
 import com.taskifyApplication.dto.TaskStatusDto.TaskStatusDTO;
 import com.taskifyApplication.dto.TaskStatusDto.UpdateTaskStatusDTO;
 import com.taskifyApplication.model.Task;
@@ -12,6 +13,7 @@ import com.taskifyApplication.repository.TaskStatusRepository;
 import com.taskifyApplication.repository.WorkspaceRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.elasticsearch.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -71,14 +73,9 @@ public class TaskStatusService {
         return convertToDto(savedStatus);
     }
 
-    public TaskStatusDTO updateStatus(UpdateTaskStatusDTO updateDto) {
-        User currentUser = userService.getCurrentUser();
-        TaskStatus status = taskStatusRepository.findById(updateDto.getId())
-                .orElseThrow(() -> new IllegalArgumentException("TaskStatus not found"));
-
-        if (!workspaceRepository.accessibleForUser(currentUser, status.getWorkspace().getId())) {
-            throw new SecurityException("User does not have permission to modify this workspace");
-        }
+    @Transactional
+    public TaskStatusDTO updateStatus(Long workspaceId, Long statusId, UpdateTaskStatusDTO updateDto) {
+        TaskStatus status = taskStatusRepository.findByIdAndWorkspaceId(statusId, workspaceId).orElseThrow(() -> new ResourceNotFoundException("Status not found in this workspace"));
 
         if (updateDto.getName() != null) {
             status.setName(updateDto.getName());
@@ -86,6 +83,7 @@ public class TaskStatusService {
         if (updateDto.getColor() != null) {
             status.setColor(updateDto.getColor());
         }
+
         if (updateDto.getOrder() != null) {
             status.setOrder(updateDto.getOrder());
         }
@@ -119,7 +117,21 @@ public class TaskStatusService {
         taskStatusRepository.delete(status);
     }
 
+    @Transactional
+    public void reorderStatuses(Long workspaceId, List<StatusOrderUpdateDTO> statusUpdates) {
+        for (StatusOrderUpdateDTO update : statusUpdates) {
+            TaskStatus status = taskStatusRepository.findById(update.getId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Status not found with id: " + update.getId()));
+            if (!status.getWorkspace().getId().equals(workspaceId)) {
+                throw new SecurityException("Attempted to reorder a status from another workspace.");
+            }
+
+            status.setOrder(update.getOrder());
+            taskStatusRepository.save(status);
+        }
+    }
+
     private TaskStatusDTO convertToDto(TaskStatus status) {
-        return new TaskStatusDTO(status.getId(), status.getName(), status.getColor());
+        return new TaskStatusDTO(status.getId(), status.getName(), status.getColor(), status.getOrder());
     }
 }

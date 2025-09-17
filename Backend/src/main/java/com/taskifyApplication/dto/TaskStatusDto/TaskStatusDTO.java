@@ -11,4 +11,5 @@ public class TaskStatusDTO {
     private Long id;
     private String name;
     private String color;
+    private Integer order;
 }

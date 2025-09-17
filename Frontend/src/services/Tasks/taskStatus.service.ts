@@ -1,4 +1,3 @@
-// Frontend/src/services/TaskStatus/taskStatus.service.ts
 import api from "../api";
 
 export interface ITaskStatus {
@@ -60,7 +59,7 @@ class TaskStatusService {
   ): Promise<ITaskStatus> {
     try {
       const response = await api.put(
-        `${this.baseUrl}/${workspaceId}/statuses/${statusId}`,
+        `workspaces/${workspaceId}/statuses/${statusId}`,
         {
           ...data,
           id: statusId,
@@ -87,11 +86,7 @@ class TaskStatusService {
     statuses: { id: number; order: number }[]
   ): Promise<void> {
     try {
-      // Batch update the order of all statuses
-      const updatePromises = statuses.map((status) =>
-        this.updateStatus(workspaceId, status.id, { order: status.order })
-      );
-      await Promise.all(updatePromises);
+      await api.put(`/workspaces/${workspaceId}/statuses/reorder`, statuses);
     } catch (error) {
       console.error("Error reordering statuses:", error);
       throw error;

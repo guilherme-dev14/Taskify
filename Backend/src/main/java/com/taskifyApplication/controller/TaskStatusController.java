@@ -1,6 +1,7 @@
 package com.taskifyApplication.controller;
 
 import com.taskifyApplication.dto.TaskStatusDto.CreateTaskStatusDTO;
+import com.taskifyApplication.dto.TaskStatusDto.StatusOrderUpdateDTO;
 import com.taskifyApplication.dto.TaskStatusDto.TaskStatusDTO;
 import com.taskifyApplication.dto.TaskStatusDto.UpdateTaskStatusDTO;
 import com.taskifyApplication.service.TaskStatusService;
@@ -50,11 +51,20 @@ public class TaskStatusController {
     public ResponseEntity<?> updateStatus(@PathVariable Long workspaceId, @Valid @RequestBody UpdateTaskStatusDTO updateDto) {
         try {
             updateDto.setId(updateDto.getId());
-            TaskStatusDTO updatedStatus = taskStatusService.updateStatus(updateDto);
+            TaskStatusDTO updatedStatus = taskStatusService.updateStatus(updateDto.getId(), workspaceId, updateDto);
             return ResponseEntity.ok(updatedStatus);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
+    }
+
+    @PutMapping("/reorder")
+    public ResponseEntity<Void> reorderStatuses(
+            @PathVariable Long workspaceId,
+            @RequestBody List<StatusOrderUpdateDTO> statusUpdates
+    ) {
+        taskStatusService.reorderStatuses(workspaceId, statusUpdates);
+        return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/{statusId}")

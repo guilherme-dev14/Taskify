@@ -784,7 +784,8 @@ const KanbanView: React.FC = () => {
                     </Reorder.Item>
 
                     {/* Add New Status Button */}
-                    {!!selectedWorkspace && columnIndex === filteredColumns.length - 1 &&   (
+                    {!!selectedWorkspace &&
+                      columnIndex === filteredColumns.length - 1 && (
                         <motion.div
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
