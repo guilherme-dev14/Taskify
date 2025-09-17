@@ -9,11 +9,11 @@ import * as yup from "yup";
 import LightRays from "../../../components/Background/lightRays";
 import type { ILoginRequest } from "../../../types/auth.types";
 import { useAuthStore } from "../../../services/auth.store";
+import { useToast } from "../../../hooks/useToast";
 
 const validationSchema = yup.object().shape({
   email: yup.string().required("Username is required"),
   password: yup.string().required("Password is required"),
-  rememberMe: yup.boolean(),
 });
 
 export const Login = () => {
@@ -25,7 +25,7 @@ export const Login = () => {
 
   const navigate = useNavigate();
   const { login, isLoading } = useAuthStore();
-
+  const { toast } = useToast();
   const {
     register,
     formState: { errors },
@@ -49,11 +49,12 @@ export const Login = () => {
         error.response?.data?.message ||
         "Invalid email or password. Please try again.";
       setLoginError(errorMessage);
+      toast.error("Login Failed", errorMessage);
       setShowErrors(true);
       setIsLoginSuccessful(false);
       return false;
     }
-  }, [getValues, login]);
+  }, [getValues, login, toast]);
 
   const handleBeforeStepChange = useCallback(
     async (currentStep: number, nextStep: number): Promise<boolean> => {
@@ -290,7 +291,10 @@ export const Login = () => {
                           id="rememberMe"
                           className="h-4 w-4 text-blue-600 bg-gray-800 border-gray-600 rounded focus:ring-blue-500 focus:ring-2"
                         />
-                        <label htmlFor="rememberMe" className="text-sm text-gray-300">
+                        <label
+                          htmlFor="rememberMe"
+                          className="text-sm text-gray-300"
+                        >
                           Remember me
                         </label>
                       </div>

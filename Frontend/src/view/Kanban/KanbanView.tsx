@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import { motion, AnimatePresence, Reorder } from "framer-motion";
 import {
   PlusIcon,
   MagnifyingGlassIcon,
@@ -7,37 +7,49 @@ import {
   ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  XMarkIcon,
+  CheckIcon,
+  TrashIcon,
+  Squares2X2Icon,
+  SparklesIcon,
 } from "@heroicons/react/24/outline";
 import type { ICreateTaskRequest, ITask } from "../../types/task.types";
 import type { IWorkspaceName } from "../../types/workspace.types";
 import { taskService } from "../../services/Tasks/task.service";
 import { workspaceService } from "../../services/Workspace/workspace.service";
+import {
+  taskStatusService,
+  type ITaskStatus,
+} from "../../services/Tasks/taskStatus.service";
 import { NewTaskModal } from "../../components/Modals/NewTask";
 import { formatDate } from "../../utils/dateUtils";
 
-interface Column {
-  id: string;
-  title: string;
+interface Column extends ITaskStatus {
   tasks: ITask[];
-  color: string;
+  isEditing?: boolean;
+  isHovered?: boolean;
 }
 
 interface WorkspaceOption extends IWorkspaceName {
-  id: number | string; // Permitir 'all' como ID
+  id: number | string;
 }
 
-const initialColumns: Column[] = [
-  { id: "NEW", title: "New", color: "blue", tasks: [] },
-  { id: "IN_PROGRESS", title: "In Progress", color: "yellow", tasks: [] },
-  { id: "COMPLETED", title: "Completed", color: "green", tasks: [] },
-  { id: "CANCELLED", title: "Cancelled", color: "red", tasks: [] },
+const COLORS = [
+  { name: "Blue", value: "#3B82F6" },
+  { name: "Green", value: "#10B981" },
+  { name: "Yellow", value: "#F59E0B" },
+  { name: "Red", value: "#EF4444" },
+  { name: "Purple", value: "#8B5CF6" },
+  { name: "Pink", value: "#EC4899" },
+  { name: "Indigo", value: "#6366F1" },
+  { name: "Teal", value: "#14B8A6" },
 ];
 
 const KanbanView: React.FC = () => {
-  const [columns, setColumns] = useState<Column[]>(initialColumns);
+  const [columns, setColumns] = useState<Column[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedWorkspace, setSelectedWorkspace] = useState<string>("all");
+  const [selectedWorkspace, setSelectedWorkspace] = useState<string>("");
   const [draggedTask, setDraggedTask] = useState<ITask | null>(null);
   const [workspaces, setWorkspaces] = useState<WorkspaceOption[]>([]);
   const [isWorkspaceDropdownOpen, setIsWorkspaceDropdownOpen] = useState(false);
@@ -45,18 +57,248 @@ const KanbanView: React.FC = () => {
   const [modalWorkspaceId, setModalWorkspaceId] = useState<number | undefined>(
     undefined
   );
-  const [modalColumnStatus, setModalColumnStatus] = useState<string>("NEW");
+  const [modalColumnStatus, setModalColumnStatus] = useState<
+    number | undefined
+  >(undefined);
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [editingColumn, setEditingColumn] = useState<number | null>(null);
+  const [editingName, setEditingName] = useState("");
+  const [showColorPicker, setShowColorPicker] = useState<number | null>(null);
+  const [hoveredColumn, setHoveredColumn] = useState<number | null>(null);
+  const [isAddingStatus, setIsAddingStatus] = useState<{
+    after: number;
+  } | null>(null);
+  const [newStatusName, setNewStatusName] = useState("");
+  const [newStatusColor, setNewStatusColor] = useState("#3B82F6");
+  const editInputRef = useRef<HTMLInputElement>(null);
+  const newStatusInputRef = useRef<HTMLInputElement>(null);
 
-  const loadWorkspaces = useCallback(async () => {
+  const loadTasksForStatus = async (
+    statusId: number,
+    workspaceId?: string,
+    year?: number,
+    month?: number
+  ) => {
     try {
-      const userWorkspaces = await workspaceService.getWorkspacesFromUserList();
-      setWorkspaces([{ id: "all", name: "All Workspaces" }, ...userWorkspaces]);
+      const tasks = await taskService.getTasksByStatus(
+        statusId.toString(),
+        workspaceId,
+        year,
+        month
+      );
+      return tasks;
     } catch (error) {
-      console.error("Error loading workspaces:", error);
-      setWorkspaces([{ id: "all", name: "All Workspaces" }]);
+      console.error(`Error loading tasks for status ${statusId}:`, error);
+      return [];
     }
-  }, []);
+  };
+  const loadAllTasks = useCallback(
+    async (workspaceId: string) => {
+      if (!workspaceId) return;
+
+      setLoading(true);
+      try {
+        const statuses = await taskStatusService.getStatusesForWorkspace(
+          Number(workspaceId)
+        );
+        const sortedStatuses = statuses.sort(
+          (a, b) => (a.order || 0) - (b.order || 0)
+        );
+
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth() + 1;
+
+        const columnsWithTasks = await Promise.all(
+          sortedStatuses.map(async (status) => {
+            const tasks = await loadTasksForStatus(
+              status.id,
+              workspaceId,
+              year,
+              month
+            );
+            return { ...status, tasks, isEditing: false, isHovered: false };
+          })
+        );
+        setColumns(columnsWithTasks);
+      } catch (error) {
+        console.error("Error loading tasks:", error);
+        setColumns([]);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [currentDate]
+  );
+
+  useEffect(() => {
+    const initializeOrUpdateKanban = async () => {
+      if (workspaces.length === 0) {
+        try {
+          const userWorkspaces =
+            await workspaceService.getWorkspacesFromUserList();
+          setWorkspaces(userWorkspaces);
+          if (userWorkspaces.length > 0) {
+            const initialWorkspaceId = userWorkspaces[0].id.toString();
+            setSelectedWorkspace(initialWorkspaceId);
+            await loadAllTasks(initialWorkspaceId);
+          }
+        } catch (error) {
+          console.error("Error initializing Kanban:", error);
+          setLoading(false);
+        }
+      } else if (selectedWorkspace) {
+        await loadAllTasks(selectedWorkspace);
+      }
+    };
+
+    initializeOrUpdateKanban();
+  }, [selectedWorkspace, currentDate]);
+
+  useEffect(() => {
+    if (editingColumn !== null && editInputRef.current) {
+      editInputRef.current.focus();
+      editInputRef.current.select();
+    }
+  }, [editingColumn]);
+
+  useEffect(() => {
+    if (isAddingStatus && newStatusInputRef.current) {
+      newStatusInputRef.current.focus();
+    }
+  }, [isAddingStatus]);
+
+  const handleEditColumn = async (columnId: number) => {
+    const column = columns.find((c) => c.id === columnId);
+    if (column) {
+      setEditingColumn(columnId);
+      setEditingName(column.name);
+    }
+  };
+
+  const handleSaveColumnName = async () => {
+    if (!editingColumn || !selectedWorkspace) return;
+
+    try {
+      await taskStatusService.updateStatus(
+        Number(selectedWorkspace),
+        editingColumn,
+        { name: editingName }
+      );
+      setColumns((prev) =>
+        prev.map((col) =>
+          col.id === editingColumn ? { ...col, name: editingName } : col
+        )
+      );
+    } catch (error) {
+      console.error("Error updating column name:", error);
+    } finally {
+      setEditingColumn(null);
+      setEditingName("");
+    }
+  };
+
+  const handleChangeColumnColor = async (columnId: number, color: string) => {
+    if (!selectedWorkspace) return;
+
+    try {
+      await taskStatusService.updateStatus(
+        Number(selectedWorkspace),
+        columnId,
+        { color }
+      );
+      setColumns((prev) =>
+        prev.map((col) => (col.id === columnId ? { ...col, color } : col))
+      );
+    } catch (error) {
+      console.error("Error updating column color:", error);
+    } finally {
+      setShowColorPicker(null);
+    }
+  };
+
+  const handleDeleteColumn = async (columnId: number) => {
+    if (
+      !selectedWorkspace ||
+      columns.find((c) => c.id === columnId)?.tasks.length
+    ) {
+      alert("Cannot delete status with tasks or in 'All Workspaces' view");
+      return;
+    }
+
+    if (!confirm("Are you sure you want to delete this status?")) return;
+
+    try {
+      await taskStatusService.deleteStatus(Number(selectedWorkspace), columnId);
+      setColumns((prev) => prev.filter((col) => col.id !== columnId));
+    } catch (error) {
+      console.error("Error deleting column:", error);
+    }
+  };
+
+  const handleAddNewStatus = async () => {
+    if (!newStatusName.trim() || !selectedWorkspace) return;
+
+    try {
+      const newStatus = await taskStatusService.createStatus(
+        Number(selectedWorkspace),
+        {
+          name: newStatusName,
+          color: newStatusColor,
+        }
+      );
+
+      const newColumn: Column = {
+        ...newStatus,
+        tasks: [],
+        isEditing: false,
+        isHovered: false,
+      };
+
+      if (isAddingStatus?.after) {
+        const index = columns.findIndex((c) => c.id === isAddingStatus.after);
+        const newColumns = [...columns];
+        newColumns.splice(index + 1, 0, newColumn);
+        setColumns(newColumns);
+
+        // Update order
+        const reorderedStatuses = newColumns.map((col, idx) => ({
+          id: col.id,
+          order: idx,
+        }));
+        await taskStatusService.reorderStatuses(
+          Number(selectedWorkspace),
+          reorderedStatuses
+        );
+      } else {
+        setColumns([...columns, newColumn]);
+      }
+    } catch (error) {
+      console.error("Error creating new status:", error);
+    } finally {
+      setIsAddingStatus(null);
+      setNewStatusName("");
+      setNewStatusColor("#3B82F6");
+    }
+  };
+
+  const handleReorderColumns = async (newOrder: Column[]) => {
+    if (!selectedWorkspace) return;
+
+    setColumns(newOrder);
+
+    try {
+      const reorderedStatuses = newOrder.map((col, index) => ({
+        id: col.id,
+        order: index,
+      }));
+      await taskStatusService.reorderStatuses(
+        Number(selectedWorkspace),
+        reorderedStatuses
+      );
+    } catch (error) {
+      console.error("Error reordering columns:", error);
+    }
+  };
 
   const handleCreateTask = async (taskData: ICreateTaskRequest) => {
     try {
@@ -67,76 +309,87 @@ const KanbanView: React.FC = () => {
     }
   };
 
-  const handleOpenNewTaskModal = (columnStatus: string) => {
-    const currentWorkspaceId =
-      selectedWorkspace !== "all" ? Number(selectedWorkspace) : undefined;
+  const handleOpenNewTaskModal = (columnStatusId: number) => {
+    const currentWorkspaceId = selectedWorkspace
+      ? Number(selectedWorkspace)
+      : undefined;
     setModalWorkspaceId(currentWorkspaceId);
-    setModalColumnStatus(columnStatus);
+    setModalColumnStatus(columnStatusId);
     setIsNewTaskModalOpen(true);
   };
 
   const handleCloseNewTaskModal = () => {
     setIsNewTaskModalOpen(false);
     setModalWorkspaceId(undefined);
-    setModalColumnStatus("NEW");
+    setModalColumnStatus(undefined);
   };
 
-  const loadTasksForColumn = async (
-    status: string,
-    workspaceId?: string,
-    year?: number,
-    month?: number
-  ) => {
+  const handleDragStart = (task: ITask) => {
+    setDraggedTask(task);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = async (e: React.DragEvent, targetColumnId: number) => {
+    e.preventDefault();
+
+    if (!draggedTask || draggedTask.status.id === targetColumnId) {
+      setDraggedTask(null);
+      return;
+    }
+
+    const previousColumns = columns;
+
+    setColumns((prevColumns) => {
+      const newColumns = prevColumns.map((column) => ({
+        ...column,
+        tasks: column.tasks.filter((task) => task.id !== draggedTask.id),
+      }));
+
+      const targetColumn = newColumns.find((col) => col.id === targetColumnId);
+
+      if (targetColumn) {
+        const updatedTask = {
+          ...draggedTask,
+          statusId: targetColumnId,
+        };
+        targetColumn.tasks.push(updatedTask);
+      }
+      return newColumns;
+    });
+
+    setDraggedTask(null);
+
     try {
-      const tasks = await taskService.getTasksByStatus(
-        status,
-        workspaceId,
-        year,
-        month
+      await taskService.updateTask(draggedTask.id, {
+        statusId: targetColumnId,
+      });
+    } catch (error) {
+      console.error("Error updating task status:", error);
+      setColumns(previousColumns);
+    }
+  };
+
+  const navigateMonth = (direction: number) => {
+    setCurrentDate((prevDate) => {
+      const newDate = new Date(
+        prevDate.getFullYear(),
+        prevDate.getMonth() + direction,
+        1
       );
-      return tasks;
-    } catch (error) {
-      console.error(`Error loading tasks for status ${status}:`, error);
-      return [];
-    }
+      return newDate;
+    });
   };
 
-  const loadAllTasks = useCallback(async () => {
-    setLoading(true);
-    try {
-      const workspaceIdToUse =
-        selectedWorkspace === "all" ? undefined : selectedWorkspace;
-      const year = currentDate.getFullYear();
-      const month = currentDate.getMonth() + 1;
-
-      const [newTasks, inProgressTasks, completedTasks, cancelledTasks] =
-        await Promise.all([
-          loadTasksForColumn("NEW", workspaceIdToUse, year, month),
-          loadTasksForColumn("IN_PROGRESS", workspaceIdToUse, year, month),
-          loadTasksForColumn("COMPLETED", workspaceIdToUse, year, month),
-          loadTasksForColumn("CANCELLED", workspaceIdToUse, year, month),
-        ]);
-
-      setColumns([
-        { ...initialColumns[0], tasks: newTasks },
-        { ...initialColumns[1], tasks: inProgressTasks },
-        { ...initialColumns[2], tasks: completedTasks },
-        { ...initialColumns[3], tasks: cancelledTasks },
-      ]);
-    } catch (error) {
-      console.error("Error loading tasks:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [selectedWorkspace, currentDate]);
-
-  useEffect(() => {
-    loadWorkspaces();
-  }, [loadWorkspaces]);
-
-  useEffect(() => {
-    loadAllTasks();
-  }, [loadAllTasks]);
+  const getColumnHeaderStyle = (color: string) => {
+    return {
+      backgroundColor: `${color}15`,
+      borderColor: color,
+      color: color,
+    };
+  };
 
   const getPriorityColor = (priority: ITask["priority"]) => {
     switch (priority) {
@@ -164,80 +417,6 @@ const KanbanView: React.FC = () => {
     }
   };
 
-  const getColumnHeaderColor = (color: string) => {
-    switch (color) {
-      case "blue":
-        return "bg-blue-100 dark:bg-blue-900/30 text-blue-900 dark:text-blue-300";
-      case "yellow":
-        return "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-900 dark:text-yellow-300";
-      case "green":
-        return "bg-green-100 dark:bg-green-900/30 text-green-900 dark:text-green-300";
-      case "red":
-        return "bg-red-100 dark:bg-red-900/30 text-red-900 dark:text-red-300";
-      default:
-        return "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100";
-    }
-  };
-
-  const handleDragStart = (task: ITask) => {
-    setDraggedTask(task);
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-  };
-
-  const handleDrop = async (e: React.DragEvent, targetColumnId: string) => {
-    e.preventDefault();
-
-    if (!draggedTask || draggedTask.status === targetColumnId) {
-      setDraggedTask(null);
-      return;
-    }
-
-    const previousColumns = columns;
-
-    setColumns((prevColumns) => {
-      const newColumns = prevColumns.map((column) => ({
-        ...column,
-        tasks: column.tasks.filter((task) => task.id !== draggedTask.id),
-      }));
-
-      const targetColumn = newColumns.find((col) => col.id === targetColumnId);
-
-      if (targetColumn) {
-        const updatedTask = {
-          ...draggedTask,
-          status: targetColumnId as ITask["status"],
-        };
-        targetColumn.tasks.push(updatedTask);
-      }
-      return newColumns;
-    });
-
-    setDraggedTask(null);
-
-    try {
-      await taskService.updateTask(draggedTask.id, {
-        status: targetColumnId as ITask["status"],
-      });
-    } catch (error) {
-      console.error("Error updating task status:", error);
-      setColumns(previousColumns);
-    }
-  };
-
-  const navigateMonth = (direction: number) => {
-    setCurrentDate((prevDate) => {
-      const newDate = new Date(
-        prevDate.getFullYear(),
-        prevDate.getMonth() + direction,
-        1
-      );
-      return newDate;
-    });
-  };
-
   const filteredColumns = columns.map((column) => ({
     ...column,
     tasks: column.tasks.filter(
@@ -249,7 +428,7 @@ const KanbanView: React.FC = () => {
 
   return (
     <div className="min-h-screen p-6 md:p-8 lg:p-12">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-full mx-auto">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -257,22 +436,26 @@ const KanbanView: React.FC = () => {
           transition={{ duration: 0.6 }}
           className="mb-8"
         >
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
-            Kanban Board
-          </h1>
+          <div className="flex items-center gap-3 mb-2">
+            <Squares2X2Icon className="w-8 h-8 text-blue-600" />
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              Dynamic Kanban Board
+            </h1>
+            <SparklesIcon className="w-6 h-6 text-yellow-500 animate-pulse" />
+          </div>
           <p className="text-gray-600 dark:text-gray-400">
-            Visualize e gira o seu fluxo de trabalho com drag and drop
+            Customize your workflow with dynamic status columns
           </p>
         </motion.div>
 
-        {/* Barra de Filtros e Navegação */}
+        {/* Filters Bar */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.1 }}
           className="relative z-10 mb-8 flex flex-col md:flex-row justify-between items-center gap-4 p-4 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl border border-gray-200/50 dark:border-gray-700/50"
         >
-          {/* Navegador de Mês */}
+          {/* Month Navigator */}
           <div className="flex items-center gap-2">
             <button
               onClick={() => navigateMonth(-1)}
@@ -294,15 +477,15 @@ const KanbanView: React.FC = () => {
             </button>
           </div>
 
-          {/* Filtro de Workspace e Pesquisa */}
+          {/* Workspace Selector and Search */}
           <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
-            {/* Seletor de Workspace */}
+            {/* Workspace Selector */}
             <div className="relative w-full sm:w-56">
               <button
                 onClick={() =>
                   setIsWorkspaceDropdownOpen(!isWorkspaceDropdownOpen)
                 }
-                className="w-full px-4 py-3 bg-white/90 dark:bg-gray-700/90 border border-gray-200 dark:border-gray-600 rounded-xl flex items-center justify-between"
+                className="w-full px-4 py-3 bg-white/90 dark:bg-gray-700/90 border border-gray-200 dark:border-gray-600 rounded-xl flex items-center justify-between hover:border-blue-500 transition-colors"
               >
                 <div className="flex items-center gap-2">
                   <BuildingOfficeIcon className="w-5 h-5 text-gray-500" />
@@ -324,7 +507,7 @@ const KanbanView: React.FC = () => {
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
-                    className="absolute top-full mt-2 w-full bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-50"
+                    className="absolute top-full mt-2 w-full bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-50 max-h-64 overflow-y-auto"
                   >
                     {workspaces?.map((workspace) => (
                       <button
@@ -333,7 +516,7 @@ const KanbanView: React.FC = () => {
                           setSelectedWorkspace(workspace.id.toString());
                           setIsWorkspaceDropdownOpen(false);
                         }}
-                        className="w-full px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700"
+                        className="w-full px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                       >
                         {workspace.name}
                       </button>
@@ -343,7 +526,7 @@ const KanbanView: React.FC = () => {
               </AnimatePresence>
             </div>
 
-            {/* Pesquisa */}
+            {/* Search */}
             <div className="relative w-full sm:w-64">
               <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
@@ -351,13 +534,13 @@ const KanbanView: React.FC = () => {
                 placeholder="Search tasks..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-white/90 dark:bg-gray-700/90 border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-4 py-3 bg-white/90 dark:bg-gray-700/90 border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
               />
             </div>
           </div>
         </motion.div>
 
-        {/* Estado de Carregamento */}
+        {/* Loading State */}
         {loading ? (
           <motion.div
             initial={{ opacity: 0 }}
@@ -367,119 +550,326 @@ const KanbanView: React.FC = () => {
             <div className="flex flex-col items-center gap-4">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
               <p className="text-gray-600 dark:text-gray-400">
-                A carregar tarefas...
+                Loading tasks...
               </p>
             </div>
           </motion.div>
         ) : (
           /* Kanban Board */
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="flex gap-6 overflow-x-auto pb-6"
-          >
-            {filteredColumns.map((column) => (
-              <div
-                key={column.id}
-                className="flex-shrink-0 w-72"
-                onDragOver={handleDragOver}
-                onDrop={(e) => handleDrop(e, column.id)}
-              >
-                {/* Cabeçalho da Coluna */}
-                <div
-                  className={`rounded-t-lg p-4 ${getColumnHeaderColor(
-                    column.color
-                  )}`}
-                >
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-lg">{column.title}</h3>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold bg-white/30 px-2 py-1 rounded-full">
-                        {column.tasks.length}
-                      </span>
-                      <button
-                        onClick={() => handleOpenNewTaskModal(column.id)}
-                        className="opacity-75 hover:opacity-100"
-                      >
-                        <PlusIcon className="w-5 h-5" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Tarefas */}
-                <div className="space-y-3 min-h-[200px] bg-gray-100 dark:bg-gray-800/50 p-4 rounded-b-lg">
-                  <AnimatePresence>
-                    {column.tasks.map((task, taskIndex) => (
+          <div className="relative">
+            <Reorder.Group
+              axis="x"
+              values={filteredColumns}
+              onReorder={handleReorderColumns}
+              className="flex gap-6 overflow-x-auto pb-6"
+            >
+              <AnimatePresence>
+                {filteredColumns.map((column, columnIndex) => (
+                  <React.Fragment key={column.id}>
+                    <Reorder.Item
+                      value={column}
+                      dragListener={!!selectedWorkspace}
+                      className="flex-shrink-0 w-80"
+                      onMouseEnter={() => setHoveredColumn(column.id)}
+                      onMouseLeave={() => setHoveredColumn(null)}
+                      onDragOver={handleDragOver}
+                      onDrop={(e: React.DragEvent<Element>) =>
+                        handleDrop(e, column.id)
+                      }
+                    >
                       <motion.div
-                        key={task.id}
                         layout
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.9 }}
-                        transition={{
-                          duration: 0.3,
-                          delay: taskIndex * 0.05,
-                        }}
-                        draggable
-                        onDragStart={() => handleDragStart(task)}
-                        className={`p-4 rounded-lg border-l-4 cursor-move hover:shadow-lg transition-all duration-200 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm ${getPriorityColor(
-                          task.priority
-                        )} ${draggedTask?.id === task.id ? "opacity-50" : ""}`}
+                        initial={{ opacity: 0, x: 50 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -50 }}
+                        transition={{ duration: 0.3, delay: columnIndex * 0.1 }}
+                        className="h-full"
                       >
-                        <h4 className="font-medium text-gray-900 dark:text-white text-sm line-clamp-2 mb-3">
-                          {task.title || "Untitled"}
-                        </h4>
-                        {task.description && (
-                          <p className="text-xs text-gray-600 dark:text-gray-400 mb-3 line-clamp-2">
-                            {task.description}
-                          </p>
-                        )}
-                        <div className="flex items-center justify-between">
-                          {task.priority && (
-                            <span
-                              className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getPriorityBadgeColor(
-                                task.priority
-                              )}`}
-                            >
-                              {task.priority}
-                            </span>
-                          )}
-                          {task.dueDate && (
-                            <span className="text-xs text-gray-500 dark:text-gray-400">
-                              {formatDate(task.dueDate)}
-                            </span>
-                          )}
+                        {/* Column Header */}
+                        <div
+                          className="rounded-t-xl p-4 border-2 relative group"
+                          style={getColumnHeaderStyle(column.color)}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 flex-1">
+                              {!!selectedWorkspace && (
+                                <div className="cursor-move opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <Squares2X2Icon className="w-4 h-4" />
+                                </div>
+                              )}
+                              {editingColumn === column.id ? (
+                                <input
+                                  ref={editInputRef}
+                                  type="text"
+                                  value={editingName}
+                                  onChange={(e) =>
+                                    setEditingName(e.target.value)
+                                  }
+                                  onBlur={handleSaveColumnName}
+                                  onKeyPress={(e) => {
+                                    if (e.key === "Enter")
+                                      handleSaveColumnName();
+                                  }}
+                                  className="font-semibold text-lg bg-transparent outline-none border-b-2 flex-1"
+                                  style={{ borderColor: column.color }}
+                                />
+                              ) : (
+                                <h3
+                                  className="font-semibold text-lg cursor-pointer flex-1"
+                                  onClick={() =>
+                                    !!selectedWorkspace &&
+                                    handleEditColumn(column.id)
+                                  }
+                                >
+                                  {column.name}
+                                </h3>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span
+                                className="text-sm font-bold px-2 py-1 rounded-full"
+                                style={{
+                                  backgroundColor: `${column.color}30`,
+                                  color: column.color,
+                                }}
+                              >
+                                {column.tasks.length}
+                              </span>
+
+                              {/* Actions for column */}
+                              {!!selectedWorkspace &&
+                                hoveredColumn === column.id && (
+                                  <motion.div
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    className="flex items-center gap-1"
+                                  >
+                                    <div className="relative">
+                                      <button
+                                        onClick={() =>
+                                          setShowColorPicker(
+                                            showColorPicker === column.id
+                                              ? null
+                                              : column.id
+                                          )
+                                        }
+                                        className="p-1 hover:bg-white/20 rounded"
+                                        style={{ color: column.color }}
+                                      >
+                                        <div
+                                          className="w-4 h-4 rounded-full border-2"
+                                          style={{
+                                            borderColor: column.color,
+                                            backgroundColor: column.color,
+                                          }}
+                                        />
+                                      </button>
+                                      {showColorPicker === column.id && (
+                                        <div className="absolute top-full mt-2 right-0 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-2 z-50 grid grid-cols-4 gap-2">
+                                          {COLORS.map((color) => (
+                                            <button
+                                              key={color.value}
+                                              onClick={() =>
+                                                handleChangeColumnColor(
+                                                  column.id,
+                                                  color.value
+                                                )
+                                              }
+                                              className="w-8 h-8 rounded-full hover:scale-110 transition-transform"
+                                              style={{
+                                                backgroundColor: color.value,
+                                              }}
+                                              title={color.name}
+                                            />
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                    {column.tasks.length === 0 && (
+                                      <button
+                                        onClick={() =>
+                                          handleDeleteColumn(column.id)
+                                        }
+                                        className="p-1 hover:bg-red-500/20 rounded text-red-500"
+                                      >
+                                        <TrashIcon className="w-4 h-4" />
+                                      </button>
+                                    )}
+                                  </motion.div>
+                                )}
+                              <button
+                                onClick={() =>
+                                  handleOpenNewTaskModal(column.id)
+                                }
+                                className="opacity-75 hover:opacity-100 transition-opacity"
+                                style={{ color: column.color }}
+                              >
+                                <PlusIcon className="w-5 h-5" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Tasks Container */}
+                        <div
+                          className="space-y-3 min-h-[200px] p-4 rounded-b-xl border-x-2 border-b-2"
+                          style={{
+                            backgroundColor: `${column.color}05`,
+                            borderColor: `${column.color}20`,
+                          }}
+                        >
+                          <AnimatePresence>
+                            {column.tasks.map((task, taskIndex) => (
+                              <motion.div
+                                key={task.id}
+                                layout
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.9 }}
+                                transition={{
+                                  duration: 0.3,
+                                  delay: taskIndex * 0.05,
+                                }}
+                                draggable
+                                onDragStart={() => handleDragStart(task)}
+                                className={`p-4 rounded-lg border-l-4 cursor-move hover:shadow-lg transition-all duration-200 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm ${getPriorityColor(
+                                  task.priority
+                                )} ${
+                                  draggedTask?.id === task.id
+                                    ? "opacity-50"
+                                    : ""
+                                }`}
+                              >
+                                <h4 className="font-medium text-gray-900 dark:text-white text-sm line-clamp-2 mb-3">
+                                  {task.title || "Untitled"}
+                                </h4>
+                                {task.description && (
+                                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-3 line-clamp-2">
+                                    {task.description}
+                                  </p>
+                                )}
+                                <div className="flex items-center justify-between">
+                                  {task.priority && (
+                                    <span
+                                      className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getPriorityBadgeColor(
+                                        task.priority
+                                      )}`}
+                                    >
+                                      {task.priority}
+                                    </span>
+                                  )}
+                                  {task.dueDate && (
+                                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                                      {formatDate(task.dueDate)}
+                                    </span>
+                                  )}
+                                </div>
+                              </motion.div>
+                            ))}
+                          </AnimatePresence>
+
+                          <button
+                            onClick={() => handleOpenNewTaskModal(column.id)}
+                            className="w-full p-3 border-2 border-dashed rounded-lg text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-all flex items-center justify-center gap-2 hover:scale-[1.02]"
+                            style={{
+                              borderColor: `${column.color}30`,
+                              color: `${column.color}80`,
+                            }}
+                          >
+                            <PlusIcon className="w-5 h-5" />
+                            Add task
+                          </button>
                         </div>
                       </motion.div>
-                    ))}
-                  </AnimatePresence>
+                    </Reorder.Item>
 
-                  <button
-                    onClick={() => handleOpenNewTaskModal(column.id)}
-                    className="w-full p-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-gray-500 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors flex items-center justify-center gap-2"
-                  >
-                    <PlusIcon className="w-5 h-5" />
-                    Adicionar uma tarefa
-                  </button>
-                </div>
-              </div>
-            ))}
-          </motion.div>
+                    {/* Add New Status Button */}
+                    {!!selectedWorkspace && columnIndex === filteredColumns.length - 1 &&   (
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          className="flex-shrink-0"
+                        >
+                          {isAddingStatus?.after === column.id ? (
+                            <motion.div
+                              initial={{ scale: 0.9 }}
+                              animate={{ scale: 1 }}
+                              className="w-80 p-4 bg-white dark:bg-gray-800 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600"
+                            >
+                              <input
+                                ref={newStatusInputRef}
+                                type="text"
+                                placeholder="Status name..."
+                                value={newStatusName}
+                                onChange={(e) =>
+                                  setNewStatusName(e.target.value)
+                                }
+                                className="w-full px-3 py-2 border rounded-lg mb-3 dark:bg-gray-700 dark:border-gray-600"
+                              />
+                              <div className="flex items-center gap-2 mb-3">
+                                <span className="text-sm text-gray-600 dark:text-gray-400">
+                                  Color:
+                                </span>
+                                <div className="flex gap-2">
+                                  {COLORS.slice(0, 4).map((color) => (
+                                    <button
+                                      key={color.value}
+                                      onClick={() =>
+                                        setNewStatusColor(color.value)
+                                      }
+                                      className={`w-6 h-6 rounded-full ${
+                                        newStatusColor === color.value
+                                          ? "ring-2 ring-offset-2"
+                                          : ""
+                                      }`}
+                                      style={{ backgroundColor: color.value }}
+                                    />
+                                  ))}
+                                </div>
+                              </div>
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={handleAddNewStatus}
+                                  className="flex-1 px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                                >
+                                  <CheckIcon className="w-5 h-5 mx-auto" />
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setIsAddingStatus(null);
+                                    setNewStatusName("");
+                                    setNewStatusColor("#3B82F6");
+                                  }}
+                                  className="flex-1 px-3 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors"
+                                >
+                                  <XMarkIcon className="w-5 h-5 mx-auto" />
+                                </button>
+                              </div>
+                            </motion.div>
+                          ) : (
+                            <button
+                              onClick={() =>
+                                setIsAddingStatus({ after: column.id })
+                              }
+                              className="w-12 h-full min-h-[400px] flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-blue-500 dark:hover:border-blue-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all group"
+                            >
+                              <PlusIcon className="w-6 h-6 text-gray-400 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors" />
+                            </button>
+                          )}
+                        </motion.div>
+                      )}
+                  </React.Fragment>
+                ))}
+              </AnimatePresence>
+            </Reorder.Group>
+          </div>
         )}
 
         <NewTaskModal
           isOpen={isNewTaskModalOpen}
           onClose={handleCloseNewTaskModal}
           onSubmit={handleCreateTask}
-          initialStatus={
-            modalColumnStatus as
-              | "NEW"
-              | "IN_PROGRESS"
-              | "COMPLETED"
-              | "CANCELLED"
-          }
+          initialStatusId={modalColumnStatus}
           initialWorkspaceId={modalWorkspaceId}
         />
       </div>

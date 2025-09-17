@@ -1,5 +1,12 @@
+// Frontend/src/services/TaskStatus/taskStatus.service.ts
 import api from "../api";
-import type { ITaskStatus } from "../../types/task.types";
+
+export interface ITaskStatus {
+  id: number;
+  name: string;
+  color: string;
+  order?: number;
+}
 
 export interface ICreateTaskStatusRequest {
   name: string;
@@ -15,39 +22,80 @@ export interface IUpdateTaskStatusRequest {
 }
 
 class TaskStatusService {
-  async getStatusesForWorkspace(
-    workspaceId: string | number
-  ): Promise<ITaskStatus[]> {
-    const response = await api.get(`/workspaces/${workspaceId}/statuses`);
-    return response.data;
+  private readonly baseUrl = "/workspaces";
+
+  async getStatusesForWorkspace(workspaceId: number): Promise<ITaskStatus[]> {
+    try {
+      const response = await api.get(`workspaces/${workspaceId}/statuses`);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching statuses:", error);
+      throw error;
+    }
   }
 
-  async createStatus(data: ICreateTaskStatusRequest): Promise<ITaskStatus> {
-    const { workspaceId, ...rest } = data;
-    const response = await api.post(
-      `/workspaces/${workspaceId}/statuses`,
-      rest
-    );
-    return response.data;
+  async createStatus(
+    workspaceId: number,
+    data: Omit<ICreateTaskStatusRequest, "workspaceId">
+  ): Promise<ITaskStatus> {
+    try {
+      const response = await api.post(
+        `${this.baseUrl}/${workspaceId}/statuses`,
+        {
+          ...data,
+          workspaceId,
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error creating status:", error);
+      throw error;
+    }
   }
 
   async updateStatus(
-    workspaceId: string | number,
+    workspaceId: number,
     statusId: number,
-    data: IUpdateTaskStatusRequest
+    data: Omit<IUpdateTaskStatusRequest, "id">
   ): Promise<ITaskStatus> {
-    const response = await api.put(
-      `/workspaces/${workspaceId}/statuses/${statusId}`,
-      data
-    );
-    return response.data;
+    try {
+      const response = await api.put(
+        `${this.baseUrl}/${workspaceId}/statuses/${statusId}`,
+        {
+          ...data,
+          id: statusId,
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error updating status:", error);
+      throw error;
+    }
   }
 
-  async deleteStatus(
-    workspaceId: string | number,
-    statusId: number
+  async deleteStatus(workspaceId: number, statusId: number): Promise<void> {
+    try {
+      await api.delete(`${this.baseUrl}/${workspaceId}/statuses/${statusId}`);
+    } catch (error) {
+      console.error("Error deleting status:", error);
+      throw error;
+    }
+  }
+
+  async reorderStatuses(
+    workspaceId: number,
+    statuses: { id: number; order: number }[]
   ): Promise<void> {
-    await api.delete(`/workspaces/${workspaceId}/statuses/${statusId}`);
+    try {
+      // Batch update the order of all statuses
+      const updatePromises = statuses.map((status) =>
+        this.updateStatus(workspaceId, status.id, { order: status.order })
+      );
+      await Promise.all(updatePromises);
+    } catch (error) {
+      console.error("Error reordering statuses:", error);
+      throw error;
+    }
   }
 }
 

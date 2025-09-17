@@ -1,122 +1,239 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import { Dialog, Transition } from "@headlessui/react";
+import { Fragment } from "react";
+import {
+  XMarkIcon,
+  CalendarIcon,
+  ClockIcon,
+  FlagIcon,
+  FolderIcon,
+  TagIcon,
+  PaperClipIcon,
+} from "@heroicons/react/24/outline";
 import { motion, AnimatePresence } from "framer-motion";
-import { workspaceService } from "../../services/Workspace/workspace.service";
+
+import type { ICreateTaskRequest } from "../../types/task.types";
 import type { IWorkspaceName } from "../../types/workspace.types";
 import type { ICategoryResponse } from "../../types/category.types";
-import type { ICreateTaskRequest } from "../../types/task.types";
+
+import {
+  taskStatusService,
+  type ITaskStatus,
+} from "../../services/Tasks/taskStatus.service";
+import { workspaceService } from "../../services/Workspace/workspace.service";
 import { categoryService } from "../../services/Category/category.service";
 
-export interface NewTaskModalProps {
+interface NewTaskModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit?: (taskData: ICreateTaskRequest) => void;
-  initialStatus?: "NEW" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
-  initialDate?: Date;
+  onSubmit: (task: ICreateTaskRequest, attachments: File[]) => void;
+  initialStatusId?: number;
   initialWorkspaceId?: number;
-}
-
-export interface NewTaskFormData {
-  title: string;
-  description: string;
-  priority: "LOW" | "MEDIUM" | "HIGH" | "URGENT";
-  dueDate: string;
-  estimatedHours?: number;
-  actualHours?: number;
-  categoryIds: string[];
-  workspaceId: string;
-  attachments: File[];
+  initialDate?: Date;
 }
 
 export const NewTaskModal: React.FC<NewTaskModalProps> = ({
   isOpen,
   onClose,
   onSubmit,
-  initialStatus,
-  initialDate,
+  initialStatusId,
   initialWorkspaceId,
+  initialDate,
 }) => {
-  const formatDateForInput = (date?: Date) => {
-    if (!date) return "";
-    return date.toISOString().split("T")[0];
-  };
-
-  const [formData, setFormData] = useState<NewTaskFormData>({
-    title: "",
-    description: "",
-    priority: "MEDIUM",
-    dueDate: formatDateForInput(initialDate),
-    estimatedHours: undefined,
-    actualHours: undefined,
-    categoryIds: [],
-    workspaceId: initialWorkspaceId ? initialWorkspaceId.toString() : "",
-    attachments: [],
-  });
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [workspaceId, setWorkspaceId] = useState<number | null>(
+    initialWorkspaceId || null
+  );
+  const [statusId, setStatusId] = useState<number | null>(
+    initialStatusId || null
+  );
+  const [priority, setPriority] = useState<
+    "LOW" | "MEDIUM" | "HIGH" | "URGENT"
+  >("MEDIUM");
+  const [dueDate, setDueDate] = useState("");
+  const [estimatedHours, setEstimatedHours] = useState<number | null>(null);
+  const [actualHours, setActualHours] = useState<number | null>(null);
+  const [categoryIds, setCategoryIds] = useState<number[]>([]);
+  const [attachments, setAttachments] = useState<File[]>([]);
 
   const [workspaces, setWorkspaces] = useState<IWorkspaceName[]>([]);
+  const [statuses, setStatuses] = useState<ITaskStatus[]>([]);
   const [categories, setCategories] = useState<ICategoryResponse[]>([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [showNewCategoryForm, setShowNewCategoryForm] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.workspaceId) {
-      alert("Please select a workspace");
-      return;
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const loadWorkspaces = useCallback(async () => {
+    try {
+      const data = await workspaceService.getWorkspacesFromUserList();
+      setWorkspaces(data);
+      if (!initialWorkspaceId && data.length > 0) {
+        setWorkspaceId(Number(data[0].id));
+      }
+    } catch (error) {
+      console.error("Error loading workspaces:", error);
     }
-    const dueDateTime = formData.dueDate
-      ? `${formData.dueDate}T23:59:59`
-      : null;
+  }, [initialWorkspaceId]);
 
-    const taskData = {
-      title: formData.title,
-      description: formData.description,
-      priority: formData.priority,
-      dueDate: dueDateTime,
-      estimatedHours: formData.estimatedHours,
-      actualHours: formData.actualHours,
-      workspaceId: parseInt(formData.workspaceId),
-      categoryIds: formData.categoryIds.map((id) => parseInt(id)),
-      status: initialStatus || "NEW",
-      attachments: formData.attachments,
-    };
+  const loadStatuses = useCallback(
+    async (wsId: number) => {
+      try {
+        const data = await taskStatusService.getStatusesForWorkspace(wsId);
+        setStatuses(data);
+        if (!initialStatusId && data.length > 0) {
+          setStatusId(data[0].id);
+        } else if (initialStatusId) {
+          setStatusId(initialStatusId);
+        }
+      } catch (error) {
+        console.error("Error loading statuses:", error);
+        setStatuses([]);
+      }
+    },
+    [initialStatusId]
+  );
 
-    onSubmit?.(taskData);
-    handleClose();
+  const loadCategories = useCallback(async (wsId: number) => {
+    setIsLoadingCategories(true);
+    try {
+      const data = await categoryService.getAllCategoriesFromWorkspace(
+        wsId.toString()
+      );
+      setCategories(data);
+    } catch (error) {
+      console.error("Error loading categories:", error);
+      setCategories([]);
+    } finally {
+      setIsLoadingCategories(false);
+    }
+  }, []);
+
+  // --- EFEITOS (useEffect) ---
+  useEffect(() => {
+    if (isOpen) {
+      loadWorkspaces();
+      if (initialDate) {
+        const date = new Date(initialDate);
+        setDueDate(date.toLocaleDateString().slice(0, 16));
+      }
+    }
+  }, [isOpen, loadWorkspaces, initialDate]);
+
+  useEffect(() => {
+    if (workspaceId) {
+      loadStatuses(workspaceId);
+      loadCategories(workspaceId);
+    } else {
+      setStatuses([]);
+      setCategories([]);
+    }
+  }, [workspaceId, loadStatuses, loadCategories]);
+
+  // --- HANDLERS DE FORMULÁRIO E CATEGORIAS ---
+  const handleWorkspaceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newWorkspaceId = Number(e.target.value);
+    setWorkspaceId(newWorkspaceId);
+    // Reseta status e categorias ao trocar de workspace
+    setStatusId(null);
+    setCategoryIds([]);
   };
 
-  const handleClose = () => {
-    setFormData({
-      title: "",
-      description: "",
-      priority: "MEDIUM",
-      dueDate: "",
-      estimatedHours: undefined,
-      actualHours: undefined,
-      categoryIds: [],
-      workspaceId: "",
-      attachments: [],
-    });
-    setNewCategoryName("");
-    setShowNewCategoryForm(false);
-    onClose();
+  const createAndAddCategory = async () => {
+    if (!newCategoryName.trim() || !workspaceId) return;
+    try {
+      const newCategory = await categoryService.createCategory({
+        name: newCategoryName.trim(),
+        description: "",
+        workspaceId: workspaceId.toString(),
+      });
+      setCategories((prev) => [...prev, newCategory]);
+      setCategoryIds((prev) => [...prev, parseInt(newCategory.id)]);
+      setNewCategoryName("");
+      setShowNewCategoryForm(false);
+    } catch (error) {
+      console.error("Error creating category:", error);
+    }
   };
 
+  const toggleCategory = (categoryId: number) => {
+    setCategoryIds((prev) =>
+      prev.includes(categoryId)
+        ? prev.filter((id) => id !== categoryId)
+        : [...prev, categoryId]
+    );
+  };
+
+  // --- HANDLERS DE ANEXOS ---
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    setFormData({
-      ...formData,
-      attachments: [...formData.attachments, ...files],
-    });
+    setAttachments((prev) => [...prev, ...files]);
   };
 
   const removeAttachment = (index: number) => {
-    setFormData({
-      ...formData,
-      attachments: formData.attachments.filter((_, i) => i !== index),
-    });
+    setAttachments((prev) => prev.filter((_, i) => i !== index));
   };
 
+  // --- VALIDAÇÃO E SUBMISSÃO ---
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+    if (!title.trim()) newErrors.title = "Title is required";
+    if (!workspaceId) newErrors.workspace = "Workspace is required";
+    if (!statusId) newErrors.status = "Status is required";
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateForm() || !workspaceId || !statusId) return;
+
+    setLoading(true);
+
+    const taskData: ICreateTaskRequest = {
+      title,
+      description: description || "",
+      workspaceId,
+      statusId,
+      priority,
+      dueDate: dueDate ? new Date(dueDate).toLocaleDateString() : null,
+      estimatedHours: estimatedHours || undefined,
+      actualHours: actualHours || undefined,
+      categoryIds: categoryIds.length > 0 ? categoryIds : [],
+    };
+
+    try {
+      await onSubmit(taskData, attachments);
+      handleClose();
+    } catch (error) {
+      console.error("Error creating task:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // --- LIMPEZA E RESET ---
+  const handleClose = () => {
+    setTitle("");
+    setDescription("");
+    setWorkspaceId(initialWorkspaceId || null);
+    setStatusId(initialStatusId || null);
+    setPriority("MEDIUM");
+    setDueDate("");
+    setEstimatedHours(null);
+    setActualHours(null);
+    setCategoryIds([]);
+    setAttachments([]);
+    setErrors({});
+    setShowNewCategoryForm(false);
+    setNewCategoryName("");
+    onClose();
+  };
+
+  // --- FUNÇÕES AUXILIARES E ESTILOS ---
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return "0 Bytes";
     const k = 1024;
@@ -125,575 +242,400 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
-  const createAndAddCategory = async () => {
-    if (!newCategoryName.trim() || !formData.workspaceId) return;
-
-    try {
-      const newCategory = await categoryService.createCategory({
-        name: newCategoryName.trim(),
-        description: "",
-        workspaceId: formData.workspaceId,
-      });
-
-      setCategories((prev) => [...prev, newCategory]);
-      setFormData({
-        ...formData,
-        categoryIds: [...formData.categoryIds, newCategory.id],
-      });
-      setNewCategoryName("");
-      setShowNewCategoryForm(false);
-    } catch (error) {
-      console.error("Error creating category:", error);
-    }
-  };
-
-  const toggleCategory = (categoryId: string) => {
-    const isSelected = formData.categoryIds.includes(categoryId);
-    setFormData({
-      ...formData,
-      categoryIds: isSelected
-        ? formData.categoryIds.filter((id) => id !== categoryId)
-        : [...formData.categoryIds, categoryId],
-    });
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && e.target === e.currentTarget) {
-      e.preventDefault();
-      createAndAddCategory();
-    }
-  };
-
-  useEffect(() => {
-    if (isOpen) {
-      setFormData({
-        title: "",
-        description: "",
-        priority: "MEDIUM",
-        dueDate: formatDateForInput(initialDate),
-        estimatedHours: undefined,
-        actualHours: undefined,
-        categoryIds: [],
-        workspaceId: initialWorkspaceId ? initialWorkspaceId.toString() : "",
-        attachments: [],
-      });
-    }
-  }, [isOpen, initialDate, initialWorkspaceId]);
-
-  useEffect(() => {
-    if (formData.workspaceId) {
-      loadCategories(formData.workspaceId);
-    } else {
-      setCategories([]);
-    }
-  }, [formData.workspaceId]);
-
-  const loadWorkspaces = React.useCallback(async () => {
-    try {
-      const response = await workspaceService.getWorkspacesFromUser();
-
-      const userWorkspaces = response.content;
-      setWorkspaces([{ id: 0, name: "All Workspaces" }, ...userWorkspaces]);
-    } catch (error) {
-      console.error("Error loading workspaces:", error);
-      setWorkspaces([{ id: 0, name: "All Workspaces" }]);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (isOpen) {
-      loadWorkspaces();
-    }
-  }, [isOpen, loadWorkspaces]);
-
-  const loadCategories = async (workspaceId: string) => {
-    setIsLoadingCategories(true);
-    try {
-      const categories = await categoryService.getAllCategoriesFromWorkspace(
-        workspaceId
-      );
-      setCategories(categories);
-    } catch (error) {
-      console.error("Error loading categories:", error);
-    } finally {
-      setIsLoadingCategories(false);
-    }
-  };
-
-  const selectedCategories = categories.filter((cat) =>
-    formData.categoryIds.includes(cat.id)
-  );
-
-  const priorityColors = {
-    LOW: "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-700",
+  const priorityClasses = {
+    LOW: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
     MEDIUM:
-      "bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-700",
-    HIGH: "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-700",
+      "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
+    HIGH: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
     URGENT:
-      "bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-700",
+      "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
   };
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-          onClick={handleClose}
+    <Transition appear show={isOpen} as={Fragment}>
+      <Dialog as="div" className="relative z-50" onClose={handleClose}>
+        {/* The overlay (background) */}
+        <Transition.Child
+          as={Fragment}
+          enter="ease-out duration-300"
+          enterFrom="opacity-0"
+          enterTo="opacity-100"
+          leave="ease-in duration-200"
+          leaveFrom="opacity-100"
+          leaveTo="opacity-0"
         >
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            transition={{ duration: 0.2 }}
-            className="w-full max-w-2xl bg-white/90 dark:bg-gray-900/90 backdrop-blur-md rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 max-h-[90vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <form onSubmit={handleSubmit} className="p-8">
-              {/* Header */}
-              <div className="flex items-center justify-between mb-8">
-                <div>
-                  <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
-                    Create New Task
-                  </h2>
-                  <p className="text-gray-600 dark:text-gray-400 mt-1">
-                    Add a new task to your workflow
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleClose}
-                  className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                >
-                  <svg
-                    className="w-6 h-6"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </button>
-              </div>
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" />
+        </Transition.Child>
 
-              <div className="space-y-6">
-                {/* Status Display */}
-                {initialStatus && (
+        {/* Wrapper to center the modal */}
+        <div className="fixed inset-0 overflow-y-auto">
+          <div className="flex min-h-full items-center justify-center p-4 text-center">
+            {/* The modal panel itself */}
+            <Transition.Child
+              as={Fragment}
+              enter="ease-out duration-300"
+              enterFrom="opacity-0 scale-95"
+              enterTo="opacity-100 scale-100"
+              leave="ease-in duration-200"
+              leaveFrom="opacity-100 scale-100"
+              leaveTo="opacity-0 scale-95"
+            >
+              <Dialog.Panel className="w-full max-w-2xl transform overflow-hidden rounded-2xl bg-white dark:bg-gray-800 p-6 text-left align-middle shadow-xl transition-all">
+                <Dialog.Title
+                  as="div"
+                  className="flex items-center justify-between mb-6"
+                >
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Task Status
-                    </label>
-                    <div
-                      className={`inline-flex items-center px-4 py-2 rounded-lg border text-sm font-medium ${
-                        initialStatus === "NEW"
-                          ? "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-700"
-                          : initialStatus === "IN_PROGRESS"
-                          ? "bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-700"
-                          : initialStatus === "COMPLETED"
-                          ? "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-700"
-                          : "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-700"
-                      }`}
-                    >
-                      {initialStatus === "NEW"
-                        ? "New"
-                        : initialStatus === "IN_PROGRESS"
-                        ? "In Progress"
-                        : initialStatus === "COMPLETED"
-                        ? "Completed"
-                        : "Cancelled"}
-                    </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      This task will be created with the status above
+                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+                      Create New Task
+                    </h3>
+                    <p className="text-gray-600 dark:text-gray-400 mt-1">
+                      Add a new task to your workflow
                     </p>
                   </div>
-                )}
-
-                {/* Workspace Selection */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Workspace *
-                  </label>
-                  <select
-                    required
-                    value={formData.workspaceId}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        workspaceId: e.target.value,
-                        categoryIds: [],
-                      })
-                    }
-                    className="w-full px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  <button
+                    onClick={handleClose}
+                    className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                   >
-                    <option value="">Select a workspace...</option>
-                    {workspaces.map((workspace) => (
-                      <option key={workspace.id} value={workspace.id}>
-                        {workspace.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                    <XMarkIcon className="w-6 h-6 text-gray-500" />
+                  </button>
+                </Dialog.Title>
 
-                {/* Title */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Task Title *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.title}
-                    onChange={(e) =>
-                      setFormData({ ...formData, title: e.target.value })
-                    }
-                    className="w-full px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                    placeholder="Enter task title..."
-                  />
-                </div>
-
-                {/* Description */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Description
-                  </label>
-                  <textarea
-                    rows={4}
-                    value={formData.description}
-                    onChange={(e) =>
-                      setFormData({ ...formData, description: e.target.value })
-                    }
-                    className="w-full px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
-                    placeholder="Describe your task..."
-                  />
-                </div>
-
-                {/* Priority and Due Date Row */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Priority */}
+                <form
+                  onSubmit={handleSubmit}
+                  className="space-y-6 max-h-[70vh] overflow-y-auto pr-4"
+                >
+                  {/* O RESTO DO SEU FORMULÁRIO PERMANECE EXATAMENTE O MESMO AQUI */}
+                  {/* Title */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Priority
+                      Title *
                     </label>
-                    <div className="cols-4 gap-3 ">
-                      {(["LOW", "MEDIUM", "HIGH", "URGENT"] as const).map(
-                        (priority) => (
-                          <button
-                            key={priority}
-                            type="button"
-                            onClick={() =>
-                              setFormData({ ...formData, priority })
-                            }
-                            className={`px-3 py-2 rounded-lg border text-sm font-medium transition-all ${
-                              formData.priority === priority
-                                ? priorityColors[priority]
-                                : "bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700 dark:hover:bg-gray-700"
-                            }`}
+                    <input
+                      type="text"
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      className={`w-full px-4 py-3 rounded-lg border ${
+                        errors.title
+                          ? "border-red-500"
+                          : "border-gray-300 dark:border-gray-600"
+                      } bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                      placeholder="Enter task title..."
+                    />
+                    {errors.title && (
+                      <p className="mt-1 text-sm text-red-500">
+                        {errors.title}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Description */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Description
+                    </label>
+                    <textarea
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      rows={4}
+                      className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                      placeholder="Add a description..."
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Workspace */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        <span className="flex items-center gap-2">
+                          <FolderIcon className="w-4 h-4" />
+                          Workspace *
+                        </span>
+                      </label>
+                      <select
+                        value={workspaceId || ""}
+                        onChange={handleWorkspaceChange}
+                        className={`w-full px-4 py-3 rounded-lg border ${
+                          errors.workspace
+                            ? "border-red-500"
+                            : "border-gray-300 dark:border-gray-600"
+                        } bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                        disabled={!!initialWorkspaceId}
+                      >
+                        <option value="">Select workspace</option>
+                        {workspaces.map((ws) => (
+                          <option key={ws.id} value={ws.id}>
+                            {ws.name}
+                          </option>
+                        ))}
+                      </select>
+                      {errors.workspace && (
+                        <p className="mt-1 text-sm text-red-500">
+                          {errors.workspace}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Status */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Status *
+                      </label>
+                      <select
+                        value={statusId || ""}
+                        onChange={(e) => setStatusId(Number(e.target.value))}
+                        className={`w-full px-4 py-3 rounded-lg border ${
+                          errors.status
+                            ? "border-red-500"
+                            : "border-gray-300 dark:border-gray-600"
+                        } bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                        disabled={!workspaceId}
+                      >
+                        <option value="">Select status</option>
+                        {statuses.map((status) => (
+                          <option
+                            key={status.id}
+                            value={status.id}
+                            style={{ color: status.color }}
                           >
-                            {priority.charAt(0).toUpperCase() +
-                              priority.slice(1)}
-                          </button>
-                        )
+                            {status.name}
+                          </option>
+                        ))}
+                      </select>
+                      {errors.status && (
+                        <p className="mt-1 text-sm text-red-500">
+                          {errors.status}
+                        </p>
                       )}
                     </div>
                   </div>
 
-                  {/* Due Date */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Due Date
-                    </label>
-                    <input
-                      type="date"
-                      value={formData.dueDate}
-                      onChange={(e) =>
-                        setFormData({ ...formData, dueDate: e.target.value })
-                      }
-                      className=" px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                    />
-                  </div>
-                </div>
-
-                {/* Hours Estimation Row */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Estimated Hours */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Estimated Hours
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.5"
-                      value={formData.estimatedHours || ""}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          estimatedHours: e.target.value
-                            ? parseInt(e.target.value)
-                            : undefined,
-                        })
-                      }
-                      className="w-full px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                      placeholder="Hours"
-                    />
-                  </div>
-
-                  {/* Actual Hours */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Actual Hours
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.5"
-                      value={formData.actualHours || ""}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          actualHours: e.target.value
-                            ? parseInt(e.target.value)
-                            : undefined,
-                        })
-                      }
-                      className="w-full px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                      placeholder="Hours"
-                    />
-                  </div>
-                </div>
-
-                {/* Categories */}
-                {formData.workspaceId && (
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Categories
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Priority */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        <span className="flex items-center gap-2">
+                          <FlagIcon className="w-4 h-4" />
+                          Priority
+                        </span>
                       </label>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setShowNewCategoryForm(!showNewCategoryForm)
-                        }
-                        className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200"
-                      >
-                        + New Category
-                      </button>
+                      <div className="flex gap-2">
+                        {(["LOW", "MEDIUM", "HIGH", "URGENT"] as const).map(
+                          (p) => (
+                            <button
+                              key={p}
+                              type="button"
+                              onClick={() => setPriority(p)}
+                              className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                priority === p
+                                  ? priorityClasses[p]
+                                  : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+                              }`}
+                            >
+                              {p}
+                            </button>
+                          )
+                        )}
+                      </div>
                     </div>
 
-                    {/* Selected Categories */}
-                    {selectedCategories.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mb-3">
-                        {selectedCategories.map((category) => (
-                          <span
-                            key={category.id}
-                            className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-700"
-                          >
-                            {category.name}
-                            <button
-                              type="button"
-                              onClick={() => toggleCategory(category.id)}
-                              className="ml-2 text-blue-800/80 hover:text-blue-800 dark:text-blue-300/80 dark:hover:text-blue-300"
-                            >
-                              ×
-                            </button>
-                          </span>
-                        ))}
-                      </div>
-                    )}
+                    {/* Due Date */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        <span className="flex items-center gap-2">
+                          <CalendarIcon className="w-4 h-4" />
+                          Due Date
+                        </span>
+                      </label>
+                      <input
+                        type="date"
+                        value={dueDate}
+                        onChange={(e) => setDueDate(e.target.value)}
+                        className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
 
-                    {/* New Category Form */}
-                    {showNewCategoryForm && (
-                      <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 mb-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Estimated Hours */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        <span className="flex items-center gap-2">
+                          <ClockIcon className="w-4 h-4" />
+                          Estimated Hours
+                        </span>
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.5"
+                        value={estimatedHours || ""}
+                        onChange={(e) =>
+                          setEstimatedHours(
+                            e.target.value ? Number(e.target.value) : null
+                          )
+                        }
+                        className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="e.g., 4.5"
+                      />
+                    </div>
+                    {/* Actual Hours */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        <span className="flex items-center gap-2">
+                          <ClockIcon className="w-4 h-4" />
+                          Actual Hours
+                        </span>
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.5"
+                        value={actualHours || ""}
+                        onChange={(e) =>
+                          setActualHours(
+                            e.target.value ? Number(e.target.value) : null
+                          )
+                        }
+                        className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="e.g., 5"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Categories */}
+                  {workspaceId && (
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                          <span className="flex items-center gap-2">
+                            <TagIcon className="w-4 h-4" />
+                            Categories
+                          </span>
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setShowNewCategoryForm(!showNewCategoryForm)
+                          }
+                          className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200"
+                        >
+                          + New Category
+                        </button>
+                      </div>
+                      {showNewCategoryForm && (
                         <div className="flex gap-2 mb-3">
                           <input
                             type="text"
                             value={newCategoryName}
                             onChange={(e) => setNewCategoryName(e.target.value)}
-                            onKeyUp={handleKeyPress}
-                            className="flex-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
-                            placeholder="Category name..."
+                            placeholder="New category name..."
+                            className="flex-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
                           />
-                        </div>
-                        <div className="flex gap-2">
                           <button
                             type="button"
                             onClick={createAndAddCategory}
                             disabled={!newCategoryName.trim()}
-                            className="px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600 disabled:opacity-50"
                           >
-                            Create & Add
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setShowNewCategoryForm(false)}
-                            className="px-3 py-1 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded text-sm hover:bg-gray-400 dark:hover:bg-gray-500"
-                          >
-                            Cancel
+                            Add
                           </button>
                         </div>
-                      </div>
-                    )}
-
-                    {/* Available Categories */}
-                    {isLoadingCategories ? (
-                      <div className="text-center py-4 text-gray-500">
-                        Loading categories...
-                      </div>
-                    ) : categories.length > 0 ? (
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                        {categories.map((category) => (
-                          <button
-                            key={category.id}
-                            type="button"
-                            onClick={() => toggleCategory(category.id)}
-                            className={`px-3 py-2 rounded-lg border text-sm font-medium transition-all ${
-                              formData.categoryIds.includes(category.id)
-                                ? "bg-blue-100 text-blue-800 border-blue-200 ring-2 ring-blue-500 scale-105 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-700"
-                                : "bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100 hover:scale-105 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700 dark:hover:bg-gray-700"
-                            }`}
-                          >
-                            {category.name}
-                            {formData.categoryIds.includes(category.id) && (
-                              <span className="ml-1">✓</span>
-                            )}
-                          </button>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-4 text-gray-500">
-                        No categories in this workspace. Create one above!
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* File Attachments */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Attachments
-                  </label>
-
-                  {/* File Upload Area */}
-                  <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center">
-                    <div className="space-y-2">
-                      <svg
-                        className="mx-auto h-8 w-8 text-gray-400"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 4v16m8-8H4"
-                        />
-                      </svg>
-                      <div>
-                        <label className="cursor-pointer">
-                          <span className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200">
-                            Click to upload files
-                          </span>
-                          <input
-                            type="file"
-                            multiple
-                            onChange={handleFileChange}
-                            className="sr-only"
-                            accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif,.zip,.rar"
-                          />
-                        </label>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          PDF, DOC, images, ZIP files up to 10MB each
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Attached Files List */}
-                  {formData.attachments.length > 0 && (
-                    <div className="mt-4 space-y-2">
-                      {formData.attachments.map((file, index) => (
-                        <div
-                          key={index}
-                          className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg"
-                        >
-                          <div className="flex items-center gap-2">
-                            <svg
-                              className="w-5 h-5 text-gray-400"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
+                      )}
+                      {isLoadingCategories ? (
+                        <p>Loading categories...</p>
+                      ) : (
+                        <div className="flex flex-wrap gap-2">
+                          {categories.map((cat) => (
+                            <button
+                              key={cat.id}
+                              type="button"
+                              onClick={() => toggleCategory(parseInt(cat.id))}
+                              className={`px-3 py-1 rounded-full border text-xs font-medium transition-all ${
+                                categoryIds.includes(parseInt(cat.id))
+                                  ? "bg-blue-100 text-blue-800 border-blue-200 ring-2 ring-blue-500"
+                                  : "bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200"
+                              }`}
                             >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                              />
-                            </svg>
-                            <div>
-                              <p className="text-sm font-medium text-gray-900 dark:text-white truncate max-w-48">
-                                {file.name}
-                              </p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400">
-                                {formatFileSize(file.size)}
-                              </p>
-                            </div>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => removeAttachment(index)}
-                            className="text-red-500 hover:text-red-700 p-1"
-                          >
-                            <svg
-                              className="w-4 h-4"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M6 18L18 6M6 6l12 12"
-                              />
-                            </svg>
-                          </button>
+                              {cat.name}
+                            </button>
+                          ))}
                         </div>
-                      ))}
+                      )}
                     </div>
                   )}
-                </div>
-              </div>
 
-              {/* Footer */}
-              <div className="flex justify-end gap-4 mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
-                <button
-                  type="button"
-                  onClick={handleClose}
-                  className="px-6 py-3 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors font-medium"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={!formData.workspaceId || !formData.title.trim()}
-                  className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all font-medium shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Create Task
-                </button>
-              </div>
-            </form>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+                  {/* File Attachments */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <span className="flex items-center gap-2">
+                        <PaperClipIcon className="w-4 h-4" />
+                        Attachments
+                      </span>
+                    </label>
+                    <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center">
+                      <label className="cursor-pointer text-sm text-blue-600 dark:text-blue-400 hover:underline">
+                        Click to upload files
+                        <input
+                          type="file"
+                          multiple
+                          onChange={handleFileChange}
+                          className="sr-only"
+                        />
+                      </label>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        Max 10MB each
+                      </p>
+                    </div>
+                    {attachments.length > 0 && (
+                      <div className="mt-4 space-y-2">
+                        {attachments.map((file, index) => (
+                          <div
+                            key={index}
+                            className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-sm"
+                          >
+                            <p className="truncate max-w-xs">
+                              {file.name}{" "}
+                              <span className="text-gray-500">
+                                ({formatFileSize(file.size)})
+                              </span>
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => removeAttachment(index)}
+                              className="text-red-500 hover:text-red-700 p-1 rounded-full"
+                            >
+                              <XMarkIcon className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex justify-end gap-3 pt-4">
+                    <button
+                      type="button"
+                      onClick={handleClose}
+                      className="px-6 py-3 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors font-medium"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="px-6 py-3 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
+                    >
+                      {loading ? "Creating..." : "Create Task"}
+                    </button>
+                  </div>
+                </form>
+              </Dialog.Panel>
+            </Transition.Child>
+          </div>
+        </div>
+      </Dialog>
+    </Transition>
   );
 };

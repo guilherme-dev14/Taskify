@@ -14,7 +14,12 @@ export const setToken = (token: string, rememberMe: boolean = false): void => {
 
 export const getToken = (): string | undefined => {
   const token = Cookies.get(TOKEN_KEY);
-  if (!token || token.trim() === '' || token === 'undefined' || token === 'null') {
+  if (
+    !token ||
+    token.trim() === "" ||
+    token === "undefined" ||
+    token === "null"
+  ) {
     return undefined;
   }
   return token;
