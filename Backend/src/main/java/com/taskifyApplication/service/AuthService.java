@@ -4,6 +4,8 @@ import com.taskifyApplication.dto.UserDto.AuthResponseDTO;
 import com.taskifyApplication.dto.UserDto.CreateUserRequestDTO;
 import com.taskifyApplication.dto.UserDto.LoginRequestDTO;
 import com.taskifyApplication.dto.UserDto.UserDTO;
+import com.taskifyApplication.exception.DuplicateResourceException;
+import com.taskifyApplication.exception.InvalidFormatException;
 import com.taskifyApplication.model.User;
 import com.taskifyApplication.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,31 +40,29 @@ public class AuthService {
 
     // region PUBLIC FUNCTIONS
     public AuthResponseDTO register(CreateUserRequestDTO request) {
-        // Validate input
         if (!validationService.isValidEmail(request.getEmail())) {
-            throw new IllegalArgumentException("Invalid email format");
+            throw new InvalidFormatException("Invalid email format");
         }
         
         if (!validationService.isValidUsername(request.getUsername())) {
-            throw new IllegalArgumentException("Invalid username format");
+            throw new InvalidFormatException("Invalid username format");
         }
         
         if (!validationService.isValidPassword(request.getPassword())) {
-            throw new IllegalArgumentException("Password must be at least 8 characters with uppercase, lowercase, and digit");
+            throw new InvalidFormatException("Password must be at least 8 characters with uppercase, lowercase, and digit");
         }
-        
-        // Sanitize input
+
         request.setEmail(validationService.sanitizeString(request.getEmail()));
         request.setUsername(validationService.sanitizeString(request.getUsername()));
         request.setFirstName(validationService.sanitizeString(request.getFirstName()));
         request.setLastName(validationService.sanitizeString(request.getLastName()));
 
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new IllegalArgumentException("Email already exists");
+            throw new DuplicateResourceException("Email address " + request.getEmail() + " is already in use.");
         }
 
         if (userRepository.existsByUsername(request.getUsername())) {
-            throw new IllegalArgumentException("Username already exists");
+            throw new DuplicateResourceException("Username " + request.getUsername() + " is already in use.");
         }
 
         User user = User.builder()

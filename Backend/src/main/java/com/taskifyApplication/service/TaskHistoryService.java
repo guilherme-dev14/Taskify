@@ -63,8 +63,6 @@ public class TaskHistoryService {
     }
 
     public void clearWorkspaceHistory(Long workspaceId) {
-        // This would require a custom query to delete all history for a workspace
-        // For now, we'll implement a simple approach
         List<TaskHistory> allHistory = taskHistoryRepository.findAll();
         List<TaskHistory> workspaceHistory = allHistory.stream()
             .filter(h -> h.getTask().getWorkspace().getId().equals(workspaceId))

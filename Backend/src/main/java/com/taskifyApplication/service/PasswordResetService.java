@@ -1,6 +1,7 @@
 package com.taskifyApplication.service;
 
 
+import com.taskifyApplication.exception.ForbiddenException;
 import com.taskifyApplication.model.PasswordResetToken;
 import com.taskifyApplication.repository.PasswordResetTokenRepository;
 import com.taskifyApplication.repository.UserRepository;
@@ -63,7 +64,7 @@ public class PasswordResetService {
         var token = tokens.findByTokenHash(tokenHash).orElseThrow(() -> new IllegalArgumentException("Invalid token"));
 
         if (token.getUsedAt() != null || Instant.now().isAfter(token.getExpiresAt())) {
-            throw new IllegalArgumentException("Expired or used token");
+            throw new ForbiddenException("Expired or used token");
         }
 
         var user = token.getUser();

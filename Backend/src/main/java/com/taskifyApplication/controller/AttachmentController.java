@@ -8,20 +8,12 @@ import com.taskifyApplication.service.AttachmentService;
 import com.taskifyApplication.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.time.OffsetDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/attachments")
@@ -53,13 +45,13 @@ public class AttachmentController {
     public ResponseEntity<ByteArrayResource> downloadAttachment(@PathVariable Long id) {
         AttachmentService.FileDownloadInfo downloadInfo = attachmentService.getFileForDownload(id);
 
-        ByteArrayResource resource = new ByteArrayResource(downloadInfo.getContent());
+        ByteArrayResource resource = new ByteArrayResource(downloadInfo.content());
 
         return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(downloadInfo.getContentType()))
-                .contentLength(downloadInfo.getContent().length)
+                .contentType(MediaType.parseMediaType(downloadInfo.contentType()))
+                .contentLength(downloadInfo.content().length)
                 .header(HttpHeaders.CONTENT_DISPOSITION,
-                        STR."attachment; filename=\"\{downloadInfo.getFilename()}\"")
+                        STR."attachment; filename=\"\{downloadInfo.filename()}\"")
                 .body(resource);
     }
 

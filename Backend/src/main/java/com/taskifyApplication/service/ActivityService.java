@@ -1,16 +1,22 @@
 package com.taskifyApplication.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.taskifyApplication.dto.activity.ActivityDto;
+import com.taskifyApplication.exception.BadRequestException;
 import com.taskifyApplication.model.Activity;
 import com.taskifyApplication.model.Task;
 import com.taskifyApplication.model.User;
 import com.taskifyApplication.model.Workspace;
 import com.taskifyApplication.repository.ActivityRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.taskifyApplication.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.elasticsearch.ResourceNotFoundException;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +28,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
+@Slf4j
 public class ActivityService {
 
     @Autowired
@@ -33,37 +41,43 @@ public class ActivityService {
     @Autowired
     private ObjectMapper objectMapper;
 
-    // Create a new activity
-    public Activity createActivity(String type, String title, String description, 
-                                  User user, Task task, Workspace workspace, Map<String, Object> metadata) {
+    @Autowired
+    private UserRepository userRepository;
+
+    public Activity createActivity(String type, String title, String description,
+                                   User user, Task task, Workspace workspace, Map<String, Object> metadata) {
         Activity activity = new Activity(type, title, description, user);
         activity.setTask(task);
         activity.setWorkspace(workspace);
-        
+
         if (metadata != null && !metadata.isEmpty()) {
             try {
-                String metadataJson = objectMapper.writeValueAsString(metadata);
-                activity.setMetadata(metadataJson);
-            } catch (Exception e) {
-                // Log error and continue without metadata
-                System.err.println("Failed to serialize metadata: " + e.getMessage());
+                activity.setMetadata(objectMapper.writeValueAsString(metadata));
+            } catch (JsonProcessingException e) {
+                log.error("Failed to serialize activity metadata for type '{}'", type, e);
+                throw new BadRequestException("Invalid metadata format provided for activity.");
             }
         }
 
         Activity savedActivity = activityRepository.save(activity);
-        
-        // Send real-time update via WebSocket
-        ActivityDto activityDto = convertToDto(savedActivity);
-        messagingTemplate.convertAndSend("/topic/activities", activityDto);
-        
-        if (workspace != null) {
-            messagingTemplate.convertAndSend("/topic/workspace/" + workspace.getId() + "/activities", activityDto);
-        }
+
+        sendRealTimeUpdate(savedActivity);
 
         return savedActivity;
     }
+    private void sendRealTimeUpdate(Activity activity) {
+        try {
+            ActivityDto activityDto = convertToDto(activity);
+            messagingTemplate.convertAndSend("/topic/activities", activityDto);
 
-    // Get activities with pagination
+            if (activity.getWorkspace() != null) {
+                messagingTemplate.convertAndSend("/topic/workspace/" + activity.getWorkspace().getId() + "/activities", activityDto);
+            }
+        } catch (Exception e) {
+            log.error("Failed to send real-time activity update for activityId {}", activity.getId(), e);
+        }
+    }
+
     public Page<ActivityDto> getActivities(Long workspaceId, Long userId, String type, 
                                           LocalDateTime startDate, LocalDateTime endDate, 
                                           int page, int size) {
@@ -96,7 +110,6 @@ public class ActivityService {
         return activities.map(this::convertToDto);
     }
 
-    // Get recent activities (for dashboard)
     public List<ActivityDto> getRecentActivities(int limit) {
         List<Activity> activities = activityRepository.findRecentActivities(limit);
         return activities.stream()
@@ -104,7 +117,6 @@ public class ActivityService {
                 .collect(Collectors.toList());
     }
 
-    // Get activities by task
     public List<ActivityDto> getTaskActivities(Long taskId) {
         List<Activity> activities = activityRepository.findByTaskIdOrderByCreatedAtDesc(taskId);
         return activities.stream()
@@ -112,7 +124,6 @@ public class ActivityService {
                 .collect(Collectors.toList());
     }
 
-    // Get activity statistics
     public Map<String, Long> getActivityStats(LocalDateTime startDate, LocalDateTime endDate) {
         Map<String, Long> stats = new HashMap<>();
         
@@ -129,19 +140,14 @@ public class ActivityService {
         return stats;
     }
 
-    // Mark activity as read (for notifications)
-    public void markAsRead(Long activityId) {
-        // This would be implemented if we had a read status field
-        // For now, it's a placeholder for the frontend API
-    }
-
-    // Clear all activities for a user
     @Transactional
     public void clearUserActivities(Long userId) {
+        if (!userRepository.existsById(userId)) {
+            throw new ResourceNotFoundException("User not found with id: " + userId);
+        }
         activityRepository.deleteByUserId(userId);
     }
 
-    // Helper method to convert Activity to ActivityDto
     private ActivityDto convertToDto(Activity activity) {
         ActivityDto.UserDto userDto = new ActivityDto.UserDto(
                 activity.getUser().getId(),
@@ -160,7 +166,6 @@ public class ActivityService {
         );
     }
 
-    // Helper methods for common activity types
     public Activity logTaskCreated(Task task, User user) {
         return createActivity(
                 "task_created",

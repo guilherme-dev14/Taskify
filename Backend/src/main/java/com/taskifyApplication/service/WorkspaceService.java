@@ -4,6 +4,10 @@ package com.taskifyApplication.service;
 
 import com.taskifyApplication.dto.WorkspaceDto.*;
 import com.taskifyApplication.dto.UserDto.UserSummaryDTO;
+import com.taskifyApplication.exception.DuplicateResourceException;
+import com.taskifyApplication.exception.ForbiddenException;
+import com.taskifyApplication.exception.InvalidFormatException;
+import com.taskifyApplication.exception.ResourceNotFoundException;
 import com.taskifyApplication.model.*;
 import com.taskifyApplication.repository.*;
 import jakarta.persistence.EntityManager;
@@ -61,7 +65,7 @@ public class WorkspaceService {
         if (workspaceRepository.existsById(id) && workspaceRepository.accessibleForUser(currentUser, id)) {
             return convertToWorkspaceSummaryDTO(workspaceRepository.getReferenceById(id));
         } else {
-            throw new IllegalStateException("Workspace not found or you dont have access");
+            throw new ResourceNotFoundException("Workspace not found or you dont have access");
         }
     }
 
@@ -71,10 +75,10 @@ public class WorkspaceService {
                 && workspaceRepository.accessibleForUser(currentUser, workspaceId))
         {
             return workspaceRepository.findById(workspaceId)
-                    .orElseThrow(() -> new IllegalStateException("Workspace not found with id: " + workspaceId));
+                    .orElseThrow(() -> new ResourceNotFoundException("Workspace not found with id: " + workspaceId));
         }
         else {
-            throw new IllegalStateException("Workspace not found or you dont have access");
+            throw new ResourceNotFoundException("Workspace not found or you dont have access");
         }
     }
 
@@ -85,7 +89,7 @@ public class WorkspaceService {
                 .anyMatch(w -> w.getName().equalsIgnoreCase(createWorkspaceDTO.getName()));
 
         if (nameExists) {
-            throw new IllegalArgumentException("You already have a workspace with this name");
+            throw new DuplicateResourceException("You already have a workspace with this name");
         }
 
         Workspace workspace = Workspace.builder()
@@ -110,16 +114,14 @@ public class WorkspaceService {
     }
     @Transactional
     public void deleteWorkspace(Long workspaceId) {
-        // 1. Validar a existência do workspace e as permissões do utilizador
         Workspace workspace = workspaceRepository.findById(workspaceId)
-                .orElseThrow(() -> new IllegalArgumentException("Workspace not found with id: " + workspaceId));
+                .orElseThrow(() -> new ResourceNotFoundException("Workspace not found with id: " + workspaceId));
         User user = getCurrentUser();
 
         if (!workspace.getOwner().getId().equals(user.getId())) {
-            throw new IllegalArgumentException("Cannot delete workspace if you are not the OWNER");
+            throw new ForbiddenException("Cannot delete workspace if you are not the OWNER");
         }
 
-        // 2. Obter a lista de tarefas do workspace antes de começar a apagar
         List<Task> tasks = taskRepository.findByWorkspace(workspace);
         if (!tasks.isEmpty()) {
             List<Long> taskIds = tasks.stream().map(Task::getId).collect(Collectors.toList());
@@ -145,13 +147,10 @@ public class WorkspaceService {
             categoryRepository.deleteAll(categories);
         }
 
-        // Apagar Notificações
         entityManager.createQuery("DELETE FROM Notification n WHERE n.workspace.id = :workspaceId")
                 .setParameter("workspaceId", workspaceId)
                 .executeUpdate();
 
-        // 6. Apagar o Workspace
-        // A cascata na entidade Workspace tratará dos WorkspaceMembers.
         workspaceRepository.delete(workspace);
     }
 
@@ -159,10 +158,10 @@ public class WorkspaceService {
     public WorkspaceResponseDTO updateWorkspace(UpdateWorkspaceDTO updateWorkspaceDTO) {
 
         Workspace workspace = workspaceRepository.findById(updateWorkspaceDTO.getId())
-                .orElseThrow(() -> new IllegalArgumentException("Workspace not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Workspace not found"));
         User user = getCurrentUser();
         if (!workspace.getOwner().getId().equals(user.getId())) {
-            throw new IllegalArgumentException("Cannot update workspace if you are not the OWNER");
+            throw new ForbiddenException("Cannot update workspace if you are not the OWNER");
         }
         if(updateWorkspaceDTO.getName() != null && !updateWorkspaceDTO.getName().equals(workspace.getName())) {
             workspace.setName(validationService.sanitizeString(updateWorkspaceDTO.getName()));
@@ -185,11 +184,11 @@ public class WorkspaceService {
         Workspace workspace = getWorkspaceById(workspaceId);
 
         if (!canUserManageWorkspace(workspace, requestingUser)) {
-            throw new IllegalArgumentException("You don't have permission to add members to this workspace");
+            throw new ForbiddenException("You don't have permission to add members to this workspace");
         }
 
         if (workspaceMemberRepository.existsByWorkspaceAndUser(workspace, userToAdd)) {
-            throw new IllegalArgumentException("User is already a member of this workspace");
+            throw new DuplicateResourceException("User is already a member of this workspace");
         }
 
         WorkspaceMember newMember = WorkspaceMember.builder()
@@ -207,11 +206,11 @@ public class WorkspaceService {
         Workspace workspace = getWorkspaceById(workspaceId);
 
         if (!canUserManageWorkspace(workspace, requestingUser)) {
-            throw new IllegalArgumentException("You don't have permission to remove members from this workspace");
+            throw new ForbiddenException("You don't have permission to remove members from this workspace");
         }
 
         if (workspace.getOwner().equals(userToRemove)) {
-            throw new IllegalArgumentException("Cannot remove workspace owner");
+            throw new ForbiddenException("Cannot remove workspace owner");
         }
 
         Optional<WorkspaceMember> memberToRemove = workspaceMemberRepository.findByWorkspaceAndUser(workspace, userToRemove);
@@ -219,7 +218,7 @@ public class WorkspaceService {
         if (memberToRemove.isPresent()) {
             workspaceMemberRepository.delete(memberToRemove.get());
         } else {
-            throw new IllegalArgumentException("User is not a member of this workspace");
+            throw new InvalidFormatException("User is not a member of this workspace");
         }
     }
 
@@ -227,17 +226,17 @@ public class WorkspaceService {
         Workspace workspace = getWorkspaceById(workspaceId);
 
         if (!canUserManageWorkspace(workspace, requestingUser)) {
-            throw new IllegalArgumentException("You don't have permission to update member roles");
+            throw new ForbiddenException("You don't have permission to update member roles");
         }
 
         if (workspace.getOwner().equals(userToUpdate)) {
-            throw new IllegalArgumentException("Cannot change workspace owner role");
+            throw new ForbiddenException("Cannot change workspace owner role");
         }
 
         int updatedRows = workspaceMemberRepository.updateMemberRole(workspace, userToUpdate, newRole);
 
         if (updatedRows == 0) {
-            throw new IllegalArgumentException("User is not an active member of this workspace");
+            throw new InvalidFormatException("User is not an active member of this workspace");
         }
     }
     // endregion
@@ -271,10 +270,10 @@ public class WorkspaceService {
 
     public Workspace joinWorkspaceByInviteCode(String inviteCode, User user) {
         Workspace workspace = workspaceRepository.findByInviteCode(inviteCode)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid invite code"));
+                .orElseThrow(() -> new InvalidFormatException("Invalid invite code"));
 
         if (workspaceMemberRepository.existsByWorkspaceAndUser(workspace, user) || workspace.getOwner().equals(user)) {
-            throw new IllegalArgumentException("You are already a member of this workspace");
+            throw new DuplicateResourceException("You are already a member of this workspace");
         }
 
         WorkspaceMember newMember = WorkspaceMember.builder()
@@ -301,9 +300,8 @@ public class WorkspaceService {
     public String generateNewInviteCode(Long workspaceId, User requestingUser) {
         Workspace workspace = getWorkspaceById(workspaceId);
 
-        // *** CORREÇÃO APLICADA AQUI ***
         if (!canUserManageWorkspace(workspace, requestingUser)) {
-            throw new IllegalArgumentException("You don't have permission to generate invite codes");
+            throw new ForbiddenException("You don't have permission to generate invite codes");
         }
 
         String newInviteCode = generateInviteCode();
@@ -326,9 +324,8 @@ public class WorkspaceService {
         User currentUser = getCurrentUser();
         Workspace workspace = getWorkspaceById(workspaceId);
 
-        // *** CORREÇÃO APLICADA AQUI ***
         if (!canUserManageWorkspace(workspace, currentUser)) {
-            throw new IllegalArgumentException("You don't have permission to view invite codes for this workspace");
+            throw new ForbiddenException("You don't have permission to view invite codes for this workspace");
         }
 
         return workspace.getInviteCode();
@@ -339,7 +336,7 @@ public class WorkspaceService {
         Workspace workspace = getWorkspaceById(workspaceId);
 
         if (!canUserAccessWorkspace(workspace, currentUser)) {
-            throw new IllegalArgumentException("You don't have access to this workspace");
+            throw new ForbiddenException("You don't have access to this workspace");
         }
 
         return workspace.getMembers().stream()
@@ -375,7 +372,7 @@ public class WorkspaceService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String email = authentication.getName();
         return userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
     }
 
     private WorkspaceMembersResponseDTO convertToWorkspaceMemberResponseDTO(WorkspaceMember member) {

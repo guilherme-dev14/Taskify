@@ -4,6 +4,9 @@ import com.taskifyApplication.dto.TaskStatusDto.CreateTaskStatusDTO;
 import com.taskifyApplication.dto.TaskStatusDto.StatusOrderUpdateDTO;
 import com.taskifyApplication.dto.TaskStatusDto.TaskStatusDTO;
 import com.taskifyApplication.dto.TaskStatusDto.UpdateTaskStatusDTO;
+import com.taskifyApplication.exception.BadRequestException;
+import com.taskifyApplication.exception.ForbiddenException;
+import com.taskifyApplication.exception.InvalidFormatException;
 import com.taskifyApplication.model.Task;
 import com.taskifyApplication.model.TaskStatus;
 import com.taskifyApplication.model.User;
@@ -38,10 +41,10 @@ public class TaskStatusService {
     public List<TaskStatusDTO> getStatusesForWorkspace(Long workspaceId) {
         User currentUser = userService.getCurrentUser();
         Workspace workspace = workspaceRepository.findById(workspaceId)
-                .orElseThrow(() -> new IllegalArgumentException("Workspace not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Workspace not found"));
 
         if (!workspaceRepository.accessibleForUser(currentUser, workspaceId)) {
-            throw new SecurityException("User does not have access to this workspace");
+            throw new ForbiddenException("User does not have access to this workspace");
         }
 
         return taskStatusRepository.findByWorkspaceOrderByNameAsc(workspace).stream()
@@ -52,10 +55,10 @@ public class TaskStatusService {
     public TaskStatusDTO createStatus(CreateTaskStatusDTO createDto) {
         User currentUser = userService.getCurrentUser();
         Workspace workspace = workspaceRepository.findById(createDto.getWorkspaceId())
-                .orElseThrow(() -> new IllegalArgumentException("Workspace not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Workspace not found"));
 
         if (!workspaceRepository.accessibleForUser(currentUser, createDto.getWorkspaceId())) {
-            throw new SecurityException("User does not have permission to modify this workspace");
+            throw new ForbiddenException("User does not have permission to modify this workspace");
         }
 
         int maxOrder = workspace.getTaskStatuses().stream()
@@ -95,20 +98,20 @@ public class TaskStatusService {
     public void deleteStatus(Long statusId) {
         User currentUser = userService.getCurrentUser();
         TaskStatus status = taskStatusRepository.findById(statusId)
-                .orElseThrow(() -> new IllegalArgumentException("TaskStatus not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("TaskStatus not found"));
 
         if (!workspaceRepository.accessibleForUser(currentUser, status.getWorkspace().getId())) {
-            throw new SecurityException("User does not have permission to modify this workspace");
+            throw new ForbiddenException("User does not have permission to modify this workspace");
         }
 
         long tasksWithThisStatus = taskRepository.countByStatus(status);
         if (tasksWithThisStatus > 0) {
-            throw new IllegalStateException("Cannot delete status. It is currently in use by " + tasksWithThisStatus + " task(s).");
+            throw new InvalidFormatException("Cannot delete status. It is currently in use by " + tasksWithThisStatus + " task(s).");
         }
 
         Workspace workspace = status.getWorkspace();
         if (workspace.getTaskStatuses().size() <= 1) {
-            throw new IllegalStateException("Cannot delete the last status of a workspace.");
+            throw new InvalidFormatException("Cannot delete the last status of a workspace.");
         }
 
 
@@ -123,7 +126,7 @@ public class TaskStatusService {
             TaskStatus status = taskStatusRepository.findById(update.getId())
                     .orElseThrow(() -> new ResourceNotFoundException("Status not found with id: " + update.getId()));
             if (!status.getWorkspace().getId().equals(workspaceId)) {
-                throw new SecurityException("Attempted to reorder a status from another workspace.");
+                throw new BadRequestException("Attempted to reorder a status from another workspace.");
             }
 
             status.setOrder(update.getOrder());

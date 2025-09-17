@@ -3,6 +3,9 @@ package com.taskifyApplication.service;
 import com.taskifyApplication.dto.CategoryDto.CategoryResponseDTO;
 import com.taskifyApplication.dto.CategoryDto.CreateCategoryDTO;
 import com.taskifyApplication.dto.CategoryDto.UpdateCategoryDTO;
+import com.taskifyApplication.exception.DuplicateResourceException;
+import com.taskifyApplication.exception.ForbiddenException;
+import com.taskifyApplication.exception.ResourceNotFoundException;
 import com.taskifyApplication.model.Category;
 import com.taskifyApplication.model.User;
 import com.taskifyApplication.model.Workspace;
@@ -40,11 +43,10 @@ public class CategoryService {
     public CategoryResponseDTO getCategoryById(Long categoryId) {
         User currentUser = getCurrentUser();
         Category category = categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new IllegalArgumentException("Category not found with id: " + categoryId));
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found with id: " + categoryId));
         
-        // Check if user has access to the workspace containing this category
         if (!workspaceRepository.accessibleForUser(currentUser, category.getWorkspace().getId())) {
-            throw new IllegalArgumentException("You don't have access to this category");
+            throw new ForbiddenException("You don't have access to this category");
         }
 
         return convertToCategoryResponseDTO(category);
@@ -53,16 +55,14 @@ public class CategoryService {
     public CategoryResponseDTO createCategory(CreateCategoryDTO createCategoryDTO) {
         User currentUser = getCurrentUser();
         Workspace workspace = workspaceRepository.findById(createCategoryDTO.getWorkspaceId())
-                .orElseThrow(() -> new IllegalArgumentException("Workspace not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Workspace not found"));
         
-        // Check if user has access to the workspace
         if (!workspaceRepository.accessibleForUser(currentUser, workspace.getId())) {
-            throw new IllegalArgumentException("You don't have access to this workspace");
+            throw new ForbiddenException("You don't have access to this workspace");
         }
         
-        // Check if category name already exists in workspace
-        if (categoryRepository.existsInWorkspace(workspace.getId(), createCategoryDTO.getName())) {
-            throw new IllegalArgumentException("Category with this name already exists in the workspace");
+         if (categoryRepository.existsInWorkspace(workspace.getId(), createCategoryDTO.getName())) {
+            throw new DuplicateResourceException("Category with this name already exists in the workspace");
         }
 
         Category category = Category.builder()
@@ -78,11 +78,10 @@ public class CategoryService {
     public void deleteCategory(Long categoryId) {
         User currentUser = getCurrentUser();
         Category category = categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new IllegalArgumentException("Category not found with id: " + categoryId));
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found with id: " + categoryId));
         
-        // Check if user has access to the workspace
         if (!workspaceRepository.accessibleForUser(currentUser, category.getWorkspace().getId())) {
-            throw new IllegalArgumentException("You don't have access to this category");
+            throw new ForbiddenException("You don't have access to this category");
         }
         
         categoryRepository.delete(category);
@@ -91,9 +90,8 @@ public class CategoryService {
     public List<CategoryResponseDTO> getAllCategoriesFromWorkspace(Long workspaceId) {
         User currentUser = getCurrentUser();
         
-        // Check if user has access to the workspace
         if (!workspaceRepository.accessibleForUser(currentUser, workspaceId)) {
-            throw new IllegalArgumentException("You don't have access to this workspace");
+            throw new ForbiddenException("You don't have access to this workspace");
         }
 
         List<Category> categories = categoryRepository.getAllCategoriesFromWorkspace(workspaceId);
@@ -106,18 +104,16 @@ public class CategoryService {
     public CategoryResponseDTO updateCategory(UpdateCategoryDTO updateCategoryDTO) {
         User currentUser = getCurrentUser();
         Category category = categoryRepository.findById(updateCategoryDTO.getId())
-                .orElseThrow(() -> new IllegalArgumentException("Category not found with id: " + updateCategoryDTO.getId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found with id: " + updateCategoryDTO.getId()));
         
-        // Check if user has access to the workspace
         if (!workspaceRepository.accessibleForUser(currentUser, category.getWorkspace().getId())) {
-            throw new IllegalArgumentException("You don't have access to this category");
+            throw new ForbiddenException("You don't have access to this category");
         }
 
         if (updateCategoryDTO.getName() != null && !updateCategoryDTO.getName().trim().isEmpty()) {
-            // Check if new name already exists in workspace (excluding current category)
             if (!category.getName().equals(updateCategoryDTO.getName()) &&
                     categoryRepository.existsInWorkspace(category.getWorkspace().getId(), updateCategoryDTO.getName())) {
-                throw new IllegalArgumentException("Category with this name already exists in the workspace");
+                throw new DuplicateResourceException("Category with this name already exists in the workspace");
             }
             category.setName(validationService.sanitizeString(updateCategoryDTO.getName().trim()));
         }
@@ -148,7 +144,7 @@ public class CategoryService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String email = authentication.getName();
         return userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
     }
 
     // endregion

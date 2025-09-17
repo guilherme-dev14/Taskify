@@ -5,6 +5,9 @@ import com.taskifyApplication.dto.UserDto.UserDTO;
 import com.taskifyApplication.dto.UserDto.UserStatsDTO;
 import com.taskifyApplication.dto.UserDto.UserSettingsDTO;
 import com.taskifyApplication.dto.UserDto.ChangePasswordDTO;
+import com.taskifyApplication.exception.DuplicateResourceException;
+import com.taskifyApplication.exception.InvalidFormatException;
+import com.taskifyApplication.exception.ResourceNotFoundException;
 import com.taskifyApplication.model.User;
 import com.taskifyApplication.model.UserSettings;
 import com.taskifyApplication.repository.UserRepository;
@@ -40,7 +43,7 @@ public class UserService {
         String email = authentication.getName();
 
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         return convertToProfileDTO(user);
     }
@@ -48,7 +51,7 @@ public class UserService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String email = authentication.getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         userRepository.delete(user);
     }
     public UserDTO updateCurrentUserProfile(UpdateProfileDTO updateDTO) {
@@ -56,12 +59,12 @@ public class UserService {
         String email = authentication.getName();
 
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
 
         if (!user.getUsername().equals(updateDTO.getUsername()) &&
                 userRepository.existsByUsername(updateDTO.getUsername())) {
-            throw new IllegalArgumentException("Username already exists");
+            throw new DuplicateResourceException("Username already exists");
         }
 
         user.setUsername(updateDTO.getUsername());
@@ -81,7 +84,7 @@ public class UserService {
         String email = authentication.getName();
 
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         UserStatsDTO stats = new UserStatsDTO();
         stats.setTasksCompleted((int) user.getAssignedTasks().stream()
@@ -101,7 +104,7 @@ public class UserService {
         String email = authentication.getName();
 
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         UserSettings settings = userSettingsRepository.findByUser(user)
                 .orElseGet(() -> createDefaultSettings(user));
@@ -114,12 +117,11 @@ public class UserService {
         String email = authentication.getName();
 
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         UserSettings settings = userSettingsRepository.findByUser(user)
                 .orElseGet(() -> createDefaultSettings(user));
 
-        // Update settings
         if (settingsDTO.getTheme() != null) settings.setTheme(settingsDTO.getTheme());
         if (settingsDTO.getLanguage() != null) settings.setLanguage(settingsDTO.getLanguage());
         if (settingsDTO.getTimezone() != null) settings.setTimezone(settingsDTO.getTimezone());
@@ -140,23 +142,20 @@ public class UserService {
     }
 
     public void changeCurrentUserPassword(ChangePasswordDTO changePasswordDTO) {
-        // Validate password confirmation
         if (!changePasswordDTO.getNewPassword().equals(changePasswordDTO.getConfirmPassword())) {
-            throw new IllegalArgumentException("Password confirmation does not match");
+            throw new InvalidFormatException("Password confirmation does not match");
         }
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String email = authentication.getName();
 
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        // Verify current password
         if (!passwordEncoder.matches(changePasswordDTO.getCurrentPassword(), user.getPassword())) {
-            throw new IllegalArgumentException("Current password is incorrect");
+            throw new InvalidFormatException("Current password is incorrect");
         }
 
-        // Update password
         user.setPassword(passwordEncoder.encode(changePasswordDTO.getNewPassword()));
         userRepository.save(user);
     }
@@ -167,13 +166,13 @@ public class UserService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String email = authentication.getName();
         return userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
     }
 
     public User getUserFromAuthentication(Authentication authentication) {
         String email = authentication.getName();
         return userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
     }
 
     public Optional<User> findByEmail(String email) {
@@ -238,21 +237,14 @@ public class UserService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String email = authentication.getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        
-        // Create export data structure
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
         Map<String, Object> exportData = new HashMap<>();
-        
-        // User profile
+
         exportData.put("profile", getUserDTO(user));
-        
-        // User settings
-        UserSettings settings = userSettingsRepository.findByUser(user).orElse(null);
-        if (settings != null) {
-            exportData.put("settings", convertToSettingsDTO(settings));
-        }
-        
-        // Convert to JSON
+
+        userSettingsRepository.findByUser(user).ifPresent(settings -> exportData.put("settings", convertToSettingsDTO(settings)));
+
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
         return objectMapper.writeValueAsBytes(exportData);

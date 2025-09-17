@@ -1,5 +1,8 @@
 package com.taskifyApplication.service;
 
+import com.taskifyApplication.exception.BadRequestException;
+import com.taskifyApplication.exception.InvalidFormatException;
+import com.taskifyApplication.exception.ResourceNotFoundException;
 import com.taskifyApplication.model.User;
 import com.taskifyApplication.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,8 +51,7 @@ public class FileService {
         
         Path filePath = Paths.get(avatarDir, fileName);
         Files.write(filePath, file.getBytes());
-        
-        // Update user avatar in database
+
         updateUserAvatar(fileName);
         
         return fileName;
@@ -72,7 +74,7 @@ public class FileService {
     public byte[] getAvatar(String filename) throws IOException {
         Path filePath = Paths.get(uploadDir + "/avatars", filename);
         if (!Files.exists(filePath)) {
-            throw new IOException("File not found");
+            throw new ResourceNotFoundException("File not found");
         }
         return Files.readAllBytes(filePath);
     }
@@ -80,36 +82,36 @@ public class FileService {
     public byte[] getAttachment(String filename) throws IOException {
         Path filePath = Paths.get(uploadDir + "/attachments", filename);
         if (!Files.exists(filePath)) {
-            throw new IOException("File not found");
+            throw new ResourceNotFoundException("File not found");
         }
         return Files.readAllBytes(filePath);
     }
 
     private void validateImageFile(MultipartFile file) {
         if (file.isEmpty()) {
-            throw new IllegalArgumentException("File is empty");
+            throw new InvalidFormatException("File is empty");
         }
         
         if (!allowedImageTypes.contains(file.getContentType())) {
-            throw new IllegalArgumentException("Invalid file type. Only images are allowed");
+            throw new InvalidFormatException("Invalid file type. Only images are allowed");
         }
         
         if (file.getSize() > 5 * 1024 * 1024) { // 5MB limit
-            throw new IllegalArgumentException("File size too large. Maximum 5MB allowed");
+            throw new InvalidFormatException("File size too large. Maximum 5MB allowed");
         }
     }
 
     private void validateFile(MultipartFile file) {
         if (file.isEmpty()) {
-            throw new IllegalArgumentException("File is empty");
+            throw new InvalidFormatException("File is empty");
         }
         
         if (!allowedFileTypes.contains(file.getContentType())) {
-            throw new IllegalArgumentException("Invalid file type");
+            throw new InvalidFormatException("Invalid file type");
         }
         
         if (file.getSize() > 10 * 1024 * 1024) { // 10MB limit
-            throw new IllegalArgumentException("File size too large. Maximum 10MB allowed");
+            throw new InvalidFormatException("File size too large. Maximum 10MB allowed");
         }
     }
 
@@ -125,7 +127,7 @@ public class FileService {
         File directory = new File(dir);
         if (!directory.exists()) {
             if (!directory.mkdirs()) {
-                throw new IOException("Failed to create directory: " + dir);
+                throw new BadRequestException("Failed to create directory: " + dir);
             }
         }
     }

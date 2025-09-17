@@ -1,41 +1,18 @@
 package com.taskifyApplication.dto;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
+
+import java.time.LocalDateTime;
+
+@Getter
+@Setter
+@AllArgsConstructor
 public class ErrorResponseDTO {
-    private String message;
+    private LocalDateTime timestamp;
     private int status;
-    private long timestamp;
-
-    public ErrorResponseDTO() {
-        this.timestamp = System.currentTimeMillis();
-    }
-
-    public ErrorResponseDTO(String message, int status) {
-        this.message = message;
-        this.status = status;
-        this.timestamp = System.currentTimeMillis();
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
-    public void setMessage(String message) {
-        this.message = message;
-    }
-
-    public int getStatus() {
-        return status;
-    }
-
-    public void setStatus(int status) {
-        this.status = status;
-    }
-
-    public long getTimestamp() {
-        return timestamp;
-    }
-
-    public void setTimestamp(long timestamp) {
-        this.timestamp = timestamp;
-    }
+    private String error;
+    private String message;
+    private String path;
 }

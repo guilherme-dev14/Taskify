@@ -1,9 +1,14 @@
-// taskifyApplication/service/AttachmentService.java
 
 package com.taskifyApplication.service;
 
+import com.taskifyApplication.exception.BadRequestException;
+import com.taskifyApplication.exception.ForbiddenException;
+import com.taskifyApplication.exception.InvalidFormatException;
+import com.taskifyApplication.exception.ResourceNotFoundException;
 import com.taskifyApplication.model.*;
 import com.taskifyApplication.repository.*;
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.commons.io.FilenameUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -74,14 +79,14 @@ public class AttachmentService {
             return attachmentRepository.save(attachment);
 
         } catch (IOException e) {
-            throw new RuntimeException("Failed to read file bytes", e);
+            throw new BadRequestException("Failed to read file bytes");
         }
     }
 
     public Attachment uploadNewVersion(Long attachmentId, MultipartFile file,
                                        String changelog, User uploadedBy) {
         Attachment parentAttachment = attachmentRepository.findById(attachmentId)
-                .orElseThrow(() -> new RuntimeException("Attachment not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Attachment not found"));
 
         validateFile(file);
 
@@ -111,7 +116,7 @@ public class AttachmentService {
             return attachmentRepository.save(newVersion);
 
         } catch (IOException e) {
-            throw new RuntimeException("Failed to upload new version", e);
+            throw new BadRequestException("Failed to upload new version");
         }
     }
 
@@ -127,7 +132,7 @@ public class AttachmentService {
 
     public Attachment getAttachment(Long id) {
         return attachmentRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Attachment not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Attachment not found"));
     }
 
     public List<Attachment> getAttachmentVersions(Long attachmentId) {
@@ -141,7 +146,7 @@ public class AttachmentService {
         Attachment attachment = getAttachment(id);
 
         if (!canUserDeleteAttachment(attachment, user)) {
-            throw new RuntimeException("Permission denied");
+            throw new ForbiddenException("Permission denied");
         }
 
         attachmentRepository.delete(attachment);
@@ -159,19 +164,19 @@ public class AttachmentService {
 
     private void validateFile(MultipartFile file) {
         if (file.isEmpty()) {
-            throw new RuntimeException("File is empty");
+            throw new InvalidFormatException("File is empty");
         }
         if (!validationService.isValidFilename(file.getOriginalFilename())) {
-            throw new RuntimeException("Invalid filename");
+            throw new InvalidFormatException("Invalid filename");
         }
         if (!validationService.isValidFileSize(file.getSize())) {
-            throw new RuntimeException("File size exceeds maximum limit");
+            throw new InvalidFormatException("File size exceeds maximum limit");
         }
         if (!validationService.isValidFileType(file.getContentType())) {
-            throw new RuntimeException("File type not allowed");
+            throw new InvalidFormatException("File type not allowed");
         }
         if (!isValidFileHeader(file)) {
-            throw new RuntimeException("Invalid file format detected");
+            throw new InvalidFormatException("Invalid file format detected");
         }
     }
 
@@ -195,7 +200,6 @@ public class AttachmentService {
 
             return true;
         } catch (Exception e) {
-            e.printStackTrace();
             return false;
         }
     }
@@ -203,22 +207,16 @@ public class AttachmentService {
     private boolean isValidImageHeader(byte[] bytes, String contentType) {
         if (bytes.length < 4) return false;
 
-        switch (contentType.toLowerCase()) {
-            case "image/jpeg":
-            case "image/jpg":
-                return bytes[0] == (byte) 0xFF && bytes[1] == (byte) 0xD8;
-            case "image/png":
-                return bytes[0] == (byte) 0x89 && bytes[1] == 'P' &&
-                        bytes[2] == 'N' && bytes[3] == 'G';
-            case "image/gif":
-                return (bytes[0] == 'G' && bytes[1] == 'I' && bytes[2] == 'F');
-            case "image/webp":
-                return bytes.length >= 12 &&
-                        bytes[0] == 'R' && bytes[1] == 'I' && bytes[2] == 'F' && bytes[3] == 'F' &&
-                        bytes[8] == 'W' && bytes[9] == 'E' && bytes[10] == 'B' && bytes[11] == 'P';
-            default:
-                return false;
-        }
+        return switch (contentType.toLowerCase()) {
+            case "image/jpeg", "image/jpg" -> bytes[0] == (byte) 0xFF && bytes[1] == (byte) 0xD8;
+            case "image/png" -> bytes[0] == (byte) 0x89 && bytes[1] == 'P' &&
+                    bytes[2] == 'N' && bytes[3] == 'G';
+            case "image/gif" -> (bytes[0] == 'G' && bytes[1] == 'I' && bytes[2] == 'F');
+            case "image/webp" -> bytes.length >= 12 &&
+                    bytes[0] == 'R' && bytes[1] == 'I' && bytes[2] == 'F' && bytes[3] == 'F' &&
+                    bytes[8] == 'W' && bytes[9] == 'E' && bytes[10] == 'B' && bytes[11] == 'P';
+            default -> false;
+        };
     }
 
     private boolean canUserDeleteAttachment(Attachment attachment, User user) {
@@ -233,35 +231,17 @@ public class AttachmentService {
         return false;
     }
 
+    @Setter
+    @Getter
     public static class AttachmentFilters {
         private Long taskId;
         private String mimeType;
         private OffsetDateTime fromDate;
         private OffsetDateTime toDate;
 
-        public Long getTaskId() { return taskId; }
-        public void setTaskId(Long taskId) { this.taskId = taskId; }
-        public String getMimeType() { return mimeType; }
-        public void setMimeType(String mimeType) { this.mimeType = mimeType; }
-        public OffsetDateTime getFromDate() { return fromDate; }
-        public void setFromDate(OffsetDateTime fromDate) { this.fromDate = fromDate; }
-        public OffsetDateTime getToDate() { return toDate; }
-        public void setToDate(OffsetDateTime toDate) { this.toDate = toDate; }
     }
 
-    public static class FileDownloadInfo {
-        private final byte[] content;
-        private final String filename;
-        private final String contentType;
+    public record FileDownloadInfo(byte[] content, String filename, String contentType) {
 
-        public FileDownloadInfo(byte[] content, String filename, String contentType) {
-            this.content = content;
-            this.filename = filename;
-            this.contentType = contentType;
-        }
-
-        public byte[] getContent() { return content; }
-        public String getFilename() { return filename; }
-        public String getContentType() { return contentType; }
     }
 }

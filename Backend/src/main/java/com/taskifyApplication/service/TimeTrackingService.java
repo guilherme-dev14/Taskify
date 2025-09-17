@@ -4,6 +4,9 @@ import com.taskifyApplication.dto.TaskStatusDto.TaskStatusDTO;
 import com.taskifyApplication.dto.TimeTrackingDto.*;
 import com.taskifyApplication.dto.TaskDto.TaskResponseDTO;
 import com.taskifyApplication.dto.UserDto.UserDTO;
+import com.taskifyApplication.exception.BadRequestException;
+import com.taskifyApplication.exception.ForbiddenException;
+import com.taskifyApplication.exception.ResourceNotFoundException;
 import com.taskifyApplication.model.TaskStatus;
 import com.taskifyApplication.model.TimeTracking;
 import com.taskifyApplication.model.Task;
@@ -42,20 +45,17 @@ public class TimeTrackingService {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String userEmail = auth.getName();
         User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         Task task = taskRepository.findById(request.getTaskId())
-                .orElseThrow(() -> new RuntimeException("Task not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
 
-        // Check if user has access to the task's workspace
         if (!hasAccessToWorkspace(user, task.getWorkspace().getId())) {
-            throw new RuntimeException("Access denied to this workspace");
+            throw new ForbiddenException("Access denied to this workspace");
         }
 
-        // Stop any active sessions for this user
         stopAllActiveSessionsForUser(user.getId());
 
-        // Sanitize description
         String sanitizedDescription = validationService.sanitizeHtml(request.getDescription());
 
         TimeTracking timeTracking = TimeTracking.builder()
@@ -74,18 +74,17 @@ public class TimeTrackingService {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String userEmail = auth.getName();
         User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         TimeTracking timeTracking = timeTrackingRepository.findById(timeTrackingId)
-                .orElseThrow(() -> new RuntimeException("Time tracking session not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Time tracking session not found"));
 
-        // Check if user owns this session
         if (!timeTracking.getUser().getId().equals(user.getId())) {
-            throw new RuntimeException("Access denied");
+            throw new ForbiddenException("Access denied");
         }
 
         if (!timeTracking.getIsActive()) {
-            throw new RuntimeException("Session is already stopped");
+            throw new BadRequestException("Session is already stopped");
         }
 
         timeTracking.setEndTime(OffsetDateTime.now());
@@ -99,13 +98,13 @@ public class TimeTrackingService {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String userEmail = auth.getName();
         User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new RuntimeException("Task not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
 
         if (!hasAccessToWorkspace(user, task.getWorkspace().getId())) {
-            throw new RuntimeException("Access denied to this workspace");
+            throw new ForbiddenException("Access denied to this workspace");
         }
 
         List<TimeTracking> entries = timeTrackingRepository.findByTaskIdOrderByCreatedAtDesc(taskId);
@@ -118,13 +117,13 @@ public class TimeTrackingService {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String userEmail = auth.getName();
         User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         TimeTracking timeTracking = timeTrackingRepository.findById(timeTrackingId)
-                .orElseThrow(() -> new RuntimeException("Time tracking session not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Time tracking session not found"));
 
         if (!timeTracking.getUser().getId().equals(user.getId())) {
-            throw new RuntimeException("Access denied");
+            throw new ForbiddenException("Access denied");
         }
 
         if (updateDTO.getStartTime() != null) {
@@ -149,13 +148,13 @@ public class TimeTrackingService {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String userEmail = auth.getName();
         User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         TimeTracking timeTracking = timeTrackingRepository.findById(timeTrackingId)
-                .orElseThrow(() -> new RuntimeException("Time tracking session not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Time tracking session not found"));
 
         if (!timeTracking.getUser().getId().equals(user.getId())) {
-            throw new RuntimeException("Access denied");
+            throw new ForbiddenException("Access denied");
         }
 
         timeTrackingRepository.delete(timeTracking);
@@ -165,13 +164,13 @@ public class TimeTrackingService {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String userEmail = auth.getName();
         User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new RuntimeException("Task not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
 
         if (!hasAccessToWorkspace(user, task.getWorkspace().getId())) {
-            throw new RuntimeException("Access denied to this workspace");
+            throw new ForbiddenException("Access denied to this workspace");
         }
 
         Integer totalMinutes = timeTrackingRepository.getTotalDurationByTask(taskId);
@@ -186,7 +185,7 @@ public class TimeTrackingService {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String userEmail = auth.getName();
         User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         List<TimeTracking> activeSessions = timeTrackingRepository.findActiveSessionsByUser(user.getId());
         return activeSessions.stream()
@@ -198,7 +197,7 @@ public class TimeTrackingService {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String userEmail = auth.getName();
         User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         OffsetDateTime start = startDate != null ? startDate : OffsetDateTime.now().minusDays(30);
         OffsetDateTime end = endDate != null ? endDate : OffsetDateTime.now();
@@ -242,7 +241,6 @@ public class TimeTrackingService {
         dto.setFormattedDuration(timeTracking.getFormattedDuration());
         dto.setCurrentDuration(timeTracking.getCurrentDuration());
 
-        // Convert task
         TaskResponseDTO taskDto = new TaskResponseDTO();
         taskDto.setId(timeTracking.getTask().getId());
         taskDto.setTitle(timeTracking.getTask().getTitle());
@@ -250,7 +248,6 @@ public class TimeTrackingService {
         taskDto.setPriority(timeTracking.getTask().getPriority());
         dto.setTask(taskDto);
 
-        // Convert user
         UserDTO userDto = new UserDTO();
         userDto.setId(timeTracking.getUser().getId());
         userDto.setUsername(timeTracking.getUser().getUsername());

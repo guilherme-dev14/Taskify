@@ -1,6 +1,7 @@
 package com.taskifyApplication.service;
 
 import com.taskifyApplication.dto.analytics.*;
+import com.taskifyApplication.exception.ResourceNotFoundException;
 import com.taskifyApplication.model.Task;
 import com.taskifyApplication.repository.TaskRepository;
 import com.taskifyApplication.repository.UserRepository;
@@ -34,11 +35,10 @@ public class AnalyticsService {
 
         List<Task> tasks = getFilteredTasks(workspaceId, userId, start, end);
 
-        // CORREÇÃO: Adicionado filtro para tarefas com status não nulo e com nomes de conclusão.
         List<Task> completedTasks = tasks.stream()
                 .filter(task -> task.getStatus() != null &&
                         (task.getStatus().getName().equalsIgnoreCase("DONE") || task.getStatus().getName().equalsIgnoreCase("COMPLETED")))
-                .collect(Collectors.toList());
+                .toList();
 
         LocalDate today = LocalDate.now();
         long todayCompleted = completedTasks.stream()
@@ -60,7 +60,7 @@ public class AnalyticsService {
 
         ProductivityMetricsDto.DailyProgressDto dailyProgress =
                 new ProductivityMetricsDto.DailyProgressDto((int)todayCompleted, todayTarget,
-                        todayTarget > 0 ? (todayCompleted / (double)todayTarget) * 100 : 0);
+                        todayCompleted / (double)todayTarget * 100);
 
         ProductivityMetricsDto.WeeklyStatsDto weeklyStats =
                 new ProductivityMetricsDto.WeeklyStatsDto((int)weeklyCompleted, focusTime,
@@ -78,11 +78,10 @@ public class AnalyticsService {
 
         List<Task> tasks = getFilteredTasks(workspaceId, userId, start, end);
 
-        // CORREÇÃO: Adicionado filtro para tarefas com status não nulo e com nomes de conclusão.
         List<Task> completedTasks = tasks.stream()
                 .filter(task -> task.getStatus() != null &&
                         (task.getStatus().getName().equalsIgnoreCase("DONE") || task.getStatus().getName().equalsIgnoreCase("COMPLETED")))
-                .collect(Collectors.toList());
+                .toList();
 
         int totalTasks = tasks.size();
         int completedTasksCount = completedTasks.size();
@@ -122,18 +121,16 @@ public class AnalyticsService {
 
         List<Task> tasks = getFilteredTasks(workspaceId, userId, start, end);
 
-        // CORREÇÃO: Adicionado filtro para ignorar tarefas com status nulo antes de agrupar.
         Map<String, Long> statusCounts = tasks.stream()
                 .filter(task -> task.getStatus() != null && task.getStatus().getName() != null)
                 .collect(Collectors.groupingBy(task -> task.getStatus().getName(), Collectors.counting()));
 
         DistributionDataDto.TaskDistribution tasksByStatus = createTaskDistribution(
-                Arrays.asList("TO_DO", "IN_PROGRESS", "DONE", "CANCELLED"), // Estes labels são para referência de cor
+                Arrays.asList("TO_DO", "IN_PROGRESS", "DONE", "CANCELLED"),
                 Arrays.asList("#6B7280", "#3B82F6", "#10B981", "#EF4444"),
                 statusCounts
         );
 
-        // CORREÇÃO: Adicionado filtro para ignorar tarefas com prioridade nula.
         Map<String, Long> priorityCounts = tasks.stream()
                 .filter(task -> task.getPriority() != null)
                 .collect(Collectors.groupingBy(task -> task.getPriority().name(), Collectors.counting()));
@@ -175,7 +172,7 @@ public class AnalyticsService {
         } else if (userId != null) {
             return taskRepository.findByAssignedToIdAndCreatedAtBetween(userId, start, end);
         } else {
-            throw new IllegalArgumentException("Workspace ID ou User ID devem ser especificados");
+            throw new ResourceNotFoundException("Workspace ID ou User ID devem ser especificados");
         }
     }
 
@@ -184,17 +181,13 @@ public class AnalyticsService {
     }
 
     private List<String> generatePeriodLabels(String period) {
-        switch (period.toLowerCase()) {
-            case "week":
-                return Arrays.asList("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun");
-            case "quarter":
-                return Arrays.asList("Q1", "Q2", "Q3", "Q4");
-            case "year":
-                return Arrays.asList("2020", "2021", "2022", "2023", "2024");
-            default:
-                return Arrays.asList("Jan", "Feb", "Mar", "Apr", "May", "Jun",
-                        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec");
-        }
+        return switch (period.toLowerCase()) {
+            case "week" -> Arrays.asList("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun");
+            case "quarter" -> Arrays.asList("Q1", "Q2", "Q3", "Q4");
+            case "year" -> Arrays.asList("2020", "2021", "2022", "2023", "2024");
+            default -> Arrays.asList("Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec");
+        };
     }
 
     private List<Integer> generateTrendData(int size, int min, int max) {
@@ -214,9 +207,8 @@ public class AnalyticsService {
 
         for (int i = 0; i < statusList.size(); i++) {
             String status = statusList.get(i);
-            // CORREÇÃO: O mapa `counts` agora tem nomes completos, não enums.
             Long count = counts.getOrDefault(status.replace("_", " "), 0L);
-            if (count == 0L) { // Tenta também com o nome do enum para compatibilidade
+            if (count == 0L) {
                 count = counts.getOrDefault(status, 0L);
             }
 
@@ -226,13 +218,11 @@ public class AnalyticsService {
                 resultColors.add(colors.get(i));
             }
         }
-
-        // Adiciona outros status que possam existir e não estão na lista padrão
-        counts.forEach((name, count) -> {
+           counts.forEach((name, count) -> {
             if (!labels.contains(name.replace("_", " "))) {
                 labels.add(name);
                 data.add(count.intValue());
-                resultColors.add("#808080"); // Cor padrão para status desconhecidos
+                resultColors.add("#808080");
             }
         });
 

@@ -5,6 +5,8 @@ import com.taskifyApplication.dto.CommentDto.CreateCommentDTO;
 import com.taskifyApplication.dto.CommentDto.UpdateCommentDTO;
 import com.taskifyApplication.dto.TaskDto.TaskSummaryDTO;
 import com.taskifyApplication.dto.UserDto.UserSummaryDTO;
+import com.taskifyApplication.exception.ForbiddenException;
+import com.taskifyApplication.exception.ResourceNotFoundException;
 import com.taskifyApplication.model.Task;
 import com.taskifyApplication.model.TaskComment;
 import com.taskifyApplication.model.User;
@@ -39,7 +41,7 @@ public class TaskCommentService {
     public CommentResponseDTO createComment(Long taskId, CreateCommentDTO createCommentDTO) {
         User currentUser = userService.getCurrentUser();
         Task task = taskRepository.findById(taskId)
-            .orElseThrow(() -> new IllegalArgumentException("Task not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
 
         TaskComment comment = TaskComment.builder()
             .content(validationService.sanitizeHtml(createCommentDTO.getContent()))
@@ -68,10 +70,10 @@ public class TaskCommentService {
     public CommentResponseDTO updateComment(Long commentId, UpdateCommentDTO updateCommentDTO) {
         User currentUser = userService.getCurrentUser();
         TaskComment comment = taskCommentRepository.findById(commentId)
-            .orElseThrow(() -> new IllegalArgumentException("Comment not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Comment not found"));
 
         if (!comment.getAuthor().getId().equals(currentUser.getId())) {
-            throw new IllegalArgumentException("You can only edit your own comments");
+            throw new ForbiddenException("You can only edit your own comments");
         }
 
         comment.setContent(validationService.sanitizeHtml(updateCommentDTO.getContent()));
@@ -82,10 +84,10 @@ public class TaskCommentService {
     public void deleteComment(Long commentId) {
         User currentUser = userService.getCurrentUser();
         TaskComment comment = taskCommentRepository.findById(commentId)
-            .orElseThrow(() -> new IllegalArgumentException("Comment not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Comment not found"));
 
         if (!comment.getAuthor().getId().equals(currentUser.getId())) {
-            throw new IllegalArgumentException("You can only delete your own comments");
+            throw new ForbiddenException("You can only delete your own comments");
         }
 
         taskCommentRepository.delete(comment);
@@ -97,15 +99,13 @@ public class TaskCommentService {
         dto.setContent(comment.getContent());
         dto.setCreatedAt(comment.getCreatedAt());
         dto.setUpdatedAt(comment.getUpdatedAt());
-        
-        // Author info
+
         UserSummaryDTO authorDTO = new UserSummaryDTO();
         authorDTO.setId(comment.getAuthor().getId());
         authorDTO.setFirstName(comment.getAuthor().getName());
         authorDTO.setEmail(comment.getAuthor().getEmail());
         dto.setAuthor(authorDTO);
 
-        // Task info
         TaskSummaryDTO taskDTO = new TaskSummaryDTO();
         taskDTO.setId(comment.getTask().getId());
         taskDTO.setTitle(comment.getTask().getTitle());

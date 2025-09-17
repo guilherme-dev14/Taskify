@@ -23,7 +23,6 @@ public class WebSocketService {
         message.put("actionBy", actionBy.getFirstName() + " " + actionBy.getLastName());
         message.put("timestamp", System.currentTimeMillis());
 
-        // Send to all users in the workspace
         simpMessagingTemplate.convertAndSend("/topic/workspace/" + workspaceId + "/tasks", message);
     }
 
@@ -35,7 +34,6 @@ public class WebSocketService {
         message.put("assignedBy", assignedBy.getFirstName() + " " + assignedBy.getLastName());
         message.put("timestamp", System.currentTimeMillis());
 
-        // Send directly to the assigned user
         simpMessagingTemplate.convertAndSendToUser(
             assignedTo.getEmail(), 
             "/queue/notifications", 
@@ -50,7 +48,6 @@ public class WebSocketService {
         message.put("userId", user.getId());
         message.put("timestamp", System.currentTimeMillis());
 
-        // Send to all users in the workspace
         simpMessagingTemplate.convertAndSend("/topic/workspace/" + workspaceId + "/activity", message);
     }
 }

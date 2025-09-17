@@ -10,6 +10,7 @@ import com.taskifyApplication.dto.UserDto.UserSummaryDTO;
 import com.taskifyApplication.dto.WorkspaceDto.WorkspaceNameDTO;
 import com.taskifyApplication.dto.WorkspaceDto.WorkspaceResponseDTO;
 import com.taskifyApplication.dto.common.PageResponse;
+import com.taskifyApplication.exception.*;
 import com.taskifyApplication.model.*;
 import com.taskifyApplication.repository.*;
 import jakarta.persistence.EntityManager;
@@ -100,10 +101,10 @@ public class TaskService {
     public PageResponse<TaskSummaryDTO> getAllTasksFromWorkspace(Long workspaceId, Pageable pageable, Long statusId, PriorityEnum priority) {
         User currentUser = getCurrentUser();
         Workspace workspace = workspaceRepository.findById(workspaceId)
-                .orElseThrow(() -> new IllegalArgumentException("Workspace not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Workspace not found"));
         
         if (!workspaceRepository.accessibleForUser(currentUser, workspaceId)) {
-            throw new IllegalArgumentException("You don't have access to this workspace");
+            throw new ForbiddenException("You don't have access to this workspace");
         }
         
         Page<Task> taskPage;
@@ -163,11 +164,11 @@ public class TaskService {
 
     public TaskDetailDTO getTaskById(Long taskId) {
         Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new IllegalArgumentException("Task not found with id: " + taskId));
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found with id: " + taskId));
 
         User currentUser = getCurrentUser();
         if (!task.canView(currentUser)) {
-            throw new IllegalArgumentException("You don't have permission to view this task");
+            throw new ForbiddenException("You don't have permission to view this task");
         }
 
         TaskDetailDTO dto = convertToTaskDetailDto(task);
@@ -176,7 +177,6 @@ public class TaskService {
             dto.getAssignedTo().setCreatedAt(task.getAssignedTo().getCreatedAt().toOffsetDateTime());
         }
         dto.setCommentsCount(task.getComments() != null ? task.getComments().size() : 0);
-        // CORRIGIDO: Lógica de verificação de status para usar o nome do objeto TaskStatus
         dto.setIsOverdue(task.getDueDate() != null &&
                 task.getDueDate().isBefore(LocalDateTime.now()) &&
                 (task.getStatus() != null && !task.getStatus().getName().equalsIgnoreCase("COMPLETED")));
@@ -191,7 +191,7 @@ public class TaskService {
         User currentUser = getCurrentUser();
 
         Workspace workspace = workspaceRepository.findById(createTaskDTO.getWorkspaceId())
-                .orElseThrow(() -> new IllegalArgumentException("Workspace not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Workspace not found"));
 
         List<Category> categories = new ArrayList<>();
         if (createTaskDTO.getCategoryIds() != null && !createTaskDTO.getCategoryIds().isEmpty()) {
@@ -199,22 +199,20 @@ public class TaskService {
         }
 
         if (taskRepository.existsByTitleAndWorkspace(createTaskDTO.getTitle(), workspace)) {
-            throw new IllegalStateException("Task with this title already exists in the workspace!");
+            throw new DuplicateResourceException("Task with this title already exists in the workspace!");
         }
 
-        // CORRIGIDO: Busca o status padrão do workspace ou o status fornecido
         TaskStatus status;
         if (createTaskDTO.getStatusId() != null) {
             status = taskStatusRepository.findById(createTaskDTO.getStatusId())
                     .orElseThrow(() -> new IllegalArgumentException("Status not found"));
             if (!status.getWorkspace().getId().equals(workspace.getId())) {
-                throw new IllegalArgumentException("The provided status does not belong to this workspace.");
+                throw new InvalidFormatException("The provided status does not belong to this workspace.");
             }
         } else {
-            // Se nenhum status for fornecido, usa o primeiro status padrão do workspace
             status = workspace.getTaskStatuses().stream()
                     .min((s1, s2) -> Integer.compare(s1.getOrder(), s2.getOrder()))
-                    .orElseThrow(() -> new IllegalStateException("Workspace does not have any default statuses."));
+                    .orElseThrow(() -> new InvalidFormatException("Workspace does not have any default statuses."));
         }
 
         String sanitizedTitle = validationService.sanitizeString(createTaskDTO.getTitle());
@@ -223,7 +221,7 @@ public class TaskService {
         Task task = Task.builder()
                 .title(sanitizedTitle)
                 .description(sanitizedDescription)
-                .status(status) // Define o objeto TaskStatus
+                .status(status)
                 .priority(createTaskDTO.getPriority() != null ? createTaskDTO.getPriority() : PriorityEnum.MEDIUM)
                 .dueDate(createTaskDTO.getDueDate())
                 .assignedTo(currentUser)
@@ -260,10 +258,10 @@ public class TaskService {
     public void deleteTask(Long taskId) {
         User currentUser = getCurrentUser();
         Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new IllegalArgumentException("Task not found with id: " + taskId));
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found with id: " + taskId));
         
         if (!task.canEdit(currentUser)) {
-            throw new IllegalArgumentException("You don't have permission to delete this task");
+            throw new ForbiddenException("You don't have permission to delete this task");
         }
 
         List<TimeTracking> timeTrackings = timeTrackingRepository.findByTaskIdOrderByCreatedAtDesc(taskId);
@@ -272,18 +270,14 @@ public class TaskService {
         }
         
         try {
-            // First clear all foreign key references to avoid cascade issues
-            // Clear activities references
             entityManager.createQuery("UPDATE Activity a SET a.task = null WHERE a.task.id = :taskId")
                     .setParameter("taskId", taskId)
                     .executeUpdate();
-            
-            // Clear parent task references for subtasks
+
             entityManager.createQuery("UPDATE Task t SET t.parentTask = null WHERE t.parentTask.id = :taskId")
                     .setParameter("taskId", taskId)
                     .executeUpdate();
-            
-            // Now delete the task
+
             taskRepository.deleteById(taskId);
             
         } catch (Exception e) {
@@ -295,16 +289,16 @@ public class TaskService {
         User currentUser = getCurrentUser();
 
         Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new IllegalArgumentException("Task not found with id: " + taskId));
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found with id: " + taskId));
 
         if (!task.canEdit(currentUser)) {
-            throw new IllegalArgumentException("You don't have permission to edit this task");
+            throw new ForbiddenException("You don't have permission to edit this task");
         }
 
         if (updateTaskDTO.getTitle() != null) {
             if (!task.getTitle().equals(updateTaskDTO.getTitle()) &&
                     taskRepository.existsByTitleAndWorkspace(updateTaskDTO.getTitle(), task.getWorkspace())) {
-                throw new IllegalStateException("Task with this title already exists in the workspace!");
+                throw new DuplicateResourceException("Task with this title already exists in the workspace!");
             }
             task.setTitle(validationService.sanitizeString(updateTaskDTO.getTitle()));
         }
@@ -319,9 +313,9 @@ public class TaskService {
 
         if (updateTaskDTO.getStatusId() != null) {
             TaskStatus newStatus = taskStatusRepository.findById(updateTaskDTO.getStatusId())
-                    .orElseThrow(() -> new IllegalArgumentException("Status not found"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Status not found"));
             if (!newStatus.getWorkspace().getId().equals(task.getWorkspace().getId())) {
-                throw new IllegalArgumentException("The provided status does not belong to this task's workspace.");
+                throw new BadRequestException("The provided status does not belong to this task's workspace.");
             }
             task.setStatus(newStatus);
         }
@@ -345,7 +339,7 @@ public class TaskService {
         if (updateTaskDTO.getCategoryIds() != null) {
             List<Category> categories = categoryRepository.findAllById(updateTaskDTO.getCategoryIds());
             if (categories.size() != updateTaskDTO.getCategoryIds().size()) {
-                throw new IllegalArgumentException("Some categories not found");
+                throw new ResourceNotFoundException("Some categories not found");
             }
             task.setCategories(categories);
         }
@@ -354,20 +348,18 @@ public class TaskService {
         
         if (updateTaskDTO.getWorkspaceId() != null) {
             Workspace workspace = workspaceRepository.findById(updateTaskDTO.getWorkspaceId())
-                    .orElseThrow(() -> new IllegalArgumentException("Workspace not found with id: " + updateTaskDTO.getWorkspaceId()));
+                    .orElseThrow(() -> new ResourceNotFoundException("Workspace not found with id: " + updateTaskDTO.getWorkspaceId()));
             task.setWorkspace(workspace);
          }
-        
-        // Then update assignee with the correct workspace context
+
         if (updateTaskDTO.getAssignedToId() != null) {
             User assignedUser = userRepository.findById(updateTaskDTO.getAssignedToId())
-                    .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + updateTaskDTO.getAssignedToId()));
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + updateTaskDTO.getAssignedToId()));
 
-            // Check if user is a member of the workspace
             if (task.getWorkspace() != null) {
                 boolean isMember = workspaceMemberRepository.existsByWorkspaceAndUser(task.getWorkspace(), assignedUser);
                 if (!isMember) {
-                    throw new IllegalArgumentException("User with id " + updateTaskDTO.getAssignedToId() + " is not a member of this workspace");
+                    throw new ForbiddenException("User with id " + updateTaskDTO.getAssignedToId() + " is not a member of this workspace");
                 }
             }
 
@@ -376,49 +368,40 @@ public class TaskService {
         
         task = taskRepository.save(task);
 
-        // Log activity
         activityService.logTaskUpdated(task, currentUser);
-        
-        // Check if task was completed and log that too
+
         if (task.getStatus() != null && task.getStatus().getName().equalsIgnoreCase("COMPLETED")) {
             task.setCompletedAt(java.time.OffsetDateTime.now());
             taskRepository.save(task);
             activityService.logTaskCompleted(task, currentUser);
         }
 
-
-        // Create notifications for task updates
         User newAssignedUser = task.getAssignedTo();
-        
-        // Notify if task was newly assigned to someone
+
         if (newAssignedUser != null && 
             !newAssignedUser.equals(currentUser) && 
             !newAssignedUser.equals(previousAssignedUser)) {
             notificationService.notifyTaskAssigned(newAssignedUser, task, currentUser);
         }
-        
-        // Notify previous assignee about task updates (if different from current user and new assignee)
+
         if (previousAssignedUser != null && 
             !previousAssignedUser.equals(currentUser) && 
             !previousAssignedUser.equals(newAssignedUser)) {
             notificationService.notifyTaskUpdated(previousAssignedUser, task, currentUser, "Task details updated");
         }
-        
-        // Notify current assignee about task updates (if different from current user)
+
         if (newAssignedUser != null && 
             !newAssignedUser.equals(currentUser) && 
             newAssignedUser.equals(previousAssignedUser)) {
             notificationService.notifyTaskUpdated(newAssignedUser, task, currentUser, "Task details updated");
         }
-        
-        // Notify about task completion
+
         if (task.getStatus().getName().equalsIgnoreCase("COMPLETED") &&
             newAssignedUser != null && 
             !newAssignedUser.equals(currentUser)) {
             notificationService.notifyTaskCompleted(newAssignedUser, task, currentUser);
         }
-        
-        // Send WebSocket notification for real-time updates
+
         String action = newAssignedUser != null && !newAssignedUser.equals(previousAssignedUser) ? "ASSIGNED" : "UPDATED";
         webSocketService.notifyWorkspaceTaskUpdate(
             task.getWorkspace().getId(), 
@@ -447,7 +430,6 @@ public class TaskService {
         LocalDateTime startOfDay = today.atStartOfDay();
         LocalDateTime endOfDay = today.plusDays(1).atStartOfDay();
 
-        // Nomes de status que consideramos como "concluídos" para as contagens
         List<String> completedStatusNames = List.of("COMPLETED", "DONE", "CONCLUÍDO");
 
         List<Task> userTasks = taskRepository.findByAssignedTo(currentUser);
@@ -456,7 +438,6 @@ public class TaskService {
         dashboardStats.setToDoToday(taskRepository.countTasksDueToday(currentUser, startOfDay, endOfDay, completedStatusNames));
         dashboardStats.setOverdue(taskRepository.countOverdueTasks(currentUser, LocalDateTime.now(), completedStatusNames));
 
-        // Contar tarefas "Em Progresso" pelo nome
         Integer inProgressCount = taskRepository.countByUserAndStatusName(currentUser, "In Progress");
         if (inProgressCount == null) {
             inProgressCount = taskRepository.countByUserAndStatusName(currentUser, "EM PROGRESSO");
@@ -496,20 +477,17 @@ public class TaskService {
         } else {
             List<Task> tasks;
             if (workspaceId != null) {
-                // If workspace is specified, get all tasks in that workspace with the given status
                 Workspace workspace = workspaceRepository.findById(workspaceId).orElse(null);
                 if (workspace == null) {
-                    return List.of(); // Return empty list if workspace not found
+                    return List.of();
                 }
-                
-                // Verify user has access to this workspace
+
                 if (!canUserAccessWorkspace(workspace, currentUser)) {
                     throw new IllegalArgumentException("You don't have access to this workspace");
                 }
                 
                 tasks = taskRepository.findByWorkspaceWithFilters(workspace, statusId, null);
             } else {
-                // If no workspace specified, get only user's assigned tasks with the given status
                 tasks = taskRepository.findByStatusWorkspaceAndAssignedTo(statusId, currentUser, null);
             }
             return tasks.stream().map(this::convertToTaskSummaryDto).collect(Collectors.toList());
@@ -518,7 +496,7 @@ public class TaskService {
         List<Task> tasks = taskRepository.findByStatusAndDueDateBetween(statusId, workspaceId, startDate, endDate);
 
         return tasks.stream()
-                .filter(task -> task.canView(currentUser)) // Garante a permissão de visualização
+                .filter(task -> task.canView(currentUser))
                 .map(this::convertToTaskSummaryDto)
                 .collect(Collectors.toList());
     }
@@ -635,8 +613,7 @@ public class TaskService {
         }
 
         dto.setCommentsCount(task.getComments() != null ? task.getComments().size() : 0);
-        
-        // Add attachment information
+
         if (task.getAttachments() != null && !task.getAttachments().isEmpty()) {
             dto.setAttachments(task.getAttachments().stream()
                     .map(this::convertToAttachmentResponseDto)
@@ -717,26 +694,15 @@ public class TaskService {
         dto.setCommentsCount(task.getComments() != null ? task.getComments().size() : 0);
         dto.setNotes(task.getNotes());
 
-        // Convert attachments
         if (task.getAttachments() != null && !task.getAttachments().isEmpty()) {
             List<AttachmentResponseDTO> attachmentDtos = task.getAttachments().stream()
-                    .filter(attachment -> attachment.getIsLatestVersion())
+                    .filter(Attachment::getIsLatestVersion)
                     .map(this::convertToAttachmentResponseDto)
                     .collect(Collectors.toList());
             dto.setAttachments(attachmentDtos);
         }
 
-        // Add checklist items
-        if (task.getChecklist() != null && !task.getChecklist().isEmpty()) {
-            dto.setChecklist(task.getChecklist());
-        }
-
         return dto;
-    }
-
-    // Workspace-wide task methods for collaborative view
-    public PageResponse<TaskSummaryDTO> getAllTasksInWorkspace(Long workspaceId, Pageable pageable) {
-        return getAllTasksInWorkspace(workspaceId, null, null, pageable);
     }
 
     public PageResponse<TaskSummaryDTO> getAllTasksInWorkspace(Long workspaceId, Long statusId,
@@ -744,11 +710,10 @@ public class TaskService {
         User currentUser = getCurrentUser();
         
         Workspace workspace = workspaceRepository.findById(workspaceId)
-                .orElseThrow(() -> new IllegalArgumentException("Workspace not found"));
-                
-        // Verify user has access to this workspace
+                .orElseThrow(() -> new ResourceNotFoundException("Workspace not found"));
+
         if (!canUserAccessWorkspace(workspace, currentUser)) {
-            throw new IllegalArgumentException("You don't have access to this workspace");
+            throw new ForbiddenException("You don't have access to this workspace");
         }
 
         Page<Task> taskPage;
@@ -782,11 +747,10 @@ public class TaskService {
         User currentUser = getCurrentUser();
         
         Workspace workspace = workspaceRepository.findById(workspaceId)
-                .orElseThrow(() -> new IllegalArgumentException("Workspace not found"));
-                
-        // Verify user has access to this workspace
+                .orElseThrow(() -> new ResourceNotFoundException("Workspace not found"));
+
         if (!canUserAccessWorkspace(workspace, currentUser)) {
-            throw new IllegalArgumentException("You don't have access to this workspace");
+            throw new ForbiddenException("You don't have access to this workspace");
         }
 
         List<Task> tasks;
@@ -801,14 +765,11 @@ public class TaskService {
                 .collect(Collectors.toList());
     }
 
-    // Helper method to check workspace access
     private boolean canUserAccessWorkspace(Workspace workspace, User user) {
-        // Check if user is owner
         if (workspace.getOwner().equals(user)) {
             return true;
         }
-        
-        // Check if user is a member
+
         return workspace.getMembers().stream()
                 .anyMatch(member -> member.getUser().equals(user));
     }
@@ -822,15 +783,14 @@ public class TaskService {
             throw new IllegalArgumentException("Some tasks were not found");
         }
 
-        // Validar permissões e consistência do workspace
         if (!tasks.isEmpty()) {
-            Long firstWorkspaceId = tasks.get(0).getWorkspace().getId();
+            Long firstWorkspaceId = tasks.getFirst().getWorkspace().getId();
             for (Task task : tasks) {
                 if (!task.canEdit(currentUser)) {
-                    throw new IllegalArgumentException("You don't have permission to edit task: " + task.getTitle());
+                    throw new ForbiddenException("You don't have permission to edit task: " + task.getTitle());
                 }
                 if (!task.getWorkspace().getId().equals(firstWorkspaceId)) {
-                    throw new IllegalArgumentException("Bulk operations can only be performed on tasks within the same workspace.");
+                    throw new InvalidFormatException("Bulk operations can only be performed on tasks within the same workspace.");
                 }
             }
         }
@@ -838,7 +798,7 @@ public class TaskService {
         User assignedUser = null;
         if (bulkUpdateDTO.getAssignedToId() != null) {
             assignedUser = userRepository.findById(bulkUpdateDTO.getAssignedToId())
-                    .orElseThrow(() -> new IllegalArgumentException("Assigned user not found"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Assigned user not found"));
         }
 
         List<Category> categories = null;
@@ -849,15 +809,13 @@ public class TaskService {
         TaskStatus newStatus = null;
         if (bulkUpdateDTO.getStatusId() != null) {
             newStatus = taskStatusRepository.findById(bulkUpdateDTO.getStatusId())
-                    .orElseThrow(() -> new IllegalArgumentException("Status not found with id: " + bulkUpdateDTO.getStatusId()));
+                    .orElseThrow(() -> new ResourceNotFoundException("Status not found with id: " + bulkUpdateDTO.getStatusId()));
 
-            // Valida se o status pertence ao workspace das tarefas
             if (!tasks.isEmpty() && !newStatus.getWorkspace().getId().equals(tasks.get(0).getWorkspace().getId())) {
-                throw new IllegalArgumentException("The selected status does not belong to the tasks' workspace.");
+                throw new ForbiddenException("The selected status does not belong to the tasks' workspace.");
             }
         }
 
-        // Aplicar as atualizações em todas as tarefas
         for (Task task : tasks) {
             if (newStatus != null) {
                 task.setStatus(newStatus);
@@ -878,7 +836,6 @@ public class TaskService {
 
         List<Task> updatedTasks = taskRepository.saveAll(tasks);
 
-        // Enviar notificações via WebSocket para cada tarefa atualizada
         for (Task task : updatedTasks) {
             webSocketService.notifyWorkspaceTaskUpdate(
                     task.getWorkspace().getId(),
@@ -897,15 +854,13 @@ public class TaskService {
         User currentUser = getCurrentUser();
         
         List<Task> tasks = taskRepository.findAllById(taskIds);
-        
-        // Verify permissions for all tasks
+
         for (Task task : tasks) {
             if (!task.canEdit(currentUser)) {
-                throw new IllegalArgumentException("You don't have permission to delete task: " + task.getTitle());
+                throw new ForbiddenException("You don't have permission to delete task: " + task.getTitle());
             }
         }
-        
-        // Send WebSocket notifications before deletion
+
         for (Task task : tasks) {
             webSocketService.notifyWorkspaceTaskUpdate(
                 task.getWorkspace().getId(),
@@ -922,22 +877,21 @@ public class TaskService {
         User currentUser = getCurrentUser();
 
         Task originalTask = taskRepository.findById(taskId)
-                .orElseThrow(() -> new IllegalArgumentException("Task not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
 
         if (!originalTask.canEdit(currentUser)) {
-            throw new IllegalArgumentException("You don't have permission to clone this task");
+            throw new ForbiddenException("You don't have permission to clone this task");
         }
       TaskStatus initialStatus = originalTask.getWorkspace().getTaskStatuses().stream()
                 .min((s1, s2) -> Integer.compare(s1.getOrder(), s2.getOrder()))
-                .orElseThrow(() -> new IllegalStateException("Cannot clone task: The workspace does not have any statuses configured."));
+                .orElseThrow(() -> new InvalidFormatException("Cannot clone task: The workspace does not have any statuses configured."));
 
-        // Create clone with "Copy of" prefix
         Task clonedTask = Task.builder()
                 .title("Copy of " + originalTask.getTitle())
                 .description(originalTask.getDescription())
-                .status(initialStatus) // <-- MUDANÇA APLICADA AQUI
+                .status(initialStatus)
                 .priority(originalTask.getPriority())
-                .assignedTo(currentUser) // Assign to current user
+                .assignedTo(currentUser)
                 .workspace(originalTask.getWorkspace())
                 .categories(new ArrayList<>(originalTask.getCategories()))
                 .estimatedHours(originalTask.getEstimatedHours())
@@ -958,28 +912,28 @@ public class TaskService {
         User currentUser = getCurrentUser();
 
         Task parentTask = taskRepository.findById(createSubtaskDTO.getParentTaskId())
-                .orElseThrow(() -> new IllegalArgumentException("Parent task not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Parent task not found"));
 
         if (!parentTask.canEdit(currentUser)) {
-            throw new IllegalArgumentException("You don't have permission to create subtasks for this task");
+            throw new ForbiddenException("You don't have permission to create subtasks for this task");
         }
 
         User assignedUser = currentUser;
         if (createSubtaskDTO.getAssignedToId() != null) {
             assignedUser = userRepository.findById(createSubtaskDTO.getAssignedToId())
-                    .orElseThrow(() -> new IllegalArgumentException("Assigned user not found"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Assigned user not found"));
         }
 
         List<Category> categories = new ArrayList<>();
         if (createSubtaskDTO.getCategoryIds() != null && !createSubtaskDTO.getCategoryIds().isEmpty()) {
             categories = categoryRepository.findAllById(createSubtaskDTO.getCategoryIds());
             if (categories.size() != createSubtaskDTO.getCategoryIds().size()) {
-                throw new IllegalArgumentException("Some categories not found");
+                throw new ResourceNotFoundException("Some categories not found");
             }
         }
         TaskStatus initialStatus = parentTask.getWorkspace().getTaskStatuses().stream()
                 .min((s1, s2) -> Integer.compare(s1.getOrder(), s2.getOrder()))
-                .orElseThrow(() -> new IllegalStateException("Cannot create subtask: The workspace does not have any statuses configured."));
+                .orElseThrow(() -> new InvalidFormatException("Cannot create subtask: The workspace does not have any statuses configured."));
 
         Task subtask = Task.builder()
                 .title(createSubtaskDTO.getTitle())
@@ -1006,11 +960,11 @@ public class TaskService {
 
     public List<TaskSummaryDTO> getSubtasks(Long parentTaskId) {
         Task parentTask = taskRepository.findById(parentTaskId)
-                .orElseThrow(() -> new IllegalArgumentException("Parent task not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Parent task not found"));
         
         User currentUser = getCurrentUser();
         if (!parentTask.canEdit(currentUser)) {
-            throw new IllegalArgumentException("You don't have permission to view subtasks");
+            throw new ForbiddenException("You don't have permission to view subtasks");
         }
         
         return parentTask.getSubtasks().stream()
@@ -1020,15 +974,15 @@ public class TaskService {
     
     public TaskSummaryDTO getParentTask(Long subtaskId) {
         Task subtask = taskRepository.findById(subtaskId)
-                .orElseThrow(() -> new IllegalArgumentException("Subtask not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Subtask not found"));
         
         User currentUser = getCurrentUser();
         if (!subtask.canEdit(currentUser)) {
-            throw new IllegalArgumentException("You don't have permission to view this task");
+            throw new ForbiddenException("You don't have permission to view this task");
         }
         
         if (subtask.getParentTask() == null) {
-            throw new IllegalArgumentException("This task is not a subtask");
+            throw new InvalidFormatException("This task is not a subtask");
         }
         
         return convertToTaskSummaryDto(subtask.getParentTask());
@@ -1038,22 +992,22 @@ public class TaskService {
         User currentUser = getCurrentUser();
         
         Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new IllegalArgumentException("Task not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
         
         Task parentTask = taskRepository.findById(parentTaskId)
-                .orElseThrow(() -> new IllegalArgumentException("Parent task not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Parent task not found"));
         
         if (!task.canEdit(currentUser) || !parentTask.canEdit(currentUser)) {
-            throw new IllegalArgumentException("You don't have permission to modify these tasks");
+            throw new ForbiddenException("You don't have permission to modify these tasks");
         }
         
         if (task.getId().equals(parentTask.getId())) {
-            throw new IllegalArgumentException("A task cannot be a subtask of itself");
+            throw new InvalidFormatException("A task cannot be a subtask of itself");
         }
         
         // Ensure they're in the same workspace
         if (!task.getWorkspace().getId().equals(parentTask.getWorkspace().getId())) {
-            throw new IllegalArgumentException("Tasks must be in the same workspace");
+            throw new InvalidFormatException("Tasks must be in the same workspace");
         }
         
         task.setParentTask(parentTask);
@@ -1071,14 +1025,14 @@ public class TaskService {
         User currentUser = getCurrentUser();
         
         Task subtask = taskRepository.findById(subtaskId)
-                .orElseThrow(() -> new IllegalArgumentException("Subtask not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Subtask not found"));
         
         if (!subtask.canEdit(currentUser)) {
-            throw new IllegalArgumentException("You don't have permission to modify this task");
+            throw new ForbiddenException("You don't have permission to modify this task");
         }
         
         if (subtask.getParentTask() == null) {
-            throw new IllegalArgumentException("This task is not a subtask");
+            throw new InvalidFormatException("This task is not a subtask");
         }
         
         subtask.setParentTask(null);
@@ -1101,7 +1055,6 @@ public class TaskService {
         List<Object> parameters = new ArrayList<>();
         int paramIndex = 1;
 
-        // Join with workspace for access control
         queryBuilder.append("JOIN t.workspace w ");
         queryBuilder.append("LEFT JOIN w.workspaceMembers wm ");
         whereBuilder.append("AND (w.owner = ?").append(paramIndex).append(" OR wm.user = ?").append(paramIndex + 1).append(") ");
@@ -1109,7 +1062,6 @@ public class TaskService {
         parameters.add(currentUser);
         paramIndex += 2;
 
-        // Search term in title and description
         if (searchDTO.getSearchTerm() != null && !searchDTO.getSearchTerm().trim().isEmpty()) {
             whereBuilder.append("AND (LOWER(t.title) LIKE LOWER(?").append(paramIndex).append(") OR LOWER(t.description) LIKE LOWER(?").append(paramIndex + 1).append(")) ");
             String searchTerm = "%" + searchDTO.getSearchTerm().trim() + "%";
@@ -1118,7 +1070,6 @@ public class TaskService {
             paramIndex += 2;
         }
 
-        // Workspace filter
         if (searchDTO.getWorkspaceIds() != null && !searchDTO.getWorkspaceIds().isEmpty()) {
             whereBuilder.append("AND t.workspace.id IN (");
             for (int i = 0; i < searchDTO.getWorkspaceIds().size(); i++) {
@@ -1130,7 +1081,6 @@ public class TaskService {
             whereBuilder.append(") ");
         }
 
-        // Status filter
         if (searchDTO.getStatusesId() != null && !searchDTO.getStatusesId().isEmpty()) {
             whereBuilder.append("AND t.status IN (");
             for (int i = 0; i < searchDTO.getStatusesId().size(); i++) {
@@ -1142,7 +1092,6 @@ public class TaskService {
             whereBuilder.append(") ");
         }
 
-        // Priority filter
         if (searchDTO.getPriorities() != null && !searchDTO.getPriorities().isEmpty()) {
             whereBuilder.append("AND t.priority IN (");
             for (int i = 0; i < searchDTO.getPriorities().size(); i++) {
@@ -1154,7 +1103,6 @@ public class TaskService {
             whereBuilder.append(") ");
         }
 
-        // Category filter
         if (searchDTO.getCategoryIds() != null && !searchDTO.getCategoryIds().isEmpty()) {
             queryBuilder.append("LEFT JOIN t.categories c ");
             whereBuilder.append("AND c.id IN (");
@@ -1167,7 +1115,6 @@ public class TaskService {
             whereBuilder.append(") ");
         }
 
-        // Date filters
         if (searchDTO.getDueDateFrom() != null) {
             whereBuilder.append("AND t.dueDate >= ?").append(paramIndex).append(" ");
             parameters.add(searchDTO.getDueDateFrom());
@@ -1210,24 +1157,20 @@ public class TaskService {
             paramIndex++;
         }
 
-        // Build final query
         String finalQuery = queryBuilder.toString() + whereBuilder.toString() + "ORDER BY t.createdAt DESC";
 
         jakarta.persistence.Query query = entityManager.createQuery(finalQuery);
-        
-        // Set parameters
+
         for (int i = 0; i < parameters.size(); i++) {
             query.setParameter(i + 1, parameters.get(i));
         }
 
-        // Apply pagination
         query.setFirstResult((int) pageable.getOffset());
         query.setMaxResults(pageable.getPageSize());
 
         @SuppressWarnings("unchecked")
         List<Task> tasks = query.getResultList();
 
-        // Count query for total elements
         String countQuery = queryBuilder.toString().replace("SELECT DISTINCT t", "SELECT COUNT(DISTINCT t)") + whereBuilder.toString();
         jakarta.persistence.Query countQ = entityManager.createQuery(countQuery);
         for (int i = 0; i < parameters.size(); i++) {
@@ -1235,7 +1178,6 @@ public class TaskService {
         }
         Long totalElements = (Long) countQ.getSingleResult();
 
-        // Convert to DTOs
         List<TaskSummaryDTO> taskSummaryDTOs = tasks.stream()
                 .map(this::convertToTaskSummaryDto)
                 .collect(Collectors.toList());
@@ -1265,7 +1207,6 @@ public class TaskService {
         List<Object> parameters = new ArrayList<>();
         int paramIndex = 1;
 
-        // Access control
         queryBuilder.append("JOIN t.workspace w ");
         queryBuilder.append("LEFT JOIN w.workspaceMembers wm ");
         whereBuilder.append("AND (w.owner = ?").append(paramIndex).append(" OR wm.user = ?").append(paramIndex + 1).append(") ");
@@ -1273,7 +1214,6 @@ public class TaskService {
         parameters.add(currentUser);
         paramIndex += 2;
 
-        // Date range filter - tasks with due dates in the range OR created in the range
         whereBuilder.append("AND ((t.dueDate BETWEEN ?").append(paramIndex).append(" AND ?").append(paramIndex + 1).append(") ");
         whereBuilder.append("OR (t.createdAt BETWEEN ?").append(paramIndex + 2).append(" AND ?").append(paramIndex + 3).append(")) ");
         parameters.add(startDateTime);
@@ -1282,14 +1222,12 @@ public class TaskService {
         parameters.add(endDateTime);
         paramIndex += 4;
 
-        // Workspace filter
         if (workspaceId != null) {
             whereBuilder.append("AND t.workspace.id = ?").append(paramIndex).append(" ");
             parameters.add(workspaceId);
             paramIndex++;
         }
 
-        // Status filter
         if (statusId != null) {
             whereBuilder.append("AND t.status = ?").append(paramIndex).append(" ");
             parameters.add(statusId);

@@ -1,5 +1,6 @@
 package com.taskifyApplication.service;
 
+import com.taskifyApplication.exception.ResourceNotFoundException;
 import com.taskifyApplication.model.User;
 import com.taskifyApplication.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +21,7 @@ public class CustomUserDetailsService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + email));
 
         UserBuilder builder = org.springframework.security.core.userdetails.User.builder();
         builder.username(user.getEmail());
