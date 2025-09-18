@@ -173,7 +173,7 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     Long countTasksInWorkspace(@Param("workspaceId") Long workspaceId);
 
     @Query("SELECT COUNT(t) FROM Task t WHERE t.workspace.id = :workspaceId AND t.status.id = :status")
-    Long countTasksByStatusInWorkspace(@Param("workspaceId") Long workspaceId, @Param("statusId") Long statusId);
+    Long countTasksByStatusInWorkspace(@Param("workspaceId") Long workspaceId, @Param("status") Long statusId);
 
     @Query("SELECT COUNT(t) FROM Task t WHERE t.workspace.id = :workspaceId AND t.assignedTo.id = :userId")
     Long countTasksAssignedToUserInWorkspace(@Param("workspaceId") Long workspaceId, @Param("userId") Long userId);

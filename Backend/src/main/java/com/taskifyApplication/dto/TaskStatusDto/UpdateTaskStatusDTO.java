@@ -7,9 +7,6 @@ import lombok.Data;
 @Data
 public class UpdateTaskStatusDTO {
 
-    @NotNull(message = "Status ID is required")
-    private Long id;
-
     @Size(max = 50, message = "Status name must not exceed 50 characters")
     private String name;
 

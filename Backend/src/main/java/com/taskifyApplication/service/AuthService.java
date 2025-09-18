@@ -42,7 +42,7 @@ public class AuthService {
     // endregion
 
     // region PUBLIC FUNCTIONS
-    public AuthResponseDTO register(CreateUserRequestDTO request, HttpServletResponse response) { // 1. Adicionar HttpServletResponse
+    public AuthResponseDTO register(CreateUserRequestDTO request, HttpServletResponse response) {
         if (!validationService.isValidEmail(request.getEmail())) {
             throw new InvalidFormatException("Invalid email format");
         }
@@ -95,7 +95,7 @@ public class AuthService {
                 .build();
     }
 
-    public AuthResponseDTO login(LoginRequestDTO request, HttpServletResponse response) { // 1. Adicionar HttpServletResponse
+    public AuthResponseDTO login(LoginRequestDTO request, HttpServletResponse response) {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         request.getEmail(),
@@ -118,6 +118,7 @@ public class AuthService {
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
         return AuthResponseDTO.builder()
+                .token(token)
                 .user(convertToProfileDTO(user))
                 .build();
     }

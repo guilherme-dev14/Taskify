@@ -37,9 +37,8 @@ public class TaskStatusController {
     }
 
     @PutMapping("/{statusId}")
-    public ResponseEntity<?> updateStatus(@PathVariable Long workspaceId, @Valid @RequestBody UpdateTaskStatusDTO updateDto) {
-            updateDto.setId(updateDto.getId());
-            TaskStatusDTO updatedStatus = taskStatusService.updateStatus(updateDto.getId(), workspaceId, updateDto);
+    public ResponseEntity<?> updateStatus(@PathVariable Long workspaceId, @PathVariable Long statusId ,@Valid @RequestBody UpdateTaskStatusDTO updateDto) {
+            TaskStatusDTO updatedStatus = taskStatusService.updateStatus(statusId, workspaceId, updateDto);
             return ResponseEntity.ok(updatedStatus);
     }
 

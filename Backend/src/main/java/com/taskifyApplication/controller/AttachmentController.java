@@ -46,7 +46,7 @@ public class AttachmentController {
                 .contentType(MediaType.parseMediaType(downloadInfo.contentType()))
                 .contentLength(downloadInfo.content().length)
                 .header(HttpHeaders.CONTENT_DISPOSITION,
-                        STR."attachment; filename=\"\{downloadInfo.filename()}\"")
+                        String.format("attachment; filename=\"%s\"", downloadInfo.filename()))
                 .body(resource);
     }
 
