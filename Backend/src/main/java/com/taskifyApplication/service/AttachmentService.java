@@ -13,6 +13,8 @@ import org.apache.commons.io.FilenameUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -34,13 +36,16 @@ public class AttachmentService {
     private ValidationService validationService;
 
     @Autowired
+    private UserService userService;
+
+    @Autowired
     private TaskRepository taskRepository;
 
     @Autowired
     private WorkspaceRepository workspaceRepository;
 
     public Attachment uploadAttachment(MultipartFile file, Long taskId, Long workspaceId,
-                                       String description, User uploadedBy) {
+                                       String description) {
         validateFile(file);
 
         Task task = null;
@@ -48,15 +53,16 @@ public class AttachmentService {
 
         if (taskId != null) {
             task = taskRepository.findById(taskId)
-                    .orElseThrow(() -> new RuntimeException("Task not found"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
             workspace = task.getWorkspace();
         } else if (workspaceId != null) {
             workspace = workspaceRepository.findById(workspaceId)
-                    .orElseThrow(() -> new RuntimeException("Workspace not found"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Workspace not found"));
         } else {
-            throw new RuntimeException("Either taskId or workspaceId must be provided");
+            throw new InvalidFormatException("Either taskId or workspaceId must be provided");
         }
 
+        User uploadedBy = userService.getCurrentUser();
         try {
             String originalFilename = file.getOriginalFilename();
             String extension = FilenameUtils.getExtension(originalFilename);
@@ -83,43 +89,6 @@ public class AttachmentService {
         }
     }
 
-    public Attachment uploadNewVersion(Long attachmentId, MultipartFile file,
-                                       String changelog, User uploadedBy) {
-        Attachment parentAttachment = attachmentRepository.findById(attachmentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Attachment not found"));
-
-        validateFile(file);
-
-        try {
-            parentAttachment.setIsLatestVersion(false);
-            attachmentRepository.save(parentAttachment);
-
-            String originalFilename = file.getOriginalFilename();
-            String extension = FilenameUtils.getExtension(originalFilename);
-            String uniqueFilename = UUID.randomUUID().toString() + "." + extension;
-
-            Attachment newVersion = Attachment.builder()
-                    .data(file.getBytes())
-                    .filename(uniqueFilename)
-                    .originalName(originalFilename)
-                    .mimeType(file.getContentType())
-                    .size(file.getSize())
-                    .uploadedBy(uploadedBy)
-                    .task(parentAttachment.getTask())
-                    .workspace(parentAttachment.getWorkspace())
-                    .description(changelog)
-                    .version(parentAttachment.getVersion() + 1)
-                    .isLatestVersion(true)
-                    .parentAttachment(parentAttachment)
-                    .build();
-
-            return attachmentRepository.save(newVersion);
-
-        } catch (IOException e) {
-            throw new BadRequestException("Failed to upload new version");
-        }
-    }
-
     public Page<Attachment> getAttachments(AttachmentFilters filters, Pageable pageable) {
         return attachmentRepository.findWithFilters(
                 filters.getTaskId(),
@@ -135,16 +104,9 @@ public class AttachmentService {
                 .orElseThrow(() -> new ResourceNotFoundException("Attachment not found"));
     }
 
-    public List<Attachment> getAttachmentVersions(Long attachmentId) {
-        Attachment attachment = getAttachment(attachmentId);
-        Attachment parentAttachment = attachment.getParentAttachment() != null ?
-                attachment.getParentAttachment() : attachment;
-        return attachmentRepository.findByParentAttachmentOrderByVersionAsc(parentAttachment);
-    }
-
-    public void deleteAttachment(Long id, User user) {
+    public void deleteAttachment(Long id) {
         Attachment attachment = getAttachment(id);
-
+        User user = userService.getCurrentUser();
         if (!canUserDeleteAttachment(attachment, user)) {
             throw new ForbiddenException("Permission denied");
         }

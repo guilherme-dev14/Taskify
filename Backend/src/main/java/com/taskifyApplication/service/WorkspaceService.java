@@ -180,10 +180,10 @@ public class WorkspaceService {
     // endregion
 
     // region MEMBERS CONFIG
-    public void addMemberToWorkspace(Long workspaceId, User userToAdd, RoleEnum role, User requestingUser) {
+    public void addMemberToWorkspace(Long workspaceId, User userToAdd, RoleEnum role) {
         Workspace workspace = getWorkspaceById(workspaceId);
-
-        if (!canUserManageWorkspace(workspace, requestingUser)) {
+        User requestingUser = getCurrentUser();
+        if (!canUserManageWorkspace(workspace)) {
             throw new ForbiddenException("You don't have permission to add members to this workspace");
         }
 
@@ -202,10 +202,10 @@ public class WorkspaceService {
         notificationService.notifyWorkspaceInvite(userToAdd, workspace, requestingUser);
     }
 
-    public void removeMemberFromWorkspace(Long workspaceId, User userToRemove, User requestingUser) {
+    public void removeMemberFromWorkspace(Long workspaceId, User userToRemove) {
         Workspace workspace = getWorkspaceById(workspaceId);
-
-        if (!canUserManageWorkspace(workspace, requestingUser)) {
+        User requestingUser = getCurrentUser();
+        if (!canUserManageWorkspace(workspace)) {
             throw new ForbiddenException("You don't have permission to remove members from this workspace");
         }
 
@@ -222,10 +222,10 @@ public class WorkspaceService {
         }
     }
 
-    public void updateMemberRole(Long workspaceId, User userToUpdate, RoleEnum newRole, User requestingUser) {
+    public void updateMemberRole(Long workspaceId, User userToUpdate, RoleEnum newRole) {
         Workspace workspace = getWorkspaceById(workspaceId);
-
-        if (!canUserManageWorkspace(workspace, requestingUser)) {
+        User requestingUser = getCurrentUser();
+        if (!canUserManageWorkspace(workspace)) {
             throw new ForbiddenException("You don't have permission to update member roles");
         }
 
@@ -242,12 +242,14 @@ public class WorkspaceService {
     // endregion
 
     // region VALIDATION
-    public boolean canUserAccessWorkspace(Workspace workspace, User user) {
+    public boolean canUserAccessWorkspace(Workspace workspace) {
+        User user = getCurrentUser();
         return workspace.getOwner().equals(user) ||
                 workspaceMemberRepository.existsByWorkspaceAndUser(workspace, user);
     }
 
-    public boolean canUserManageWorkspace(Workspace workspace, User user) {
+    public boolean canUserManageWorkspace(Workspace workspace) {
+        User user = getCurrentUser();
         if (workspace.getOwner().equals(user)) {
             return true;
         }
@@ -268,7 +270,8 @@ public class WorkspaceService {
 
     // region INVITE CODE
 
-    public Workspace joinWorkspaceByInviteCode(String inviteCode, User user) {
+    public void joinWorkspaceByInviteCode(String inviteCode) {
+        User user = getCurrentUser();
         Workspace workspace = workspaceRepository.findByInviteCode(inviteCode)
                 .orElseThrow(() -> new InvalidFormatException("Invalid invite code"));
 
@@ -294,13 +297,12 @@ public class WorkspaceService {
             notificationService.notifyMemberJoined(workspace.getOwner(), workspace, user);
         }
 
-        return workspace;
     }
 
-    public String generateNewInviteCode(Long workspaceId, User requestingUser) {
+    public String generateNewInviteCode(Long workspaceId) {
         Workspace workspace = getWorkspaceById(workspaceId);
 
-        if (!canUserManageWorkspace(workspace, requestingUser)) {
+        if (!canUserManageWorkspace(workspace)) {
             throw new ForbiddenException("You don't have permission to generate invite codes");
         }
 
@@ -324,7 +326,7 @@ public class WorkspaceService {
         User currentUser = getCurrentUser();
         Workspace workspace = getWorkspaceById(workspaceId);
 
-        if (!canUserManageWorkspace(workspace, currentUser)) {
+        if (!canUserManageWorkspace(workspace)) {
             throw new ForbiddenException("You don't have permission to view invite codes for this workspace");
         }
 
@@ -335,7 +337,7 @@ public class WorkspaceService {
         User currentUser = getCurrentUser();
         Workspace workspace = getWorkspaceById(workspaceId);
 
-        if (!canUserAccessWorkspace(workspace, currentUser)) {
+        if (!canUserAccessWorkspace(workspace)) {
             throw new ForbiddenException("You don't have access to this workspace");
         }
 

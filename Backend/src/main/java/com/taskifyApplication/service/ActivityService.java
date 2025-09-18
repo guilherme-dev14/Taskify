@@ -126,7 +126,12 @@ public class ActivityService {
 
     public Map<String, Long> getActivityStats(LocalDateTime startDate, LocalDateTime endDate) {
         Map<String, Long> stats = new HashMap<>();
-        
+        if (startDate == null) {
+            startDate = LocalDateTime.now().minusDays(30);
+        }
+        if (endDate == null) {
+            endDate = LocalDateTime.now();
+        }
         String[] activityTypes = {
             "task_created", "task_updated", "task_completed", "task_deleted",
             "comment_added", "user_joined", "timer_started", "timer_stopped"

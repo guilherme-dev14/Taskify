@@ -30,13 +30,10 @@ public class AttachmentController {
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "taskId", required = false) Long taskId,
             @RequestParam(value = "workspaceId", required = false) Long workspaceId,
-            @RequestParam(value = "description", required = false) String description,
-            Authentication authentication) {
-
-        User currentUser = getCurrentUser(authentication);
+            @RequestParam(value = "description", required = false) String description) {
 
         Attachment attachment = attachmentService.uploadAttachment(
-                file, taskId, workspaceId, description, currentUser);
+                file, taskId, workspaceId, description);
 
         return ResponseEntity.ok(attachment);
     }
@@ -44,9 +41,7 @@ public class AttachmentController {
     @GetMapping("/{id}/download")
     public ResponseEntity<ByteArrayResource> downloadAttachment(@PathVariable Long id) {
         AttachmentService.FileDownloadInfo downloadInfo = attachmentService.getFileForDownload(id);
-
         ByteArrayResource resource = new ByteArrayResource(downloadInfo.content());
-
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(downloadInfo.contentType()))
                 .contentLength(downloadInfo.content().length)
@@ -56,13 +51,9 @@ public class AttachmentController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteAttachment(@PathVariable Long id, Authentication authentication) {
-        User currentUser = getCurrentUser(authentication);
-        attachmentService.deleteAttachment(id, currentUser);
+    public ResponseEntity<Void> deleteAttachment(@PathVariable Long id ) {
+        attachmentService.deleteAttachment(id);
         return ResponseEntity.noContent().build();
     }
 
-    private User getCurrentUser(Authentication authentication) {
-        return userService.getUserFromAuthentication(authentication);
-    }
 }

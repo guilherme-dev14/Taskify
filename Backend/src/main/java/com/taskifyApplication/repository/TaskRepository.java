@@ -43,7 +43,6 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
 
     Page<Task> findByAssignedTo(User assignedTo, Pageable pageable);
 
-    // Workspace-wide task methods (for collaborative view)
     List<Task> findByWorkspace(Workspace workspace);
     
     Page<Task> findByWorkspace(Workspace workspace, Pageable pageable);
@@ -114,7 +113,6 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
                                    @Param("priority") PriorityEnum priority,
                                    Pageable pageable);
 
-    // Advanced search and filtering methods
     @Query("SELECT DISTINCT t FROM Task t LEFT JOIN t.tags tag WHERE " +
            "(:workspaceId IS NULL OR t.workspace.id = :workspaceId) " +
            "AND (:assigneeId IS NULL OR t.assignedTo.id = :assigneeId) " +
@@ -142,7 +140,6 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
                                       @Param("tags") List<String> tags,
                                       Pageable pageable);
 
-    // Full-text search
     @Query("SELECT t FROM Task t WHERE " +
            "LOWER(t.title) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
            "LOWER(t.description) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
@@ -157,7 +154,6 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
                                       @Param("query") String query, 
                                       Pageable pageable);
 
-    // Subtask queries
     List<Task> findByParentTaskOrderByCreatedAtAsc(Task parentTask);
 
     @Query("SELECT COUNT(t) FROM Task t WHERE t.parentTask = :parentTask")
@@ -166,7 +162,6 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     @Query("SELECT COUNT(t) FROM Task t WHERE t.parentTask = :parentTask AND t.status.name = 'COMPLETED'")
     Long countCompletedSubtasks(@Param("parentTask") Task parentTask);
 
-    // Tag queries
     @Query("SELECT DISTINCT tag FROM Task t JOIN t.tags tag WHERE t.workspace.id = :workspaceId " +
            "GROUP BY tag ORDER BY COUNT(tag) DESC")
     List<String> findMostUsedTagsInWorkspace(@Param("workspaceId") Long workspaceId, Pageable pageable);
@@ -183,7 +178,6 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     @Query("SELECT COUNT(t) FROM Task t WHERE t.workspace.id = :workspaceId AND t.assignedTo.id = :userId")
     Long countTasksAssignedToUserInWorkspace(@Param("workspaceId") Long workspaceId, @Param("userId") Long userId);
 
-    // Analytics support methods
     @Query("SELECT t FROM Task t WHERE t.workspace.id = :workspaceId AND t.assignedTo.id = :userId AND t.createdAt BETWEEN :startDate AND :endDate")
     List<Task> findByWorkspaceIdAndAssignedToIdAndCreatedAtBetween(@Param("workspaceId") Long workspaceId, 
                                                                    @Param("userId") Long userId, 

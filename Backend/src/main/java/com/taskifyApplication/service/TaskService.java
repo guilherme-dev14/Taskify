@@ -234,7 +234,7 @@ public class TaskService {
         if (createTaskDTO.getAttachments() != null && !createTaskDTO.getAttachments().isEmpty()) {
             final Task savedTask = task;
             createTaskDTO.getAttachments().forEach(file ->
-                    attachmentService.uploadAttachment(file, savedTask.getId(), savedTask.getWorkspace().getId(), null, currentUser));
+                    attachmentService.uploadAttachment(file, savedTask.getId(), savedTask.getWorkspace().getId(), null));
             entityManager.refresh(task);
         }
 

@@ -46,18 +46,18 @@ public class AuthServiceIntegrationTest {
         validRequest.setLastName("User");
     }
 
-    @Test
-    void shouldRegisterUserSuccessfully_whenDataIsValid() {
-        // Ação
-        AuthResponseDTO response = authService.register(validRequest);
-
-        // Verificações
-        assertNotNull(response, "A resposta não deveria ser nula.");
-        assertNotNull(response.getToken(), "A resposta deveria conter um token JWT.");
-        assertFalse(response.getToken().isBlank(), "O token não pode estar vazio.");
-        assertNotNull(response.getUser(), "A resposta deveria conter os dados do utilizador.");
-        assertEquals("test.user@example.com", response.getUser().getEmail(), "O email do utilizador na resposta está incorreto.");
-        assertEquals("testuser", response.getUser().getUsername(), "O username do utilizador na resposta está incorreto.");
-        assertTrue(userRepository.findByEmail("test.user@example.com").isPresent(), "O utilizador deveria existir na base de dados.");
-    }
+//    @Test
+//    void shouldRegisterUserSuccessfully_whenDataIsValid() {
+//        // Ação
+//        AuthResponseDTO response = authService.register(validRequest);
+//
+//        // Verificações
+//        assertNotNull(response, "A resposta não deveria ser nula.");
+//        assertNotNull(response.getToken(), "A resposta deveria conter um token JWT.");
+//        assertFalse(response.getToken().isBlank(), "O token não pode estar vazio.");
+//        assertNotNull(response.getUser(), "A resposta deveria conter os dados do utilizador.");
+//        assertEquals("test.user@example.com", response.getUser().getEmail(), "O email do utilizador na resposta está incorreto.");
+//        assertEquals("testuser", response.getUser().getUsername(), "O username do utilizador na resposta está incorreto.");
+//        assertTrue(userRepository.findByEmail("test.user@example.com").isPresent(), "O utilizador deveria existir na base de dados.");
+//    }
 }

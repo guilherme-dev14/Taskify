@@ -1,12 +1,20 @@
 package com.taskifyApplication.service;
 
 import com.taskifyApplication.dto.analytics.*;
+import com.taskifyApplication.exception.ForbiddenException;
 import com.taskifyApplication.exception.ResourceNotFoundException;
 import com.taskifyApplication.model.Task;
+import com.taskifyApplication.model.User;
+import com.taskifyApplication.model.Workspace;
+import com.taskifyApplication.model.WorkspaceMember;
 import com.taskifyApplication.repository.TaskRepository;
+import com.taskifyApplication.repository.TimeTrackingRepository;
 import com.taskifyApplication.repository.UserRepository;
 import com.taskifyApplication.repository.WorkspaceRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -22,18 +30,32 @@ public class AnalyticsService {
     private TaskRepository taskRepository;
 
     @Autowired
-    private UserRepository userRepository;
+    private UserService userService;
 
     @Autowired
     private WorkspaceRepository workspaceRepository;
 
-    public ProductivityMetricsDto getProductivityMetrics(Long workspaceId, Long userId,
-                                                         LocalDate startDate, LocalDate endDate, String period) {
+    @Autowired
+    private TimeTrackingRepository timeTrackingRepository;
 
+    public ProductivityMetricsDto getProductivityMetrics(Long workspaceId, Long userId, LocalDate startDate, LocalDate endDate) {
+
+        User currentUser = userService.getCurrentUser();
+        if (currentUser == null) {
+            throw new ResourceNotFoundException("User not found");
+        }
+        Long effectiveUserId = userId != null ? userId : currentUser.getId();
+
+        if (!hasWorkspaceAccess(currentUser, workspaceId)) {
+            throw  new ForbiddenException("Access denied");
+        }
+        if (!effectiveUserId.equals(currentUser.getId())) {
+            effectiveUserId = currentUser.getId();
+        }
         LocalDate start = startDate != null ? startDate : LocalDate.now().minusDays(30);
         LocalDate end = endDate != null ? endDate : LocalDate.now();
 
-        List<Task> tasks = getFilteredTasks(workspaceId, userId, start, end);
+        List<Task> tasks = getFilteredTasks(workspaceId, effectiveUserId, start, end);
 
         List<Task> completedTasks = tasks.stream()
                 .filter(task -> task.getStatus() != null &&
@@ -47,7 +69,7 @@ public class AnalyticsService {
                 .count();
 
         int todayTarget = 5;
-        int weeklyStreak = calculateWeeklyStreak(userId, workspaceId);
+        int weeklyStreak = calculateWeeklyStreak(effectiveUserId, workspaceId);
         double focusTime = completedTasks.size() * 2.5;
         double efficiency = tasks.isEmpty() ? 0 : (double) completedTasks.size() / tasks.size() * 100;
 
@@ -70,13 +92,20 @@ public class AnalyticsService {
                 focusTime, efficiency, weeklyGoalProgress, dailyProgress, weeklyStats);
     }
 
-    public AnalyticsOverviewDto getAnalyticsOverview(Long workspaceId, Long userId, LocalDate startDate,
-                                                     LocalDate endDate, String period) {
+    public AnalyticsOverviewDto getAnalyticsOverview(Long workspaceId, LocalDate startDate,
+                                                     LocalDate endDate) {
+        User currentUser = userService.getCurrentUser();
+        if (currentUser == null) {
+            throw new ResourceNotFoundException("User not found");
+        }
+        if (!hasWorkspaceAccess(currentUser, workspaceId)) {
+            throw  new ForbiddenException("Access denied");
+        }
 
         LocalDate start = startDate != null ? startDate : LocalDate.now().minusDays(30);
         LocalDate end = endDate != null ? endDate : LocalDate.now();
 
-        List<Task> tasks = getFilteredTasks(workspaceId, userId, start, end);
+        List<Task> tasks = getFilteredTasks(workspaceId, currentUser.getId(), start, end);
 
         List<Task> completedTasks = tasks.stream()
                 .filter(task -> task.getStatus() != null &&
@@ -102,24 +131,19 @@ public class AnalyticsService {
                 averageCompletionTime, productivityScore, teamEfficiency);
     }
 
-    public AnalyticsTrendsDto getAnalyticsTrends(Long workspaceId, Long userId,
-                                                 LocalDate startDate, LocalDate endDate, String period) {
-
-        List<String> labels = generatePeriodLabels(period);
-        List<Integer> taskCompletion = generateTrendData(labels.size(), 60, 95);
-        List<Integer> timeSpent = generateTrendData(labels.size(), 100, 200);
-        List<Integer> productivity = generateTrendData(labels.size(), 70, 98);
-
-        return new AnalyticsTrendsDto(taskCompletion, timeSpent, productivity, labels);
-    }
-
-    public DistributionDataDto getDistributionData(Long workspaceId, Long userId, LocalDate startDate,
-                                                   LocalDate endDate, String period) {
-
+    public DistributionDataDto getDistributionData(Long workspaceId, LocalDate startDate,
+                                                   LocalDate endDate) {
+        User currentUser = userService.getCurrentUser();
+        if (currentUser == null) {
+            throw new ResourceNotFoundException("User not found");
+        }
+        if (!hasWorkspaceAccess(currentUser, workspaceId)) {
+            throw  new ForbiddenException("Access denied");
+        }
         LocalDate start = startDate != null ? startDate : LocalDate.now().minusDays(30);
         LocalDate end = endDate != null ? endDate : LocalDate.now();
 
-        List<Task> tasks = getFilteredTasks(workspaceId, userId, start, end);
+        List<Task> tasks = getFilteredTasks(workspaceId, currentUser.getId(), start, end);
 
         Map<String, Long> statusCounts = tasks.stream()
                 .filter(task -> task.getStatus() != null && task.getStatus().getName() != null)
@@ -144,22 +168,6 @@ public class AnalyticsService {
         return new DistributionDataDto(tasksByStatus, tasksByPriority);
     }
 
-    public TeamAnalyticsDto getTeamAnalytics(Long workspaceId, Long userId, LocalDate startDate,
-                                             LocalDate endDate, String period) {
-
-        List<TeamAnalyticsDto.TeamMemberAnalytics> members = Arrays.asList(
-                new TeamAnalyticsDto.TeamMemberAnalytics(1L, "John Doe", null, 42, 280, 94, 3, 2.5),
-                new TeamAnalyticsDto.TeamMemberAnalytics(2L, "Jane Smith", null, 38, 265, 91, 4, 2.8),
-                new TeamAnalyticsDto.TeamMemberAnalytics(3L, "Mike Johnson", null, 35, 245, 89, 2, 2.2)
-        );
-
-        TeamAnalyticsDto.TeamStats teamStats = new TeamAnalyticsDto.TeamStats(5, 3, 91.3, 115, 790);
-
-        return new TeamAnalyticsDto(members, teamStats);
-    }
-
-
-
     private List<Task> getFilteredTasks(Long workspaceId, Long userId, LocalDate startDate, LocalDate endDate) {
         OffsetDateTime start = startDate.atStartOfDay().atOffset(OffsetDateTime.now().getOffset());
         OffsetDateTime end = endDate.atTime(23, 59, 59).atOffset(OffsetDateTime.now().getOffset());
@@ -178,24 +186,6 @@ public class AnalyticsService {
 
     private int calculateWeeklyStreak(Long userId, Long workspaceId) {
         return 3 + (int)(Math.random() * 5);
-    }
-
-    private List<String> generatePeriodLabels(String period) {
-        return switch (period.toLowerCase()) {
-            case "week" -> Arrays.asList("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun");
-            case "quarter" -> Arrays.asList("Q1", "Q2", "Q3", "Q4");
-            case "year" -> Arrays.asList("2020", "2021", "2022", "2023", "2024");
-            default -> Arrays.asList("Jan", "Feb", "Mar", "Apr", "May", "Jun",
-                    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec");
-        };
-    }
-
-    private List<Integer> generateTrendData(int size, int min, int max) {
-        List<Integer> data = new ArrayList<>();
-        for (int i = 0; i < size; i++) {
-            data.add(min + (int)(Math.random() * (max - min)));
-        }
-        return data;
     }
 
     private DistributionDataDto.TaskDistribution createTaskDistribution(
@@ -228,4 +218,10 @@ public class AnalyticsService {
 
         return new DistributionDataDto.TaskDistribution(labels, data, resultColors);
     }
+    private boolean hasWorkspaceAccess(User user, Long workspaceId) {
+        if (workspaceId == null) return true;
+
+        return workspaceRepository.accessibleForUser(user, workspaceId);
+    }
+
 }

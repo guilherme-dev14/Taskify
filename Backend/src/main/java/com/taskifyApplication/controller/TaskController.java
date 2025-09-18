@@ -51,13 +51,8 @@ public class TaskController {
 
     @GetMapping("/{id}")
     public ResponseEntity<TaskDetailDTO> getTaskById(@PathVariable Long id) {
-        try {
             TaskDetailDTO task = taskService.getTaskById(id);
             return ResponseEntity.ok(task);
-        } catch (IllegalArgumentException e) {
-            System.out.println("DEBUG: TaskController.getTaskById - IllegalArgumentException: " + e.getMessage());
-            return ResponseEntity.badRequest().body(null);
-        }
     }
     @GetMapping("/kanban")
     public ResponseEntity<List<TaskSummaryDTO>> getTasksByStatus(
@@ -101,7 +96,6 @@ public class TaskController {
         return ResponseEntity.ok(stats);
     }
 
-    // Workspace-wide task endpoints
     @GetMapping("/workspace/{workspaceId}")
     public ResponseEntity<PageResponse<TaskSummaryDTO>> getAllTasksInWorkspace(
             @PathVariable Long workspaceId,
@@ -111,17 +105,11 @@ public class TaskController {
             @RequestParam(defaultValue = "DESC") String direction,
             @RequestParam(required = false) Long statusId,
             @RequestParam(required = false) PriorityEnum priority) {
-        try {
             Sort.Direction sortDirection = Sort.Direction.fromString(direction);
             Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sort));
             
             PageResponse<TaskSummaryDTO> tasks = taskService.getAllTasksInWorkspace(workspaceId, statusId, priority, pageable);
             return ResponseEntity.ok(tasks);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
     }
 
     @GetMapping("/workspace/{workspaceId}/list")
@@ -129,104 +117,64 @@ public class TaskController {
             @PathVariable Long workspaceId,
             @RequestParam(required = false) Long statusId,
             @RequestParam(required = false) PriorityEnum priority) {
-        try {
             List<TaskSummaryDTO> tasks = taskService.getAllTasksInWorkspaceList(workspaceId, statusId, priority);
             return ResponseEntity.ok(tasks);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
     }
 
     // Bulk Operations
     @PutMapping("/bulk-update")
     public ResponseEntity<List<TaskResponseDTO>> bulkUpdateTasks(@Valid @RequestBody BulkTaskOperationDTO bulkUpdateDTO) {
-        try {
             List<TaskResponseDTO> updatedTasks = taskService.bulkUpdateTasks(bulkUpdateDTO);
             return ResponseEntity.ok(updatedTasks);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
-        }
     }
 
     @DeleteMapping("/bulk-delete")
     public ResponseEntity<Void> bulkDeleteTasks(@RequestBody List<Long> taskIds) {
-        try {
             taskService.bulkDeleteTasks(taskIds);
             return ResponseEntity.noContent().build();
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
-        }
     }
 
     @PostMapping("/{id}/clone")
     public ResponseEntity<TaskResponseDTO> cloneTask(@PathVariable Long id) {
-        try {
             TaskResponseDTO clonedTask = taskService.cloneTask(id);
             return ResponseEntity.status(HttpStatus.CREATED).body(clonedTask);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
-        }
     }
 
-    // Subtask Management
     @PostMapping("/{parentId}/subtasks")
     public ResponseEntity<TaskResponseDTO> createSubtask(
             @PathVariable Long parentId,
             @Valid @RequestBody CreateSubtaskDTO createSubtaskDTO) {
-        try {
             createSubtaskDTO.setParentTaskId(parentId);
             TaskResponseDTO subtask = taskService.createSubtask(createSubtaskDTO);
             return ResponseEntity.status(HttpStatus.CREATED).body(subtask);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
-        }
     }
 
     @GetMapping("/{parentId}/subtasks")
     public ResponseEntity<List<TaskSummaryDTO>> getSubtasks(@PathVariable Long parentId) {
-        try {
             List<TaskSummaryDTO> subtasks = taskService.getSubtasks(parentId);
             return ResponseEntity.ok(subtasks);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
-        }
     }
 
     @GetMapping("/{subtaskId}/parent")
     public ResponseEntity<TaskSummaryDTO> getParentTask(@PathVariable Long subtaskId) {
-        try {
             TaskSummaryDTO parentTask = taskService.getParentTask(subtaskId);
             return ResponseEntity.ok(parentTask);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
-        }
     }
 
     @PutMapping("/{taskId}/convert-to-subtask/{parentId}")
     public ResponseEntity<Void> convertToSubtask(
             @PathVariable Long taskId,
             @PathVariable Long parentId) {
-        try {
             taskService.convertToSubtask(taskId, parentId);
             return ResponseEntity.ok().build();
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
-        }
     }
 
     @PutMapping("/{subtaskId}/promote-to-main-task")
     public ResponseEntity<Void> promoteToMainTask(@PathVariable Long subtaskId) {
-        try {
             taskService.promoteToMainTask(subtaskId);
             return ResponseEntity.ok().build();
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
-        }
     }
 
-    // Advanced Search
     @PostMapping("/search")
     public ResponseEntity<PageResponse<TaskSummaryDTO>> advancedSearch(
             @Valid @RequestBody AdvancedSearchDTO searchDTO,
@@ -234,7 +182,6 @@ public class TaskController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir) {
-        try {
             Sort sort = sortDir.equalsIgnoreCase("desc") ? 
                 Sort.by(sortBy).descending() : 
                 Sort.by(sortBy).ascending();
@@ -242,24 +189,16 @@ public class TaskController {
             Pageable pageable = PageRequest.of(page, size, sort);
             PageResponse<TaskSummaryDTO> tasks = taskService.advancedSearch(searchDTO, pageable);
             return ResponseEntity.ok(tasks);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
     }
 
-    // Calendar View endpoints
     @GetMapping("/calendar")
     public ResponseEntity<List<TaskSummaryDTO>> getTasksForDateRange(
             @RequestParam String startDate,
             @RequestParam String endDate,
             @RequestParam(required = false) Long workspaceId,
             @RequestParam(required = false) Long statusId) {
-        try {
             List<TaskSummaryDTO> tasks = taskService.getTasksForDateRange(startDate, endDate, workspaceId, statusId);
             return ResponseEntity.ok(tasks);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
     }
 
     @GetMapping("/{taskId}/time-tracking")
