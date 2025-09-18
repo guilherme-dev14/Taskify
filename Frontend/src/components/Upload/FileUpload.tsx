@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   CloudArrowUpIcon,
   DocumentIcon,
-  TrashIcon,
   XMarkIcon,
   CheckCircleIcon,
   ExclamationTriangleIcon,
@@ -119,8 +118,9 @@ export const FileUpload: React.FC<FileUploadProps> = ({
 
       toast.success("File uploaded successfully", uploadedFile.name);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Upload failed";
-      
+      const errorMessage =
+        error instanceof Error ? error.message : "Upload failed";
+
       setFiles((prev) =>
         prev.map((f) =>
           f.id === uploadedFile.id
@@ -262,7 +262,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
 
         <div className="space-y-4">
           <CloudArrowUpIcon className="w-12 h-12 text-gray-400 mx-auto" />
-          
+
           <div>
             <p className="text-lg font-medium text-gray-900 dark:text-white">
               {isDragOver ? "Drop files here" : "Upload files"}
@@ -281,7 +281,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
       <AnimatePresence>
         {files.map((file) => {
           const FileIconComponent = getFileIcon(file.type);
-          
+
           return (
             <motion.div
               key={file.id}
@@ -291,7 +291,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
               className="flex items-center space-x-4 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700"
             >
               <FileIconComponent className="w-8 h-8 text-gray-400 flex-shrink-0" />
-              
+
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
                   {file.name}
@@ -299,7 +299,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
                 <p className="text-xs text-gray-500 dark:text-gray-400">
                   {formatFileSize(file.size)}
                 </p>
-                
+
                 {file.status === "uploading" && (
                   <div className="mt-2">
                     <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
@@ -312,15 +312,15 @@ export const FileUpload: React.FC<FileUploadProps> = ({
                     </div>
                   </div>
                 )}
-                
+
                 {file.status === "error" && (
                   <p className="text-xs text-red-500 mt-1">{file.error}</p>
                 )}
               </div>
-              
+
               <div className="flex items-center space-x-2">
                 {getStatusIcon(file.status)}
-                
+
                 <button
                   onClick={() => removeFile(file.id)}
                   className="p-1 text-gray-400 hover:text-red-500 transition-colors"

@@ -61,17 +61,6 @@ export const useActivityStats = (
   });
 };
 
-export const useMarkActivityAsRead = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: activityService.markAsRead,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["activities"] });
-    },
-  });
-};
-
 export const useClearUserActivities = () => {
   const queryClient = useQueryClient();
 

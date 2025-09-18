@@ -60,7 +60,7 @@ const TasksView: React.FC = () => {
   const [taskToDelete, setTaskToDelete] = useState<ITask | null>(null);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
-  const [workspaceStatuses, setWorkspaceStatuses] = useState<ITaskStatus[]>([]);
+  const [workspaceStatuses] = useState<ITaskStatus[]>([]);
 
   const [typingUsers, setTypingUsers] = useState<
     Array<{ id: string; name: string }>

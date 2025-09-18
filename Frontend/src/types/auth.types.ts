@@ -55,12 +55,12 @@ export interface IChangePasswordRequest {
 
 export interface IUserSettings {
   id?: number;
-  theme?: 'light' | 'dark' | 'system';
+  theme?: "light" | "dark" | "system";
   language?: string;
   timezone?: string;
   dateFormat?: string;
-  timeFormat?: '12h' | '24h';
+  timeFormat?: "12h" | "24h";
   emailNotifications?: boolean;
   taskReminders?: boolean;
-  weekStartsOn?: number; // 0 for Sunday, 1 for Monday
+  weekStartsOn?: number;
 }

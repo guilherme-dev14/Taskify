@@ -303,7 +303,7 @@ const KanbanView: React.FC = () => {
   const handleCreateTask = async (taskData: ICreateTaskRequest) => {
     try {
       await taskService.createTask(taskData);
-      loadAllTasks();
+      loadAllTasks(taskData.workspaceId.toString());
     } catch (error) {
       console.error("Error creating task:", error);
     }

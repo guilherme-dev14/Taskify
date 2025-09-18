@@ -7,17 +7,18 @@ import type {
 import { setToken, removeToken } from "../../utils/token.utils";
 
 class AuthService {
-  async login(data: ILoginRequest & { rememberMe?: boolean }): Promise<IAuthResponse> {
+  async login(
+    data: ILoginRequest & { rememberMe?: boolean }
+  ): Promise<IAuthResponse> {
     const response = await api.post<IAuthResponse>("/auth/login", {
       email: data.email,
-      password: data.password
+      password: data.password,
     });
     setToken(response.data.token, data.rememberMe);
     return response.data;
   }
 
   async register(data: IRegisterRequest): Promise<IAuthResponse> {
-    debugger;
     const response = await api.post<IAuthResponse>("/auth/register", data);
     return response.data;
   }

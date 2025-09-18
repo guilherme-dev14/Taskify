@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import type { ITaskStatus } from "../types/task.types";
 
 export interface Task {
   comments: string;
@@ -7,7 +8,7 @@ export interface Task {
   title: string;
   description?: string;
   notes?: string;
-  status: "NEW" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
+  status: ITaskStatus;
   priority: "LOW" | "MEDIUM" | "HIGH" | "URGENT";
   dueDate?: string;
   createdAt: string;
@@ -86,7 +87,7 @@ export interface TaskStats {
   totalTasks: number;
   completedTasks: number;
   overdueTasks: number;
-  tasksByStatus: Record<Task["status"], number>;
+  tasksByStatus: Record<string, number>;
   tasksByPriority: Record<Task["priority"], number>;
   averageCompletionTime: number;
   productivityTrend: Array<{
@@ -286,8 +287,8 @@ export const useTaskStore = create<TaskState>()(
         }
 
         filtered.sort((a, b) => {
-          let aValue: string | number | undefined = a[sortBy];
-          let bValue: string | number | undefined = b[sortBy];
+          let aValue: string | ITaskStatus | undefined = a[sortBy];
+          let bValue: string | ITaskStatus | undefined = b[sortBy];
 
           if (sortBy === "priority") {
             const priorityOrder = { LOW: 0, MEDIUM: 1, HIGH: 2, URGENT: 3 };
@@ -315,8 +316,8 @@ export const useTaskStore = create<TaskState>()(
           (task) =>
             task.dueDate &&
             task.dueDate < now &&
-            task.status !== "COMPLETED" &&
-            task.status !== "CANCELLED"
+            task.status.name !== "COMPLETED" &&
+            task.status.name !== "CANCELLED"
         );
       },
 

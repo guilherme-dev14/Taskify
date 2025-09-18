@@ -217,7 +217,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
       },
 
       joinWorkspaceByInvite: async (code) => {
-        const invite = await get().validateInvite(code);
+        await get().validateInvite(code);
       },
 
       revokeInvite: (workspaceId, code) =>

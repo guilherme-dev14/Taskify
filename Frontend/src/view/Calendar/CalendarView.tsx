@@ -79,11 +79,7 @@ const CalendarView: React.FC = () => {
         filters.workspaceId = parseInt(selectedWorkspace);
       }
       if (selectedStatus !== "all") {
-        filters.status = selectedStatus as
-          | "NEW"
-          | "IN_PROGRESS"
-          | "COMPLETED"
-          | "CANCELLED";
+        filters.statusId = Number(selectedStatus);
       }
       if (selectedPriority !== "all") {
         filters.priority = selectedPriority as
@@ -93,13 +89,13 @@ const CalendarView: React.FC = () => {
           | "URGENT";
       }
 
-      const response = filters.workspaceId 
+      const response = filters.workspaceId
         ? await taskService.getWorkspaceTasks(filters.workspaceId, {
             page: filters.page,
             size: filters.size,
             sort: filters.sortBy,
             direction: filters.sortDir === "desc" ? "DESC" : "ASC",
-            status: filters.status,
+            statusId: filters.statusId,
             priority: filters.priority,
           })
         : await taskService.getAllTasks(filters);
@@ -226,14 +222,14 @@ const CalendarView: React.FC = () => {
   };
 
   const getStatusColor = (status: ITask["status"]) => {
-    switch (status) {
-      case "NEW":
+    switch (status.order) {
+      case 1:
         return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300";
-      case "IN_PROGRESS":
+      case 2:
         return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300";
-      case "COMPLETED":
+      case 3:
         return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300";
-      case "CANCELLED":
+      case 4:
         return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300";
       default:
         return "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300";
@@ -525,7 +521,7 @@ const CalendarView: React.FC = () => {
           isOpen={isNewTaskModalOpen}
           onClose={handleCloseNewTaskModal}
           onSubmit={handleCreateTask}
-          initialStatus="NEW"
+          initialStatusId={1}
           initialDate={modalDate}
           initialWorkspaceId={modalWorkspaceId}
         />
@@ -603,7 +599,7 @@ const CalendarView: React.FC = () => {
                               task.status
                             )}`}
                           >
-                            {task.status.replace("_", " ")}
+                            {task.status.name.replace("_", " ")}
                           </span>
                         </div>
                       </div>
@@ -730,7 +726,7 @@ const CalendarView: React.FC = () => {
                           taskToDelete.status
                         )}`}
                       >
-                        {taskToDelete.status.replace("_", " ")}
+                        {taskToDelete.status.name.replace("_", " ")}
                       </span>
                     </div>
                   </div>

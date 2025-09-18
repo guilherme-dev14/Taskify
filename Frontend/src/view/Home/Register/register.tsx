@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { useForm, type SubmitHandler } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import Stepper, { Step } from "../../../components/Stepper";
 import { Link, useNavigate } from "react-router-dom";
@@ -41,7 +41,6 @@ export const Register = () => {
 
   const {
     register,
-    handleSubmit,
     formState: { errors },
     trigger,
     getValues,

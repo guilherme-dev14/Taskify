@@ -7,52 +7,12 @@ import { TaskCard } from "../../components/Tasks/TaskCard";
 import { UserAvatarGroup } from "../../components/UI/UserAvatarBubble";
 import { type ITask, type ITasksResponse } from "../../types/task.types";
 import { type IUserSummary } from "../../types/user.types";
-import { type Task } from "../../stores/task.store";
 import {
   MagnifyingGlassIcon,
   FunnelIcon,
   UserGroupIcon,
   PlusIcon,
 } from "@heroicons/react/24/outline";
-
-const mapITaskToTask = (iTask: ITask): Task => ({
-  id: Number(iTask.id),
-  title: iTask.title,
-  description: iTask.description,
-  notes: iTask.notes,
-  status: iTask.status,
-  priority: iTask.priority,
-  dueDate: iTask.dueDate,
-  createdAt: iTask.createdAt,
-  updatedAt: iTask.updatedAt,
-  comments: "",
-  progress: 0,
-  completionPercentage: 0,
-  estimatedHours: undefined,
-  actualHours: undefined,
-  assignedTo: iTask.assignedTo
-    ? {
-        id: iTask.assignedTo.id,
-        username: iTask.assignedTo.username,
-        email: iTask.assignedTo.email,
-        firstName: iTask.assignedTo.firstName,
-        lastName: iTask.assignedTo.lastName,
-        avatar: iTask.assignedTo.avatar,
-      }
-    : undefined,
-  workspace: {
-    id: Number(iTask.workspaceId),
-    name: "Workspace",
-  },
-  categories: [],
-  tags: [],
-  parentTask: undefined,
-  subtasks: [],
-  dependencies: [],
-  attachments: [],
-  checklist: [],
-  timeTrackingEntries: [],
-});
 
 interface WorkspaceTasksViewProps {
   workspaceId: number;
@@ -205,10 +165,10 @@ export const WorkspaceTasksView: React.FC<WorkspaceTasksViewProps> = ({
           <div className="flex items-center space-x-2">
             <FunnelIcon className="w-5 h-5 text-gray-400" />
             <select
-              value={filters.status || ""}
+              value={filters.status ? String(filters.status) : ""}
               onChange={(e) =>
                 handleStatusFilter(
-                  (e.target.value as ITask["status"]) || undefined
+                  (e.target.value as unknown as ITask["status"]) || undefined
                 )
               }
               className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
@@ -251,10 +211,7 @@ export const WorkspaceTasksView: React.FC<WorkspaceTasksViewProps> = ({
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.2 }}
             >
-              <TaskCard
-                task={mapITaskToTask(task)}
-                onStatusChange={handleTaskStatusChange}
-              />
+              <TaskCard task={task} onStatusChange={handleTaskStatusChange} />
             </motion.div>
           ))}
         </AnimatePresence>

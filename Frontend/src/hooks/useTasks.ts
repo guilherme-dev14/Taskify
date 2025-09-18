@@ -13,7 +13,7 @@ const taskAPI = {
     const params = new URLSearchParams();
     if (filters.workspaceId)
       params.append("workspaceId", filters.workspaceId.toString());
-    if (filters.status) params.append("status", filters.status);
+    if (filters.status) params.append("status", filters.status.name);
     if (filters.priority) params.append("priority", filters.priority);
     if (filters.assignedTo)
       params.append("assignedTo", filters.assignedTo.toString());

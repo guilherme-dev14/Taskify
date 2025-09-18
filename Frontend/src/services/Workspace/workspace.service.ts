@@ -65,13 +65,11 @@ export const workspaceService = {
         console.log(`Successfully deleted workspace ${id}:`, response.status);
         return;
       } catch (firstError: any) {
-        // If it fails with 500, it might be due to categories
         if (firstError.response?.status === 500) {
           console.log(
             `Delete failed with 500, might be due to categories. Trying to clean up categories first...`
           );
 
-          // Try to delete categories first
           try {
             const categories =
               await categoryService.getAllCategoriesFromWorkspace(id);
@@ -93,7 +91,6 @@ export const workspaceService = {
               }
             }
 
-            // Now try to delete the workspace again
             const response = await api.delete(`/workspace/${id}`);
             console.log(
               `Successfully deleted workspace ${id} after cleaning up categories:`,
@@ -108,7 +105,6 @@ export const workspaceService = {
           }
         }
 
-        // If cleanup didn't work or it wasn't a 500 error, throw the original error
         throw firstError;
       }
     } catch (error: any) {
@@ -118,7 +114,7 @@ export const workspaceService = {
         data: error.response?.data,
         url: error.config?.url,
       });
-      throw error; // Re-throw to let the calling component handle it
+      throw error;
     }
   },
 

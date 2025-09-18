@@ -1,13 +1,5 @@
-/**
- * Utilities for date formatting and manipulation
- */
-
-// Default locale for date formatting (Brazilian Portuguese)
 const DEFAULT_LOCALE = "pt-BR";
 
-/**
- * Format date to DD/MM/YYYY format
- */
 export const formatDate = (date: Date | string | null | undefined): string => {
   if (!date) return "";
 
@@ -25,9 +17,6 @@ export const formatDate = (date: Date | string | null | undefined): string => {
   }
 };
 
-/**
- * Format date with time to DD/MM/YYYY HH:mm
- */
 export const formatDateTime = (
   date: Date | string | null | undefined
 ): string => {

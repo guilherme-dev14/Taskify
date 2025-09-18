@@ -114,7 +114,7 @@ export const advancedTaskService = {
     const params = new URLSearchParams();
     if (startDate) params.append("startDate", startDate);
     if (endDate) params.append("endDate", endDate);
-    
+
     const response = await api.get(
       `/tasks/time-tracking/history?${params.toString()}`
     );
@@ -232,8 +232,7 @@ export const advancedTaskService = {
   },
 
   bulkDeleteTasks: async (taskIds: number[]): Promise<void> => {
-    // @ts-ignore
-      await api.delete("/tasks/bulk-delete", taskIds);
+    await api.delete("/tasks/bulk-delete", { data: taskIds });
   },
 
   updateEstimate: async (

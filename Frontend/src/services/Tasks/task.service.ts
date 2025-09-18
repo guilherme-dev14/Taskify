@@ -147,7 +147,6 @@ export const taskService = {
     return response.data;
   },
 
-  // Subtask Management
   async createSubtask(
     parentId: string,
     subtaskData: Omit<ICreateTaskRequest, "parentTaskId">
@@ -177,7 +176,6 @@ export const taskService = {
     await api.put(`/tasks/${subtaskId}/promote-to-main-task`);
   },
 
-  // Bulk Operations
   async bulkUpdateTasks(
     taskIds: string[],
     updates: Partial<IUpdateTaskRequest>
@@ -198,7 +196,6 @@ export const taskService = {
     return response.data;
   },
 
-  // Calendar integration
   async getTasksForDateRange(
     startDate: string,
     endDate: string,

@@ -54,6 +54,7 @@ export interface ITaskStatus {
   id: number;
   name: string;
   color: string;
+  order: number;
 }
 export interface ICreateTaskRequest {
   title: string;

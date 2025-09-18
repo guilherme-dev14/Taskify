@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import {
   taskStatusService,
   type ICreateTaskStatusRequest,
@@ -39,7 +38,7 @@ export const StatusManagement: React.FC<StatusManagementProps> = ({
     setIsLoading(true);
     try {
       const data = await taskStatusService.getStatusesForWorkspace(workspaceId);
-      setStatuses(data);
+      setStatuses(data as ITaskStatus[]);
     } catch (error) {
       toast.error("Error", "Could not load statuses.");
     } finally {
@@ -58,7 +57,10 @@ export const StatusManagement: React.FC<StatusManagementProps> = ({
         color: newStatusColor,
         workspaceId: workspaceId,
       };
-      await taskStatusService.createStatus(request);
+      await taskStatusService.createStatus(request.workspaceId, {
+        name: request.name,
+        color: request.color,
+      });
       toast.success("Success", "New status created!");
       setNewStatusName("");
       setNewStatusColor("#CCCCCC");
