@@ -82,22 +82,8 @@ public class ActivityController {
     public ResponseEntity<Map<String, Long>> getActivityStats(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
-
-        if (startDate == null) {
-            startDate = LocalDateTime.now().minusDays(30);
-        }
-        if (endDate == null) {
-            endDate = LocalDateTime.now();
-        }
-
         Map<String, Long> stats = activityService.getActivityStats(startDate, endDate);
         return ResponseEntity.ok(stats);
-    }
-
-    @PostMapping("/{id}/read")
-    public ResponseEntity<Void> markAsRead(@PathVariable Long id) {
-        activityService.markAsRead(id);
-        return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/user/{userId}/clear")

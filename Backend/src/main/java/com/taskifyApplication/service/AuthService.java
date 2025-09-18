@@ -8,7 +8,10 @@ import com.taskifyApplication.exception.DuplicateResourceException;
 import com.taskifyApplication.exception.InvalidFormatException;
 import com.taskifyApplication.model.User;
 import com.taskifyApplication.repository.UserRepository;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -39,15 +42,15 @@ public class AuthService {
     // endregion
 
     // region PUBLIC FUNCTIONS
-    public AuthResponseDTO register(CreateUserRequestDTO request) {
+    public AuthResponseDTO register(CreateUserRequestDTO request, HttpServletResponse response) { // 1. Adicionar HttpServletResponse
         if (!validationService.isValidEmail(request.getEmail())) {
             throw new InvalidFormatException("Invalid email format");
         }
-        
+
         if (!validationService.isValidUsername(request.getUsername())) {
             throw new InvalidFormatException("Invalid username format");
         }
-        
+
         if (!validationService.isValidPassword(request.getPassword())) {
             throw new InvalidFormatException("Password must be at least 8 characters with uppercase, lowercase, and digit");
         }
@@ -78,13 +81,21 @@ public class AuthService {
         UserDetails userDetails = userDetailsService.loadUserByUsername(user.getEmail());
         String token = jwtService.generateToken(userDetails);
 
+        ResponseCookie cookie = ResponseCookie.from("jwt-token", token)
+                .httpOnly(true)
+                .secure(false) // Mude para 'true' em produção (HTTPS)
+                .path("/")
+                .maxAge(24 * 60 * 60)
+                .build();
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+
         return AuthResponseDTO.builder()
-                .token(token)
+
                 .user(convertToProfileDTO(user))
                 .build();
     }
 
-    public AuthResponseDTO login(LoginRequestDTO request) {
+    public AuthResponseDTO login(LoginRequestDTO request, HttpServletResponse response) { // 1. Adicionar HttpServletResponse
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         request.getEmail(),
@@ -93,16 +104,36 @@ public class AuthService {
         );
 
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new IllegalArgumentException("Invalid credentials"));
+                .orElseThrow(() -> new InvalidFormatException("Invalid credentials"));
 
         UserDetails userDetails = userDetailsService.loadUserByUsername(user.getEmail());
         String token = jwtService.generateToken(userDetails);
 
+        ResponseCookie cookie = ResponseCookie.from("jwt-token", token)
+                .httpOnly(true)
+                .secure(false) // Mude para 'true' em produção (HTTPS)
+                .path("/")
+                .maxAge(24 * 60 * 60) // 1 dia
+                .build();
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+
         return AuthResponseDTO.builder()
-                .token(token)
                 .user(convertToProfileDTO(user))
                 .build();
     }
+
+    public void logout(HttpServletResponse response) {
+
+        ResponseCookie cookie = ResponseCookie.from("jwt-token", "")
+                .httpOnly(true)
+                .secure(false) // Mude para 'true' em produção (HTTPS)
+                .path("/")
+                .maxAge(0)
+                .build();
+
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+    }
+
     // endregion
 
     // region PRIVATE FUNCTIONS
