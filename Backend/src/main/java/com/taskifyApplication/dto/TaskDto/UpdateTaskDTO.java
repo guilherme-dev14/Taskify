@@ -8,7 +8,6 @@ import java.util.List;
 
 @Data
 public class UpdateTaskDTO {
-    private Long id;
     @Size(max = 150, message = "Title must not exceed 150 characters")
     private String title;
 

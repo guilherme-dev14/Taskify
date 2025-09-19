@@ -63,9 +63,6 @@ public class TaskService {
     // endregion
 
     // region PUBLIC FUNCTIONS SERVICE
-    public PageResponse<TaskSummaryDTO> getAllTasksFromUser(Pageable pageable) {
-        return getAllTasksFromUser(pageable, null);
-    }
 
     public PageResponse<TaskSummaryDTO> getAllTasksFromUser(Pageable pageable, Long workspaceId, Long statusId, PriorityEnum priority) {
         User currentUser = getCurrentUser();
@@ -94,10 +91,6 @@ public class TaskService {
                 .build();
     }
 
-    public PageResponse<TaskSummaryDTO> getAllTasksFromUser(Pageable pageable, Long workspaceId) {
-        return getAllTasksFromUser(pageable, workspaceId, null, null);
-    }
-
     public PageResponse<TaskSummaryDTO> getAllTasksFromWorkspace(Long workspaceId, Pageable pageable, Long statusId, PriorityEnum priority) {
         User currentUser = getCurrentUser();
         Workspace workspace = workspaceRepository.findById(workspaceId)
@@ -124,38 +117,6 @@ public class TaskService {
                 .page(taskPage.getNumber())
                 .totalPages(taskPage.getTotalPages())
                 .size(taskPage.getSize())
-                .first(taskPage.isFirst())
-                .last(taskPage.isLast())
-                .empty(taskPage.isEmpty())
-                .build();
-    }
-
-    public PageResponse<TaskSummaryDTO> getAllTasksFromWorkspace(Long workspaceId, Pageable pageable) {
-        return getAllTasksFromWorkspace(workspaceId, pageable, null, null);
-    }
-    
-    private PageResponse<TaskSummaryDTO> getAllTasksFromUserOld(Pageable pageable, Long workspaceId) {
-        User currentUser = getCurrentUser();
-        
-        Page<Task> taskPage;
-        
-        if (workspaceId != null) {
-            taskPage = taskRepository.findByAssignedToAndWorkspaceId(currentUser, workspaceId, pageable);
-        } else {
-            taskPage = taskRepository.findByAssignedTo(currentUser, pageable);
-        }
-
-
-        List<TaskSummaryDTO> taskSummaries = taskPage.getContent().stream()
-                .map(this::convertToTaskSummaryDto)
-                .collect(Collectors.toList());
-
-        return PageResponse.<TaskSummaryDTO>builder()
-                .content(taskSummaries)
-                .page(taskPage.getNumber())
-                .size(taskPage.getSize())
-                .totalElements(taskPage.getTotalElements())
-                .totalPages(taskPage.getTotalPages())
                 .first(taskPage.isFirst())
                 .last(taskPage.isLast())
                 .empty(taskPage.isEmpty())
@@ -739,10 +700,6 @@ public class TaskService {
                 .build();
     }
 
-    public List<TaskSummaryDTO> getAllTasksInWorkspaceList(Long workspaceId) {
-        return getAllTasksInWorkspaceList(workspaceId, null, null);
-    }
-
     public List<TaskSummaryDTO> getAllTasksInWorkspaceList(Long workspaceId, Long statusId, PriorityEnum priority) {
         User currentUser = getCurrentUser();
         
@@ -905,145 +862,6 @@ public class TaskService {
                 currentUser
         );
         return convertToTaskResponseDto(clonedTask);
-    }
-    
-    // SUBTASK MANAGEMENT
-    public TaskResponseDTO createSubtask(CreateSubtaskDTO createSubtaskDTO) {
-        User currentUser = getCurrentUser();
-
-        Task parentTask = taskRepository.findById(createSubtaskDTO.getParentTaskId())
-                .orElseThrow(() -> new ResourceNotFoundException("Parent task not found"));
-
-        if (!parentTask.canEdit(currentUser)) {
-            throw new ForbiddenException("You don't have permission to create subtasks for this task");
-        }
-
-        User assignedUser = currentUser;
-        if (createSubtaskDTO.getAssignedToId() != null) {
-            assignedUser = userRepository.findById(createSubtaskDTO.getAssignedToId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Assigned user not found"));
-        }
-
-        List<Category> categories = new ArrayList<>();
-        if (createSubtaskDTO.getCategoryIds() != null && !createSubtaskDTO.getCategoryIds().isEmpty()) {
-            categories = categoryRepository.findAllById(createSubtaskDTO.getCategoryIds());
-            if (categories.size() != createSubtaskDTO.getCategoryIds().size()) {
-                throw new ResourceNotFoundException("Some categories not found");
-            }
-        }
-        TaskStatus initialStatus = parentTask.getWorkspace().getTaskStatuses().stream()
-                .min((s1, s2) -> Integer.compare(s1.getOrder(), s2.getOrder()))
-                .orElseThrow(() -> new InvalidFormatException("Cannot create subtask: The workspace does not have any statuses configured."));
-
-        Task subtask = Task.builder()
-                .title(createSubtaskDTO.getTitle())
-                .description(createSubtaskDTO.getDescription())
-                .status(initialStatus) // <-- MUDANÇA APLICADA AQUI
-                .priority(createSubtaskDTO.getPriority())
-                .dueDate(createSubtaskDTO.getDueDate())
-                .assignedTo(assignedUser)
-                .workspace(parentTask.getWorkspace())
-                .parentTask(parentTask)
-                .categories(categories)
-                .estimatedHours(createSubtaskDTO.getEstimatedHours())
-                .build();
-        subtask = taskRepository.save(subtask);
-
-        webSocketService.notifyWorkspaceTaskUpdate(
-                parentTask.getWorkspace().getId(),
-                convertToTaskSummaryDto(subtask),
-                "CREATED",
-                currentUser
-        );
-        return convertToTaskResponseDto(subtask);
-    }
-
-    public List<TaskSummaryDTO> getSubtasks(Long parentTaskId) {
-        Task parentTask = taskRepository.findById(parentTaskId)
-                .orElseThrow(() -> new ResourceNotFoundException("Parent task not found"));
-        
-        User currentUser = getCurrentUser();
-        if (!parentTask.canEdit(currentUser)) {
-            throw new ForbiddenException("You don't have permission to view subtasks");
-        }
-        
-        return parentTask.getSubtasks().stream()
-                .map(this::convertToTaskSummaryDto)
-                .collect(Collectors.toList());
-    }
-    
-    public TaskSummaryDTO getParentTask(Long subtaskId) {
-        Task subtask = taskRepository.findById(subtaskId)
-                .orElseThrow(() -> new ResourceNotFoundException("Subtask not found"));
-        
-        User currentUser = getCurrentUser();
-        if (!subtask.canEdit(currentUser)) {
-            throw new ForbiddenException("You don't have permission to view this task");
-        }
-        
-        if (subtask.getParentTask() == null) {
-            throw new InvalidFormatException("This task is not a subtask");
-        }
-        
-        return convertToTaskSummaryDto(subtask.getParentTask());
-    }
-    
-    public void convertToSubtask(Long taskId, Long parentTaskId) {
-        User currentUser = getCurrentUser();
-        
-        Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
-        
-        Task parentTask = taskRepository.findById(parentTaskId)
-                .orElseThrow(() -> new ResourceNotFoundException("Parent task not found"));
-        
-        if (!task.canEdit(currentUser) || !parentTask.canEdit(currentUser)) {
-            throw new ForbiddenException("You don't have permission to modify these tasks");
-        }
-        
-        if (task.getId().equals(parentTask.getId())) {
-            throw new InvalidFormatException("A task cannot be a subtask of itself");
-        }
-        
-        // Ensure they're in the same workspace
-        if (!task.getWorkspace().getId().equals(parentTask.getWorkspace().getId())) {
-            throw new InvalidFormatException("Tasks must be in the same workspace");
-        }
-        
-        task.setParentTask(parentTask);
-        taskRepository.save(task);
-        
-        webSocketService.notifyWorkspaceTaskUpdate(
-            task.getWorkspace().getId(),
-            convertToTaskSummaryDto(task),
-            "UPDATED",
-            currentUser
-        );
-    }
-    
-    public void promoteToMainTask(Long subtaskId) {
-        User currentUser = getCurrentUser();
-        
-        Task subtask = taskRepository.findById(subtaskId)
-                .orElseThrow(() -> new ResourceNotFoundException("Subtask not found"));
-        
-        if (!subtask.canEdit(currentUser)) {
-            throw new ForbiddenException("You don't have permission to modify this task");
-        }
-        
-        if (subtask.getParentTask() == null) {
-            throw new InvalidFormatException("This task is not a subtask");
-        }
-        
-        subtask.setParentTask(null);
-        taskRepository.save(subtask);
-        
-        webSocketService.notifyWorkspaceTaskUpdate(
-            subtask.getWorkspace().getId(),
-            convertToTaskSummaryDto(subtask),
-            "UPDATED",
-            currentUser
-        );
     }
 
     // Advanced Search

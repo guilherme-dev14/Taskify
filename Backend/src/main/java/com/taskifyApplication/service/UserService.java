@@ -233,22 +233,6 @@ public class UserService {
         dto.setCreatedAt(user.getCreatedAt().toOffsetDateTime());
         return dto;
     }
-    public byte[] exportCurrentUserData() throws Exception {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-
-        Map<String, Object> exportData = new HashMap<>();
-
-        exportData.put("profile", getUserDTO(user));
-
-        userSettingsRepository.findByUser(user).ifPresent(settings -> exportData.put("settings", convertToSettingsDTO(settings)));
-
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new JavaTimeModule());
-        return objectMapper.writeValueAsBytes(exportData);
-    }
 
     // endregion
 }

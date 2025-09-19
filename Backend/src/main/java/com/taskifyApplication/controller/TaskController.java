@@ -67,10 +67,8 @@ public class TaskController {
 
     @PostMapping
     public ResponseEntity<TaskResponseDTO> createTask(
-            @Valid @ModelAttribute CreateTaskDTO createTaskDTO,
-            @RequestParam(value = "attachments", required = false) List<MultipartFile> attachments) {
-
-        createTaskDTO.setAttachments(attachments);
+            @Valid @ModelAttribute CreateTaskDTO createTaskDTO
+        ) {
 
         TaskResponseDTO task = taskService.createTask(createTaskDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(task);
@@ -138,41 +136,6 @@ public class TaskController {
     public ResponseEntity<TaskResponseDTO> cloneTask(@PathVariable Long id) {
             TaskResponseDTO clonedTask = taskService.cloneTask(id);
             return ResponseEntity.status(HttpStatus.CREATED).body(clonedTask);
-    }
-
-    @PostMapping("/{parentId}/subtasks")
-    public ResponseEntity<TaskResponseDTO> createSubtask(
-            @PathVariable Long parentId,
-            @Valid @RequestBody CreateSubtaskDTO createSubtaskDTO) {
-            createSubtaskDTO.setParentTaskId(parentId);
-            TaskResponseDTO subtask = taskService.createSubtask(createSubtaskDTO);
-            return ResponseEntity.status(HttpStatus.CREATED).body(subtask);
-    }
-
-    @GetMapping("/{parentId}/subtasks")
-    public ResponseEntity<List<TaskSummaryDTO>> getSubtasks(@PathVariable Long parentId) {
-            List<TaskSummaryDTO> subtasks = taskService.getSubtasks(parentId);
-            return ResponseEntity.ok(subtasks);
-    }
-
-    @GetMapping("/{subtaskId}/parent")
-    public ResponseEntity<TaskSummaryDTO> getParentTask(@PathVariable Long subtaskId) {
-            TaskSummaryDTO parentTask = taskService.getParentTask(subtaskId);
-            return ResponseEntity.ok(parentTask);
-    }
-
-    @PutMapping("/{taskId}/convert-to-subtask/{parentId}")
-    public ResponseEntity<Void> convertToSubtask(
-            @PathVariable Long taskId,
-            @PathVariable Long parentId) {
-            taskService.convertToSubtask(taskId, parentId);
-            return ResponseEntity.ok().build();
-    }
-
-    @PutMapping("/{subtaskId}/promote-to-main-task")
-    public ResponseEntity<Void> promoteToMainTask(@PathVariable Long subtaskId) {
-            taskService.promoteToMainTask(subtaskId);
-            return ResponseEntity.ok().build();
     }
 
     @PostMapping("/search")

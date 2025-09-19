@@ -50,21 +50,6 @@ public class UserController {
             return ResponseEntity.ok(updatedSettings);
     }
 
-    @PutMapping("/change-password")
-    public ResponseEntity<String> changePassword(@Valid @RequestBody ChangePasswordDTO changePasswordDTO) {
-            userService.changeCurrentUserPassword(changePasswordDTO);
-            return ResponseEntity.ok("Password changed successfully");
-    }
-
-    @GetMapping("/export")
-    public ResponseEntity<byte[]> exportUserData() throws Exception {
-            byte[] data = userService.exportCurrentUserData();
-            return ResponseEntity.ok()
-                    .header("Content-Disposition", "attachment; filename=taskify-export.json")
-                    .header("Content-Type", "application/json")
-                    .body(data);
-    }
-
     @DeleteMapping("/deleteProfile")
     public ResponseEntity<?> deleteCurrentUser() {
             userService.deleteCurrentUserProfile();

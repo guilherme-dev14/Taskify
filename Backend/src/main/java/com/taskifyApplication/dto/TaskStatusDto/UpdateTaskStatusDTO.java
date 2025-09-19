@@ -12,6 +12,4 @@ public class UpdateTaskStatusDTO {
 
     @Size(max = 20, message = "Color hex code must not exceed 20 characters")
     private String color;
-
-    private Integer order;
 }

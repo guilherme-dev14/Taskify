@@ -87,10 +87,6 @@ public class TaskStatusService {
             status.setColor(updateDto.getColor());
         }
 
-        if (updateDto.getOrder() != null) {
-            status.setOrder(updateDto.getOrder());
-        }
-
         TaskStatus updatedStatus = taskStatusRepository.save(status);
         return convertToDto(updatedStatus);
     }
