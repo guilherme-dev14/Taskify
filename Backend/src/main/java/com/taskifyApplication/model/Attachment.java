@@ -16,9 +16,8 @@ public class Attachment {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Lob
-    @Column(nullable = false, columnDefinition = "BYTEA")
-    private byte[] data;
+    @Column(name = "file_path")
+    private String filePath;
 
     @Column(nullable = false)
     private String filename;

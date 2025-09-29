@@ -1,19 +1,26 @@
 package com.taskifyApplication.dto.AttachmentDto;
 
-import lombok.Data;
+import com.taskifyApplication.dto.UserDto.UserSummaryDTO;
 import java.time.OffsetDateTime;
 
-@Data
+import lombok.Getter;
+import lombok.Setter;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class AttachmentResponseDTO {
+
     private Long id;
-    private String filename;
     private String originalName;
+    private String filePath;
     private String mimeType;
     private Long size;
     private OffsetDateTime uploadedAt;
-    private String uploadedByName;
-    private Long uploadedById;
     private String description;
+    private UserSummaryDTO uploadedBy;
     private Integer version;
-    private Boolean isLatestVersion;
 }

@@ -37,7 +37,6 @@ export function AttachmentList({
     size: 20,
   });
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-
   const queryClient = useQueryClient();
 
   const {
@@ -56,14 +55,6 @@ export function AttachmentList({
       queryClient.invalidateQueries({ queryKey: ["attachments"] });
     },
   });
-
-  const handleDownload = async (attachment: IAttachment) => {
-    try {
-      await attachmentService.downloadAttachment(attachment.id);
-    } catch (error) {
-      console.error("Download failed:", error);
-    }
-  };
 
   const handlePreview = (attachment: IAttachment) => {
     if (attachmentService.isPreviewable(attachment.mimeType)) {
@@ -129,16 +120,16 @@ export function AttachmentList({
         </button>
       </div>
 
-      {attachments.content.map((attachment) => (
+      {attachments?.content.map((attachment) => (
         <div
           key={attachment.id}
           className="flex items-center space-x-3 p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
         >
           {/* File Icon/Thumbnail */}
           <div className="flex-shrink-0">
-            {attachment.thumbnailUrl ? (
+            {attachment.filePath ? (
               <img
-                src={attachment.thumbnailUrl}
+                src={attachment.filePath}
                 alt={attachment.originalName}
                 className="h-10 w-10 object-cover rounded"
                 onError={(e) => {
@@ -149,7 +140,7 @@ export function AttachmentList({
             ) : null}
             <div
               className={`h-10 w-10 flex items-center justify-center text-2xl ${
-                attachment.thumbnailUrl ? "hidden" : ""
+                attachment.filePath ? "hidden" : ""
               }`}
             >
               {attachmentService.getFileTypeIcon(attachment.mimeType)}
@@ -158,9 +149,15 @@ export function AttachmentList({
 
           {/* File Info */}
           <div className="flex-1 min-w-0">
-            <h4 className="text-sm font-medium text-gray-900 truncate">
+            <a
+              href={attachment.filePath}
+              target="_blank"
+              rel="noopener noreferrer"
+              download={attachment.originalName}
+              className="text-sm font-medium text-gray-900 truncate hover:text-blue-600"
+            >
               {attachment.originalName}
-            </h4>
+            </a>
 
             <div className="flex items-center space-x-4 mt-1 text-xs text-gray-500">
               <span className="flex items-center space-x-1">
@@ -177,12 +174,6 @@ export function AttachmentList({
               </span>
 
               <span>{attachmentService.formatFileSize(attachment.size)}</span>
-
-              {!attachment.isLatestVersion && (
-                <span className="text-orange-600 font-medium">
-                  v{attachment.version}
-                </span>
-              )}
             </div>
           </div>
 
@@ -198,13 +189,17 @@ export function AttachmentList({
               </button>
             )}
 
-            <button
-              onClick={() => handleDownload(attachment)}
+            {/* O botão de download agora é um link direto */}
+            <a
+              href={attachment.filePath}
+              target="_blank"
+              rel="noopener noreferrer"
+              download={attachment.originalName}
               className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
               title="Download"
             >
               <ArrowDownTrayIcon className="h-4 w-4" />
-            </button>
+            </a>
 
             <button
               onClick={() => handleDelete(attachment.id)}

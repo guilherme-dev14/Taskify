@@ -20,12 +20,22 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import com.google.cloud.storage.BlobId;
+import com.google.cloud.storage.BlobInfo;
+import com.google.cloud.storage.Storage;
+
 
 @Service
 public class FileService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private Storage storage;
+
+    @Value("${gcs.bucket.name}")
+    private String bucketName;
 
     @Value("${app.upload.dir:${user.home}/taskify-uploads}")
     private String uploadDir;
@@ -34,6 +44,23 @@ public class FileService {
             "image/jpeg", "image/jpg", "image/png", "image/gif"
     );
 
+    public String uploadFile(MultipartFile file) throws IOException {
+        String fileName = UUID.randomUUID().toString() + "-" + file.getOriginalFilename();
+
+        BlobId blobId = BlobId.of(bucketName, fileName);
+        BlobInfo blobInfo = BlobInfo.newBuilder(blobId)
+                .setContentType(file.getContentType())
+                .build();
+
+        storage.create(blobInfo, file.getBytes());
+
+        return "https://storage.googleapis.com/" + bucketName + "/" + fileName;
+    }
+    public void deleteFile(String fileUrl) {
+        String fileName = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
+        BlobId blobId = BlobId.of(bucketName, fileName);
+        storage.delete(blobId);
+    }
     private final List<String> allowedFileTypes = Arrays.asList(
             "image/jpeg", "image/jpg", "image/png", "image/gif",
             "application/pdf", "text/plain", "application/msword",

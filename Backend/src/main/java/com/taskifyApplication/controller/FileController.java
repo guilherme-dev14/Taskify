@@ -3,6 +3,7 @@ package com.taskifyApplication.controller;
 import com.taskifyApplication.service.FileService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -18,31 +19,19 @@ public class FileController {
     @Autowired
     private FileService fileService;
 
-    @PostMapping("/upload/avatar")
+    @PostMapping(path = "/upload/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE) // <-- ADICIONE AQUI
     public ResponseEntity<String> uploadAvatar(@RequestParam("file") MultipartFile file) throws IOException {
-            String fileName = fileService.saveAvatar(file);
-            return ResponseEntity.ok(fileName);
+        String avatarUrl = fileService.saveAvatar(file);
+        return ResponseEntity.ok(avatarUrl);
     }
 
-    @PostMapping("/upload/attachment")
-    public ResponseEntity<String> uploadAttachment(@RequestParam("file") MultipartFile file) throws IOException {
-            String fileName = fileService.saveAttachment(file);
-            return ResponseEntity.ok(fileName);
-    }
+
 
     @GetMapping("/avatar/{filename}")
-    public ResponseEntity<byte[]> getAvatar(@PathVariable String filename) throws IOException{
-            byte[] file = fileService.getAvatar(filename);
-            return ResponseEntity.ok()
-                    .header("Content-Type", "image/jpeg")
-                    .body(file);
-    }
-
-    @GetMapping("/attachment/{filename}")
-    public ResponseEntity<byte[]> getAttachment(@PathVariable String filename) throws IOException {
-            byte[] file = fileService.getAttachment(filename);
-            return ResponseEntity.ok()
-                    .header("Content-Disposition", "attachment; filename=\"" + filename + "\"")
-                    .body(file);
+    public ResponseEntity<byte[]> getAvatar(@PathVariable String filename) throws IOException {
+        byte[] file = fileService.getAvatar(filename);
+        return ResponseEntity.ok()
+                .header("Content-Type", "image/jpeg") // O tipo de conteúdo deve ser dinâmico
+                .body(file);
     }
 }

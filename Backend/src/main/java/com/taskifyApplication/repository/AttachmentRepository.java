@@ -1,8 +1,6 @@
 package com.taskifyApplication.repository;
 
 import com.taskifyApplication.model.Attachment;
-import com.taskifyApplication.model.Task;
-import com.taskifyApplication.model.Workspace;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -16,14 +14,8 @@ import java.util.List;
 @Repository
 public interface AttachmentRepository extends JpaRepository<Attachment, Long> {
 
-    Page<Attachment> findByTaskOrderByUploadedAtDesc(Task task, Pageable pageable);
-    
-    Page<Attachment> findByWorkspaceOrderByUploadedAtDesc(Workspace workspace, Pageable pageable);
-    
-    List<Attachment> findByTaskAndIsLatestVersionTrue(Task task);
-    
-    List<Attachment> findByParentAttachmentOrderByVersionAsc(Attachment parentAttachment);
-    
+    List<Attachment> findByTaskId(Long taskId);
+
     @Query("SELECT a FROM Attachment a WHERE a.task.id = :taskId AND " +
            "(:mimeType IS NULL OR a.mimeType LIKE %:mimeType%) AND " +
            "(:fromDate IS NULL OR a.uploadedAt >= :fromDate) AND " +
@@ -33,10 +25,5 @@ public interface AttachmentRepository extends JpaRepository<Attachment, Long> {
                                    @Param("fromDate") OffsetDateTime fromDate,
                                    @Param("toDate") OffsetDateTime toDate,
                                    Pageable pageable);
-    
-    @Query("SELECT COUNT(a) FROM Attachment a WHERE a.task = :task")
-    Long countByTask(@Param("task") Task task);
-    
-    @Query("SELECT SUM(a.size) FROM Attachment a WHERE a.workspace = :workspace")
-    Long getTotalSizeByWorkspace(@Param("workspace") Workspace workspace);
+
 }

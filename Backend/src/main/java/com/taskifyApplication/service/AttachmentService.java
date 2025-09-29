@@ -1,4 +1,3 @@
-
 package com.taskifyApplication.service;
 
 import com.taskifyApplication.exception.BadRequestException;
@@ -9,11 +8,9 @@ import com.taskifyApplication.model.*;
 import com.taskifyApplication.repository.*;
 import lombok.Getter;
 import lombok.Setter;
-import org.apache.commons.io.FilenameUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,7 +20,8 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.OffsetDateTime;
-import java.util.*;
+import java.util.List;
+import java.util.Objects;
 
 @Service
 @Transactional
@@ -44,12 +42,21 @@ public class AttachmentService {
     @Autowired
     private WorkspaceRepository workspaceRepository;
 
-    public Attachment uploadAttachment(MultipartFile file, Long taskId, Long workspaceId,
-                                       String description) {
+    @Autowired
+    private FileService fileService;
+
+    public List<Attachment> getAttachmentsForTask(Long taskId) {
+        if (!taskRepository.existsById(taskId)) {
+            throw new ResourceNotFoundException("Task not found with id: " + taskId);
+        }
+        return attachmentRepository.findByTaskId(taskId);
+    }
+
+    public Attachment uploadAttachment(MultipartFile file, Long taskId, Long workspaceId, String description) {
         validateFile(file);
 
         Task task = null;
-        Workspace workspace = null;
+        Workspace workspace;
 
         if (taskId != null) {
             task = taskRepository.findById(taskId)
@@ -63,15 +70,14 @@ public class AttachmentService {
         }
 
         User uploadedBy = userService.getCurrentUser();
+
         try {
-            String originalFilename = file.getOriginalFilename();
-            String extension = FilenameUtils.getExtension(originalFilename);
-            String uniqueFilename = UUID.randomUUID().toString() + "." + extension;
+            String fileUrl = fileService.uploadFile(file);
 
             Attachment attachment = Attachment.builder()
-                    .data(file.getBytes())
-                    .filename(uniqueFilename)
-                    .originalName(originalFilename)
+                    .filePath(fileUrl)
+                    .filename(extractFileNameFromUrl(fileUrl))
+                    .originalName(file.getOriginalFilename())
                     .mimeType(file.getContentType())
                     .size(file.getSize())
                     .uploadedBy(uploadedBy)
@@ -85,8 +91,48 @@ public class AttachmentService {
             return attachmentRepository.save(attachment);
 
         } catch (IOException e) {
-            throw new BadRequestException("Failed to read file bytes");
+            throw new BadRequestException("Failed to upload file. Reason: " + e.getMessage());
         }
+    }
+
+    public void deleteAttachment(Long id) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        Attachment attachment = attachmentRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Attachment not found with id: " + id));
+
+       Task task = attachment.getTask();
+        if (task != null) {
+            boolean isMember = workspaceRepository.isUserMemberOfWorkspace(task.getWorkspace().getId(), username);
+            if (!isMember) {
+                throw new ForbiddenException("User does not have permission to delete this attachment.");
+            }
+        } else {
+            boolean isMember = workspaceRepository.isUserMemberOfWorkspace(attachment.getWorkspace().getId(), username);
+            if (!isMember) {
+                throw new ForbiddenException("User does not have permission to delete this attachment.");
+            }
+        }
+
+
+        String fileUrl = attachment.getFilePath();
+
+        try {
+            if (fileUrl != null && !fileUrl.isEmpty()) {
+                fileService.deleteFile(fileUrl);
+            }
+        } catch (Exception e) {
+            System.err.println("Could not delete file from GCS: " + e.getMessage());
+        }
+
+        attachmentRepository.delete(attachment);
+    }
+
+    private String extractFileNameFromUrl(String fileUrl) {
+        if (fileUrl == null || fileUrl.isEmpty()) {
+            return null;
+        }
+        return fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
     }
 
     public Page<Attachment> getAttachments(AttachmentFilters filters, Pageable pageable) {
@@ -102,26 +148,6 @@ public class AttachmentService {
     public Attachment getAttachment(Long id) {
         return attachmentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Attachment not found"));
-    }
-
-    public void deleteAttachment(Long id) {
-        Attachment attachment = getAttachment(id);
-        User user = userService.getCurrentUser();
-        if (!canUserDeleteAttachment(attachment, user)) {
-            throw new ForbiddenException("Permission denied");
-        }
-
-        attachmentRepository.delete(attachment);
-    }
-
-    public FileDownloadInfo getFileForDownload(Long id) {
-        Attachment attachment = getAttachment(id);
-
-        return new FileDownloadInfo(
-                attachment.getData(),
-                attachment.getOriginalName(),
-                attachment.getMimeType()
-        );
     }
 
     private void validateFile(MultipartFile file) {
@@ -169,7 +195,7 @@ public class AttachmentService {
     private boolean isValidImageHeader(byte[] bytes, String contentType) {
         if (bytes.length < 4) return false;
 
-        return switch (contentType.toLowerCase()) {
+        return switch (Objects.requireNonNull(contentType).toLowerCase()) {
             case "image/jpeg", "image/jpg" -> bytes[0] == (byte) 0xFF && bytes[1] == (byte) 0xD8;
             case "image/png" -> bytes[0] == (byte) 0x89 && bytes[1] == 'P' &&
                     bytes[2] == 'N' && bytes[3] == 'G';
@@ -200,10 +226,7 @@ public class AttachmentService {
         private String mimeType;
         private OffsetDateTime fromDate;
         private OffsetDateTime toDate;
-
     }
 
-    public record FileDownloadInfo(byte[] content, String filename, String contentType) {
-
-    }
+    public record FileDownloadInfo(byte[] content, String filename, String contentType) {}
 }

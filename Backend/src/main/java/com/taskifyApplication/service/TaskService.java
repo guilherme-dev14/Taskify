@@ -585,20 +585,36 @@ public class TaskService {
     }
 
     private AttachmentResponseDTO convertToAttachmentResponseDto(Attachment attachment) {
+        // Vamos usar o construtor com Lombok para um código mais limpo
+        // ou setters, se preferir. Abaixo, a versão com setters.
         AttachmentResponseDTO dto = new AttachmentResponseDTO();
+
         dto.setId(attachment.getId());
-        dto.setFilename(attachment.getFilename());
+
+        // CORREÇÃO 1: Use os campos corretos.
+        // 'originalName' é o nome que o usuário vê. 'filePath' é a URL para download.
         dto.setOriginalName(attachment.getOriginalName());
+        dto.setFilePath(attachment.getFilePath()); // Adicionando o campo mais importante!
+
         dto.setMimeType(attachment.getMimeType());
         dto.setSize(attachment.getSize());
         dto.setUploadedAt(attachment.getUploadedAt());
         dto.setDescription(attachment.getDescription());
         dto.setVersion(attachment.getVersion());
-        dto.setIsLatestVersion(attachment.getIsLatestVersion());
 
+        // CORREÇÃO 2: Crie o DTO de usuário corretamente.
         if (attachment.getUploadedBy() != null) {
-            dto.setUploadedByName(attachment.getUploadedBy().getFirstName() + " " + attachment.getUploadedBy().getLastName());
-            dto.setUploadedById(attachment.getUploadedBy().getId());
+            // Crie um UserSummaryDTO, que é o tipo esperado pelo AttachmentResponseDTO.
+            User uploadedBy = attachment.getUploadedBy();
+            UserSummaryDTO userDto = new UserSummaryDTO(
+                    uploadedBy.getId(),
+                    uploadedBy.getUsername(),
+                    uploadedBy.getFirstName(),
+                    uploadedBy.getLastName(),
+                    uploadedBy.getEmail(),
+                    uploadedBy.getProfilePictureUrl()
+            );
+            dto.setUploadedBy(userDto);
         }
 
         return dto;

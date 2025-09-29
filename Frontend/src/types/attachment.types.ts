@@ -1,44 +1,22 @@
 export interface IAttachment {
   id: string;
-  filename: string;
+  filePath: string;
   originalName: string;
   mimeType: string;
   size: number;
-  url: string;
-  thumbnailUrl?: string;
   uploadedAt: string;
   uploadedBy: {
     id: string;
-    username: string;
     firstName: string;
     lastName: string;
   };
-  taskId?: string;
-  workspaceId?: string;
-  version: number;
-  isLatestVersion: boolean;
-  parentAttachmentId?: string;
-}
-
-export interface IAttachmentVersion {
-  id: string;
-  attachmentId: string;
-  version: number;
-  filename: string;
-  size: number;
-  uploadedAt: string;
-  uploadedBy: {
-    id: string;
-    username: string;
-  };
-  changelog?: string;
 }
 
 export interface IUploadProgress {
   id: string;
   filename: string;
   progress: number;
-  status: 'uploading' | 'processing' | 'completed' | 'error';
+  status: "uploading" | "processing" | "completed" | "error";
   error?: string;
 }
 
@@ -66,7 +44,6 @@ export interface IAttachmentsResponse {
 
 export interface IUploadAttachmentRequest {
   file: File;
-  taskId?: string;
-  workspaceId?: string;
+  taskId: string;
   description?: string;
 }

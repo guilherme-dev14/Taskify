@@ -48,4 +48,10 @@ public interface WorkspaceRepository extends JpaRepository<Workspace, Long> {
            "LEFT JOIN WorkspaceMember wm ON w.id = wm.workspace.id " +
            "WHERE w.id = :workspaceId AND (w.owner = :user OR wm.user = :user)")
     boolean accessibleForUser(@Param("user") User user, @Param("workspaceId") long workspaceId);
+
+    @Query("SELECT CASE WHEN COUNT(wm) > 0 THEN TRUE ELSE FALSE END " +
+            "FROM WorkspaceMember wm " +
+            "WHERE wm.workspace.id = :workspaceId AND wm.user.email = :email")
+    boolean isUserMemberOfWorkspace(@Param("workspaceId") Long workspaceId, @Param("email") String email);
+
 }
