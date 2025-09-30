@@ -3,9 +3,11 @@ package com.taskifyApplication.service;
 
 import com.taskifyApplication.exception.ForbiddenException;
 import com.taskifyApplication.model.PasswordResetToken;
+import com.taskifyApplication.model.User;
 import com.taskifyApplication.repository.PasswordResetTokenRepository;
 import com.taskifyApplication.repository.UserRepository;
 import jakarta.transaction.Transactional;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.SimpleMailMessage;
@@ -15,7 +17,9 @@ import org.springframework.stereotype.Service;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Base64;
+import java.util.UUID;
 
 @Transactional
 @Service
@@ -34,6 +38,14 @@ public class PasswordResetService {
 
     @Value("${app.resetTokenTtlMinutes:30}")
     private int tokenTtlMinutes;
+
+    @Autowired
+    private EmailService emailService;
+
+    @Autowired
+    private UserService userService;
+    @Autowired
+    private PasswordResetTokenRepository passwordResetTokenRepository;
 
     public PasswordResetService(PasswordResetTokenRepository tokens, UserRepository users, JavaMailSender mailSender) {
         this.tokens = tokens; this.users = users; this.mailSender = mailSender;
@@ -108,5 +120,15 @@ public class PasswordResetService {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public void createPasswordResetTokenForUser(User user) {
+        String token = UUID.randomUUID().toString();
+        PasswordResetToken myToken = new PasswordResetToken();
+        myToken.setUser(user);
+        myToken.setTokenHash(passwordEncoder.encode(token));
+        myToken.setExpiresAt(Instant.now().plus(1, ChronoUnit.HOURS));
+        passwordResetTokenRepository.save(myToken);
+        emailService.sendPasswordResetEmail(user.getEmail(), user.getFirstName(), token);
     }
 }

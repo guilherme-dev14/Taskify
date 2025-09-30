@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Nova Tarefa Atribuída</title>
+</head>
+<body style="font-family: Arial, sans-serif; margin: 0; padding: 20px; color: #333;">
+<div style="max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 20px;">
+    <h2 style="color: #0052cc;">Taskify - Nova Tarefa para Você</h2>
+    <p>Olá, <span th:text="${assigneeName}">Usuário</span>!</p>
+    <p><b th:text="${assignerName}">Alguém</b> atribuiu uma nova tarefa a você no workspace <b th:text="${workspaceName}"></b>.</p>
+
+    <div style="background-color: #f7f7f7; padding: 15px; border-left: 3px solid #0052cc; margin: 20px 0;">
+        <h4 style="margin: 0 0 10px 0;">Detalhes da Tarefa:</h4>
+        <p style="margin: 5px 0;"><b>Título:</b> <span th:text="${taskTitle}"></span></p>
+        <p style="margin: 5px 0;" th:if="${taskDueDate}"><b>Prazo:</b> <span th:text="${taskDueDate}"></span></p>
+    </div>
+
+    <p>Você pode visualizar os detalhes e começar a trabalhar na tarefa clicando no botão abaixo:</p>
+    <div style="text-align: center; margin: 30px 0;">
+        <a th:href="${taskLink}" style="background-color: #0052cc; color: white; padding: 15px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+            Ver Tarefa
+        </a>
+    </div>
+    <hr style="border: 0; border-top: 1px solid #ddd;" />
+    <p style="font-size: 12px; color: #999;">Equipe Taskify</p>
+</div>
+</body>
+</html>

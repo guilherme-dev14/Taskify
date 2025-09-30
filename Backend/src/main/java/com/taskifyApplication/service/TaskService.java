@@ -45,8 +45,6 @@ public class TaskService {
     @Autowired
     private UserRepository userRepository;
     @Autowired
-    private NotificationService notificationService;
-    @Autowired
     private ValidationService validationService;
     @Autowired
     private WebSocketService webSocketService;
@@ -60,6 +58,11 @@ public class TaskService {
     private TaskStatusRepository taskStatusRepository;
     @PersistenceContext
     private EntityManager entityManager;
+    @Autowired
+    private UserService userService;
+    @Autowired
+    private NotificationOrchestratorService notifier;
+
     // endregion
 
     // region PUBLIC FUNCTIONS SERVICE
@@ -202,7 +205,7 @@ public class TaskService {
         activityService.logTaskCreated(task, currentUser);
 
         if (task.getAssignedTo() != null && !task.getAssignedTo().equals(currentUser)) {
-            notificationService.notifyTaskAssigned(task.getAssignedTo(), task, currentUser);
+            notifier.notifyUserOfTaskAssignment(currentUser, task.getAssignedTo(), task);
         }
 
         webSocketService.notifyWorkspaceTaskUpdate(
@@ -342,25 +345,7 @@ public class TaskService {
         if (newAssignedUser != null && 
             !newAssignedUser.equals(currentUser) && 
             !newAssignedUser.equals(previousAssignedUser)) {
-            notificationService.notifyTaskAssigned(newAssignedUser, task, currentUser);
-        }
-
-        if (previousAssignedUser != null && 
-            !previousAssignedUser.equals(currentUser) && 
-            !previousAssignedUser.equals(newAssignedUser)) {
-            notificationService.notifyTaskUpdated(previousAssignedUser, task, currentUser, "Task details updated");
-        }
-
-        if (newAssignedUser != null && 
-            !newAssignedUser.equals(currentUser) && 
-            newAssignedUser.equals(previousAssignedUser)) {
-            notificationService.notifyTaskUpdated(newAssignedUser, task, currentUser, "Task details updated");
-        }
-
-        if (task.getStatus().getName().equalsIgnoreCase("COMPLETED") &&
-            newAssignedUser != null && 
-            !newAssignedUser.equals(currentUser)) {
-            notificationService.notifyTaskCompleted(newAssignedUser, task, currentUser);
+            notifier.notifyUserOfTaskAssignment(currentUser, newAssignedUser, task);
         }
 
         String action = newAssignedUser != null && !newAssignedUser.equals(previousAssignedUser) ? "ASSIGNED" : "UPDATED";

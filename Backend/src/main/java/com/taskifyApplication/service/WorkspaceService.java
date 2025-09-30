@@ -47,12 +47,14 @@ public class WorkspaceService {
     private ActivityRepository activityRepository;
     @Autowired
     private CategoryRepository categoryRepository;
-    @Autowired
-    private NotificationService notificationService;
     @PersistenceContext
     private EntityManager entityManager;
     @Autowired
     private ValidationService validationService;
+    @Autowired
+    private UserService userService;
+    @Autowired
+    private NotificationOrchestratorService notifier;
 
     // region CRUD
     public Page<WorkspaceNameDTO> getUserWorkspaces(Pageable pageable) {
@@ -199,7 +201,7 @@ public class WorkspaceService {
 
         workspaceMemberRepository.save(newMember);
 
-        notificationService.notifyWorkspaceInvite(userToAdd, workspace, requestingUser);
+        notifier.notifyUserOfWorkspaceInvite(requestingUser, userToAdd, workspace);
     }
 
     public void removeMemberFromWorkspace(Long workspaceId, User userToRemove) {
@@ -287,17 +289,9 @@ public class WorkspaceService {
 
         workspaceMemberRepository.save(newMember);
 
-        workspace.getMembers().forEach(member -> {
-            if (!member.getUser().equals(user)) {
-                notificationService.notifyMemberJoined(member.getUser(), workspace, user);
-            }
-        });
-
-        if (!workspace.getOwner().equals(user)) {
-            notificationService.notifyMemberJoined(workspace.getOwner(), workspace, user);
-        }
-
+        notifier.notifyMembersOfNewJoinee(workspace, user);
     }
+
 
     public String generateNewInviteCode(Long workspaceId) {
         Workspace workspace = getWorkspaceById(workspaceId);

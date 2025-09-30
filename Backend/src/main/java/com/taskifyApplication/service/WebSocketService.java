@@ -3,6 +3,7 @@ package com.taskifyApplication.service;
 import com.taskifyApplication.dto.TaskDto.TaskSummaryDTO;
 import com.taskifyApplication.model.Task;
 import com.taskifyApplication.model.User;
+import com.taskifyApplication.model.Workspace;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
@@ -35,8 +36,8 @@ public class WebSocketService {
         message.put("timestamp", System.currentTimeMillis());
 
         simpMessagingTemplate.convertAndSendToUser(
-            assignedTo.getEmail(), 
-            "/queue/notifications", 
+            assignedTo.getEmail(),
+            "/queue/notifications",
             message
         );
     }
@@ -50,4 +51,21 @@ public class WebSocketService {
 
         simpMessagingTemplate.convertAndSend("/topic/workspace/" + workspaceId + "/activity", message);
     }
+
+    public void notifyWorkspaceInvite(Workspace workspace, User invitedUser, User inviter) {
+        Map<String, Object> message = new HashMap<>();
+        message.put("action", "WORKSPACE_INVITE");
+        message.put("workspaceId", workspace.getId());
+        message.put("workspaceName", workspace.getName());
+        message.put("invitedBy", inviter.getFirstName() + " " + inviter.getLastName());
+        message.put("timestamp", System.currentTimeMillis());
+
+        simpMessagingTemplate.convertAndSendToUser(
+                invitedUser.getEmail(),
+                "/queue/notifications",
+                message
+        );
+    }
+
+    
 }

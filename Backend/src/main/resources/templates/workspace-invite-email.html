@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Convite para Workspace</title>
+</head>
+<body style="font-family: Arial, sans-serif; margin: 0; padding: 20px; color: #333;">
+<div style="max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 20px;">
+    <h2 style="color: #0052cc;">Taskify - Você foi convidado!</h2>
+    <p>Olá!</p>
+    <p><b th:text="${inviterName}">Alguém</b> convidou você para colaborar no workspace <b th:text="${workspaceName}">Nome do Workspace</b>.</p>
+    <p>Para aceitar o convite e começar a colaborar, clique no botão abaixo:</p>
+    <div style="text-align: center; margin: 30px 0;">
+        <a th:href="${inviteLink}" style="background-color: #28a745; color: white; padding: 15px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+            Juntar-se ao Workspace
+        </a>
+    </div>
+    <p>Seja bem-vindo à equipe!</p>
+    <hr style="border: 0; border-top: 1px solid #ddd;" />
+    <p style="font-size: 12px; color: #999;">Equipe Taskify</p>
+</div>
+</body>
+</html>

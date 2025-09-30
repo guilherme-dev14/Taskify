@@ -39,6 +39,8 @@ public class AuthService {
     private CustomUserDetailsService userDetailsService;
     @Autowired
     private ValidationService validationService;
+    @Autowired
+    private EmailService emailService;
     // endregion
 
     // region PUBLIC FUNCTIONS
@@ -77,6 +79,7 @@ public class AuthService {
                 .build();
 
         user = userRepository.save(user);
+        emailService.sendWelcomeEmail(user.getEmail(), user.getFirstName());
 
         UserDetails userDetails = userDetailsService.loadUserByUsername(user.getEmail());
         String token = jwtService.generateToken(userDetails);

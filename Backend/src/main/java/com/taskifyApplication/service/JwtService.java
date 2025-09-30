@@ -57,10 +57,10 @@ public class JwtService {
             long expiration
     ) {
         return Jwts.builder()
-                .setClaims(extraClaims) // Método correto é setClaims
+                .setClaims(extraClaims)
                 .setSubject(userDetails.getUsername())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + expiration * 1000)) // Método correto é setExpiration
+                .setExpiration(new Date(System.currentTimeMillis() + expiration * 1000))
                 .signWith(getSignInKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
