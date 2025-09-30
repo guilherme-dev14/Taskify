@@ -3,11 +3,10 @@ import { useState, useEffect, useMemo } from "react";
 import { taskService } from "../services/Tasks/task.service";
 import { workspaceService } from "../services/Workspace/workspace.service";
 import { getOperationErrorInfo } from "../utils/errorHandler";
-import type { ITaskFilters, ITasksResponse } from "../types/task.types";
+import type { ITask, ITaskFilters, ITasksResponse } from "../types/task.types";
 import type { IWorkspaceName } from "../types/workspace.types";
 import type { ErrorInfo } from "../utils/errorHandler";
 
-// Define um tipo para as opções de workspace, incluindo "All Tasks"
 type WorkspaceOption = IWorkspaceName & { color?: string };
 
 export function useTasksData() {
@@ -18,7 +17,6 @@ export function useTasksData() {
   const [isLoading, setIsLoading] = useState(true);
   const [errorInfo, setErrorInfo] = useState<ErrorInfo | null>(null);
 
-  // Estados para filtros
   const [selectedWorkspace, setSelectedWorkspace] = useState<string | number>(
     "all"
   );
@@ -28,12 +26,10 @@ export function useTasksData() {
   const [priorityFilter, setPriorityFilter] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Efeito para carregar os workspaces uma vez
   useEffect(() => {
     loadWorkspaces();
   }, []);
 
-  // Efeito para debounce do termo de busca
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
@@ -41,16 +37,9 @@ export function useTasksData() {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // Efeito para recarregar as tarefas quando os filtros ou a página mudam
   useEffect(() => {
     loadTasks();
-  }, [
-    selectedWorkspace,
-    currentPage,
-    statusFilter,
-    priorityFilter,
-    debouncedSearchTerm,
-  ]);
+  }, [currentPage]);
 
   const loadWorkspaces = async () => {
     try {
@@ -75,21 +64,19 @@ export function useTasksData() {
       setIsLoading(true);
       setErrorInfo(null);
 
-      const workspaceIdValue =
-        selectedWorkspace !== "all" ? Number(selectedWorkspace) : undefined;
-
-      // Monta os filtros para a API
       const filters: Partial<ITaskFilters> = {
         page: currentPage - 1,
         size: 6,
-        workspaceId: workspaceIdValue,
-        sortBy: "createdAt",
-        sortDir: "desc",
-        // Adicionaremos busca e outros filtros aqui quando a API suportar
+        workspaceId:
+          selectedWorkspace !== "all" ? Number(selectedWorkspace) : undefined,
+        statusId: statusFilter !== "all" ? Number(statusFilter) : undefined,
+        priority:
+          priorityFilter !== "all"
+            ? (priorityFilter as ITask["priority"])
+            : undefined,
       };
 
       const response = await taskService.getAllTasks(filters as ITaskFilters);
-
       setTasksResponse(response);
     } catch (error) {
       setErrorInfo(getOperationErrorInfo("load", error));
@@ -99,16 +86,20 @@ export function useTasksData() {
     }
   };
 
-  // Filtra as tarefas no lado do cliente com base no que a API já retornou
   const filteredTasks = useMemo(() => {
-    const tasks = tasksResponse?.content || [];
-    // A API já deve estar fazendo o filtro principal.
-    // Podemos adicionar filtros de cliente adicionais se necessário.
-    return tasks;
-  }, [tasksResponse]);
+    const allTasks = tasksResponse?.content || [];
+    if (!debouncedSearchTerm) {
+      return allTasks;
+    }
+    const search = debouncedSearchTerm.toLowerCase();
+    return allTasks.filter(
+      (task) =>
+        task.title.toLowerCase().includes(search) ||
+        task.description?.toLowerCase().includes(search)
+    );
+  }, [tasksResponse, debouncedSearchTerm]);
 
   return {
-    // Estado e Setters
     tasks: filteredTasks,
     workspaces,
     isLoading,
@@ -125,7 +116,6 @@ export function useTasksData() {
     setStatusFilter,
     priorityFilter,
     setPriorityFilter,
-    // Funções
     loadTasks,
     loadWorkspaces,
   };

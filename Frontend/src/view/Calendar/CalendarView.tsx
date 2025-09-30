@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronLeftIcon,
@@ -14,6 +14,7 @@ import type {
   ICreateTaskRequest,
   ITask,
   ITaskFilters,
+  ITaskStatus,
 } from "../../types/task.types";
 import type { IWorkspaceName } from "../../types/workspace.types";
 import { taskService } from "../../services/Tasks/task.service";
@@ -56,7 +57,6 @@ const CalendarView: React.FC = () => {
   const loadWorkspaces = useCallback(async () => {
     try {
       const response = await workspaceService.getWorkspacesFromUser();
-      // Acessar a propriedade 'content' que contém o array
       const userWorkspaces = response.content;
       setWorkspaces([{ id: 0, name: "All Workspaces" }, ...userWorkspaces]);
     } catch (error) {
@@ -118,41 +118,24 @@ const CalendarView: React.FC = () => {
     }
   }, [loadTasks, workspaces.length]);
 
-  const handleCreateTask = async (taskData: ICreateTaskRequest) => {
-    try {
-      await taskService.createTask(taskData);
-      await loadTasks();
-    } catch (error) {
-      console.error("Error creating task:", error);
-    }
-  };
+  // CORREÇÃO 1: A função foi envolvida em `useCallback` para estabilizar sua referência.
+  const getTasksForDate = useCallback(
+    (date: Date): ITask[] => {
+      return tasks.filter((task) => {
+        if (!task.dueDate) return false;
+        const taskDate = new Date(task.dueDate);
+        return (
+          taskDate.getDate() === date.getDate() &&
+          taskDate.getMonth() === date.getMonth() &&
+          taskDate.getFullYear() === date.getFullYear()
+        );
+      });
+    },
+    [tasks]
+  ); // A dependência agora é `tasks`, que é estável entre renders.
 
-  const handleEditTask = (task: ITask) => {
-    setSelectedTask(task);
-    setIsDayModalOpen(false);
-    setIsEditTaskModalOpen(true);
-  };
-
-  const handleDeleteTask = (task: ITask) => {
-    setTaskToDelete(task);
-    setIsDeleteConfirmOpen(true);
-  };
-
-  const confirmDeleteTask = async () => {
-    if (!taskToDelete) return;
-
-    try {
-      await taskService.deleteTask(taskToDelete.id);
-      await loadTasks();
-      setIsDeleteConfirmOpen(false);
-      setTaskToDelete(null);
-      setIsDayModalOpen(false);
-    } catch (error) {
-      console.error("Error deleting task:", error);
-    }
-  };
-
-  const getCalendarDays = (): CalendarDay[] => {
+  // CORREÇÃO 2: A declaração de `calendarDays` usa a função memoizada `getTasksForDate`.
+  const calendarDays = useMemo((): CalendarDay[] => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
 
@@ -192,18 +175,40 @@ const CalendarView: React.FC = () => {
     }
 
     return days;
+  }, [currentDate, getTasksForDate]);
+
+  const handleCreateTask = async (taskData: ICreateTaskRequest) => {
+    try {
+      await taskService.createTask(taskData);
+      await loadTasks();
+    } catch (error) {
+      console.error("Error creating task:", error);
+    }
   };
 
-  const getTasksForDate = (date: Date): ITask[] => {
-    return tasks.filter((task) => {
-      if (!task.dueDate) return false;
-      const taskDate = new Date(task.dueDate);
-      return (
-        taskDate.getDate() === date.getDate() &&
-        taskDate.getMonth() === date.getMonth() &&
-        taskDate.getFullYear() === date.getFullYear()
-      );
-    });
+  const handleEditTask = (task: ITask) => {
+    setSelectedTask(task);
+    setIsDayModalOpen(false);
+    setIsEditTaskModalOpen(true);
+  };
+
+  const handleDeleteTask = (task: ITask) => {
+    setTaskToDelete(task);
+    setIsDeleteConfirmOpen(true);
+  };
+
+  const confirmDeleteTask = async () => {
+    if (!taskToDelete) return;
+
+    try {
+      await taskService.deleteTask(taskToDelete.id);
+      await loadTasks();
+      setIsDeleteConfirmOpen(false);
+      setTaskToDelete(null);
+      setIsDayModalOpen(false);
+    } catch (error) {
+      console.error("Error deleting task:", error);
+    }
   };
 
   const getPriorityColor = (priority: ITask["priority"]) => {
@@ -221,19 +226,12 @@ const CalendarView: React.FC = () => {
     }
   };
 
-  const getStatusColor = (status: ITask["status"]) => {
-    switch (status.order) {
-      case 1:
-        return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300";
-      case 2:
-        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300";
-      case 3:
-        return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300";
-      case 4:
-        return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300";
-      default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300";
-    }
+  const getStatusColor = (status: ITaskStatus) => {
+    // Usando a cor definida no status, com fallback
+    return {
+      backgroundColor: `${status.color}25`, // Adiciona opacidade
+      color: status.color,
+    };
   };
 
   const handleDayClick = (day: CalendarDay) => {
@@ -270,7 +268,7 @@ const CalendarView: React.FC = () => {
     });
   };
 
-  const formatDate = (date: Date) => {
+  const formatDateTitle = (date: Date) => {
     return date.toLocaleDateString("pt-BR", {
       weekday: "long",
       year: "numeric",
@@ -287,8 +285,6 @@ const CalendarView: React.FC = () => {
       date.getFullYear() === today.getFullYear()
     );
   };
-
-  const calendarDays = getCalendarDays();
 
   return (
     <div className="min-h-screen p-6 md:p-8 lg:p-12">
@@ -560,7 +556,7 @@ const CalendarView: React.FC = () => {
                 <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
                   <div>
                     <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                      {formatDate(selectedDate)}
+                      {formatDateTitle(selectedDate)}
                     </h2>
                     <p className="text-gray-600 dark:text-gray-400 mt-1">
                       {selectedDayTasks.length}{" "}
