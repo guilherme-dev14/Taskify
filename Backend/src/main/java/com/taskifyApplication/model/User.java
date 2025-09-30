@@ -2,10 +2,9 @@ package com.taskifyApplication.model;
 
 import jakarta.persistence.*;
 import lombok.*;
-import java.util.Objects;
+
+import java.util.*;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
 @Table(name = "users")
@@ -56,6 +55,10 @@ public class User{
     @OneToMany(mappedBy = "author", fetch = FetchType.LAZY)
     @Builder.Default
     private List<TaskComment> comments = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private Set<PasswordResetToken> passwordResetTokens = new HashSet<>();
 
     @Column(name = "created_at", nullable = false)
     private ZonedDateTime createdAt;

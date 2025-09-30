@@ -3,6 +3,7 @@ package com.taskifyApplication.service;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
@@ -21,6 +22,9 @@ public class EmailService {
     @Autowired
     private TemplateEngine templateEngine;
 
+    @Value("${spring.mail.from}")
+    private String mailFrom;
+
     @Async
     protected void sendHtmlEmail(String to, String subject, String templateName, Map<String, Object> variables) {
         try {
@@ -33,6 +37,7 @@ public class EmailService {
             String htmlContent = templateEngine.process(templateName, context);
 
             helper.setTo(to);
+            helper.setFrom(mailFrom);
             helper.setSubject(subject);
             helper.setText(htmlContent, true);
 

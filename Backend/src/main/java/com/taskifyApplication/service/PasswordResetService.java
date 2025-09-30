@@ -30,7 +30,7 @@ public class PasswordResetService {
     private final JavaMailSender mailSender;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final SecureRandom random = new SecureRandom();
-    @Value("${app.mail.from}")
+    @Value("${spring.mail.from}")
     private String fromAddress;
 
     @Value("${app.frontendBaseUrl}")
