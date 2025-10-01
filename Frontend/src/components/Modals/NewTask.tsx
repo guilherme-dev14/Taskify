@@ -10,12 +10,9 @@ import {
   TagIcon,
   PaperClipIcon,
 } from "@heroicons/react/24/outline";
-import { motion, AnimatePresence } from "framer-motion";
-
 import type { ICreateTaskRequest } from "../../types/task.types";
 import type { IWorkspaceName } from "../../types/workspace.types";
 import type { ICategoryResponse } from "../../types/category.types";
-
 import {
   taskStatusService,
   type ITaskStatus,
@@ -42,12 +39,8 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({
 }) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [workspaceId, setWorkspaceId] = useState<number | null>(
-    initialWorkspaceId || null
-  );
-  const [statusId, setStatusId] = useState<number | null>(
-    initialStatusId || null
-  );
+  const [workspaceId, setWorkspaceId] = useState<number | null>(null);
+  const [statusId, setStatusId] = useState<number | null>(null);
   const [priority, setPriority] = useState<
     "LOW" | "MEDIUM" | "HIGH" | "URGENT"
   >("MEDIUM");
@@ -56,14 +49,12 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({
   const [actualHours, setActualHours] = useState<number | null>(null);
   const [categoryIds, setCategoryIds] = useState<number[]>([]);
   const [attachments, setAttachments] = useState<File[]>([]);
-
   const [workspaces, setWorkspaces] = useState<IWorkspaceName[]>([]);
   const [statuses, setStatuses] = useState<ITaskStatus[]>([]);
   const [categories, setCategories] = useState<ICategoryResponse[]>([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [showNewCategoryForm, setShowNewCategoryForm] = useState(false);
-
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -71,7 +62,9 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({
     try {
       const data = await workspaceService.getWorkspacesFromUserList();
       setWorkspaces(data);
-      if (!initialWorkspaceId && data.length > 0) {
+      if (initialWorkspaceId) {
+        setWorkspaceId(initialWorkspaceId);
+      } else if (data.length > 0) {
         setWorkspaceId(Number(data[0].id));
       }
     } catch (error) {
@@ -84,10 +77,10 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({
       try {
         const data = await taskStatusService.getStatusesForWorkspace(wsId);
         setStatuses(data);
-        if (!initialStatusId && data.length > 0) {
-          setStatusId(data[0].id);
-        } else if (initialStatusId) {
+        if (initialStatusId && data.some((s) => s.id === initialStatusId)) {
           setStatusId(initialStatusId);
+        } else if (data.length > 0) {
+          setStatusId(data[0].id);
         }
       } catch (error) {
         console.error("Error loading statuses:", error);
@@ -106,22 +99,44 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({
       setCategories(data);
     } catch (error) {
       console.error("Error loading categories:", error);
-      setCategories([]);
     } finally {
       setIsLoadingCategories(false);
     }
   }, []);
 
-  // --- EFEITOS (useEffect) ---
+  const resetForm = () => {
+    setTitle("");
+    setDescription("");
+    setPriority("MEDIUM");
+    setDueDate("");
+    setEstimatedHours(null);
+    setActualHours(null);
+    setCategoryIds([]);
+    setAttachments([]);
+    setErrors({});
+    setShowNewCategoryForm(false);
+    setNewCategoryName("");
+  };
+
   useEffect(() => {
     if (isOpen) {
-      loadWorkspaces();
+      resetForm();
+      setWorkspaceId(initialWorkspaceId || null);
+      setStatusId(initialStatusId || null);
       if (initialDate) {
         const date = new Date(initialDate);
-        setDueDate(date.toLocaleDateString().slice(0, 16));
+        date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+        setDueDate(date.toISOString().split("T")[0]);
       }
+      loadWorkspaces();
     }
-  }, [isOpen, loadWorkspaces, initialDate]);
+  }, [
+    isOpen,
+    initialWorkspaceId,
+    initialStatusId,
+    initialDate,
+    loadWorkspaces,
+  ]);
 
   useEffect(() => {
     if (workspaceId) {
@@ -133,11 +148,9 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({
     }
   }, [workspaceId, loadStatuses, loadCategories]);
 
-  // --- HANDLERS DE FORMULÁRIO E CATEGORIAS ---
   const handleWorkspaceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newWorkspaceId = Number(e.target.value);
     setWorkspaceId(newWorkspaceId);
-    // Reseta status e categorias ao trocar de workspace
     setStatusId(null);
     setCategoryIds([]);
   };
@@ -167,7 +180,6 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({
     );
   };
 
-  // --- HANDLERS DE ANEXOS ---
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     setAttachments((prev) => [...prev, ...files]);
@@ -177,7 +189,6 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({
     setAttachments((prev) => prev.filter((_, i) => i !== index));
   };
 
-  // --- VALIDAÇÃO E SUBMISSÃO ---
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
     if (!title.trim()) newErrors.title = "Title is required";
@@ -207,7 +218,7 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({
 
     try {
       await onSubmit(taskData, attachments);
-      handleClose();
+      onClose();
     } catch (error) {
       console.error("Error creating task:", error);
     } finally {
@@ -215,7 +226,6 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({
     }
   };
 
-  // --- LIMPEZA E RESET ---
   const handleClose = () => {
     setTitle("");
     setDescription("");
@@ -233,7 +243,6 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({
     onClose();
   };
 
-  // --- FUNÇÕES AUXILIARES E ESTILOS ---
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return "0 Bytes";
     const k = 1024;
@@ -254,7 +263,6 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({
   return (
     <Transition appear show={isOpen} as={Fragment}>
       <Dialog as="div" className="relative z-50" onClose={handleClose}>
-        {/* The overlay (background) */}
         <Transition.Child
           as={Fragment}
           enter="ease-out duration-300"
@@ -305,7 +313,6 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({
                   onSubmit={handleSubmit}
                   className="space-y-6 max-h-[70vh] overflow-y-auto pr-4"
                 >
-                  {/* O RESTO DO SEU FORMULÁRIO PERMANECE EXATAMENTE O MESMO AQUI */}
                   {/* Title */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">

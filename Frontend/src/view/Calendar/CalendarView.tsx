@@ -145,9 +145,11 @@ const CalendarView: React.FC = () => {
 
     const days: CalendarDay[] = [];
 
-    const prevMonth = new Date(year, month - 1, 0);
-    for (let i = firstDayOfWeek - 1; i >= 0; i--) {
-      const date = new Date(year, month - 1, prevMonth.getDate() - i);
+    const lastDayOfPrevMonth = new Date(year, month, 0);
+    const prevMonthDaysCount = lastDayOfPrevMonth.getDate();
+    for (let i = firstDayOfWeek; i > 0; i--) {
+      const day = prevMonthDaysCount - i + 1;
+      const date = new Date(year, month - 1, day);
       days.push({
         date,
         isCurrentMonth: false,
@@ -259,6 +261,7 @@ const CalendarView: React.FC = () => {
   const navigateMonth = (direction: "prev" | "next") => {
     setCurrentDate((prev) => {
       const newDate = new Date(prev);
+      newDate.setDate(1);
       if (direction === "prev") {
         newDate.setMonth(prev.getMonth() - 1);
       } else {
