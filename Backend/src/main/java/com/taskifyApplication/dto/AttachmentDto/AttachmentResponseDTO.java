@@ -20,7 +20,5 @@ public class AttachmentResponseDTO {
     private String mimeType;
     private Long size;
     private OffsetDateTime uploadedAt;
-    private String description;
     private UserSummaryDTO uploadedBy;
-    private Integer version;
 }

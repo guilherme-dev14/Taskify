@@ -83,9 +83,6 @@ public class AttachmentService {
                     .uploadedBy(uploadedBy)
                     .task(task)
                     .workspace(workspace)
-                    .description(description)
-                    .version(1)
-                    .isLatestVersion(true)
                     .build();
 
             return attachmentRepository.save(attachment);

@@ -18,16 +18,7 @@ public interface WorkspaceMemberRepository extends JpaRepository<WorkspaceMember
 
     Optional<WorkspaceMember> findByWorkspaceAndUser(Workspace workspace, User user);
 
-
     boolean existsByWorkspaceAndUser(Workspace workspace, User user);
-    @Query("SELECT CASE WHEN COUNT(*) > 0 THEN true ELSE false END FROM Workspace w " +
-            "LEFT JOIN WorkspaceMember wm ON w.id = wm.workspace.id " +
-            "WHERE w.id = :workspaceId AND " +
-            "(w.owner = :user OR (wm.user = :user AND wm.role IN ('ADMIN', 'OWNER')))")
-
-    boolean canUserManage(@Param("workspaceId") Long workspaceId, @Param("user") User user);
-
-
 
     @Modifying
     @Query("UPDATE WorkspaceMember wm SET wm.role = :newRole WHERE wm.workspace = :workspace AND wm.user = :user")

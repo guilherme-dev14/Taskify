@@ -10,9 +10,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.util.List; // Importar List
-import java.util.stream.Collectors; // Importar Collectors
+import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api")
@@ -34,15 +33,13 @@ public class AttachmentController {
                 attachment.getMimeType(),
                 attachment.getSize(),
                 attachment.getUploadedAt(),
-                attachment.getDescription(),
-                new UserSummaryDTO(attachment.getUploadedBy()),
-                attachment.getVersion()
+                new UserSummaryDTO(attachment.getUploadedBy())
         )).collect(Collectors.toList());
 
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping(path = "/tasks/{taskId}/attachments", consumes = MediaType.MULTIPART_FORM_DATA_VALUE) // <-- ADICIONE AQUI
+    @PostMapping(path = "/tasks/{taskId}/attachments", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<AttachmentResponseDTO> uploadAttachmentForTask(
             @PathVariable Long taskId,
             @RequestParam("file") MultipartFile file,
@@ -57,9 +54,7 @@ public class AttachmentController {
                 attachment.getMimeType(),
                 attachment.getSize(),
                 attachment.getUploadedAt(),
-                attachment.getDescription(),
-                new UserSummaryDTO(attachment.getUploadedBy()),
-                attachment.getVersion()
+                new UserSummaryDTO(attachment.getUploadedBy())
         );
         return ResponseEntity.ok(response);
     }

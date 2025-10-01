@@ -203,6 +203,9 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({
     if (!validateForm() || !workspaceId || !statusId) return;
 
     setLoading(true);
+    const formattedDueDate = dueDate
+      ? new Date(dueDate).toISOString().split("T")[0] + "T00:00:00"
+      : null;
 
     const taskData: ICreateTaskRequest = {
       title,
@@ -210,7 +213,7 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({
       workspaceId,
       statusId,
       priority,
-      dueDate: dueDate ? new Date(dueDate).toLocaleDateString() : null,
+      dueDate: formattedDueDate,
       estimatedHours: estimatedHours || undefined,
       actualHours: actualHours || undefined,
       categoryIds: categoryIds.length > 0 ? categoryIds : [],

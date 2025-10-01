@@ -18,7 +18,5 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
 
     @Query("SELECT CASE WHEN COUNT(c) > 0 THEN TRUE ELSE FALSE END FROM Category c WHERE c.workspace.id = :workspaceId AND c.name = :name")
     Boolean existsInWorkspace(@Param("workspaceId") Long workspaceId, @Param("name") String name);
-
-    Category findByName(String name);
 }
 

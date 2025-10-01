@@ -49,10 +49,6 @@ public class Task {
     private Integer actualHours;
     private Double completionPercentage;
 
-    @OneToMany(mappedBy = "task", cascade = {CascadeType.REMOVE}, fetch = FetchType.LAZY, orphanRemoval = true)
-    @Builder.Default
-    private List<TaskComment> comments = new ArrayList<>();
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "workspace_id", nullable = false)
     private Workspace workspace;
@@ -66,42 +62,12 @@ public class Task {
     @Builder.Default
     private List<Category> categories = new ArrayList<>();
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "parent_task_id")
-    private Task parentTask;
-
-    @OneToMany(mappedBy = "parentTask", fetch = FetchType.LAZY)
-    @Builder.Default
-    private List<Task> subtasks = new ArrayList<>();
-
-    @OneToMany(mappedBy = "task", cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE}, fetch = FetchType.LAZY, orphanRemoval = true)
-    @Builder.Default
-    private List<TaskDependency> dependencies = new ArrayList<>();
-
-    @OneToMany(mappedBy = "dependsOnTask", cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE}, fetch = FetchType.LAZY, orphanRemoval = true)
-    @Builder.Default
-    private List<TaskDependency> dependentTasks = new ArrayList<>();
-
-    @ElementCollection
-    @CollectionTable(name = "task_tags", joinColumns = @JoinColumn(name = "task_id"))
-    @Column(name = "tag")
-    @Builder.Default
-    private List<String> tags = new ArrayList<>();
-
     @Builder.Default
     private Integer progress = 0;
-
-    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
-    @OrderBy("orderIndex ASC")
-    @Builder.Default
-    private List<ChecklistItem> checklist = new ArrayList<>();
 
     @OneToMany(mappedBy = "task", cascade = {CascadeType.REMOVE}, fetch = FetchType.LAZY, orphanRemoval = true)
     @Builder.Default
     private List<Attachment> attachments = new ArrayList<>();
-
-    @Column(columnDefinition = "TEXT")
-    private String customFieldsJson;
 
     @Column(name = "updated_at")
     private OffsetDateTime updatedAt;

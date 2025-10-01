@@ -46,18 +46,6 @@ public class Attachment {
     @JoinColumn(name = "workspace_id")
     private Workspace workspace;
 
-    @Builder.Default
-    private Integer version = 1;
-
-    @Builder.Default
-    private Boolean isLatestVersion = true;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "parent_attachment_id")
-    private Attachment parentAttachment;
-
-    private String description;
-
     @PrePersist
     protected void onCreate() {
         this.uploadedAt = OffsetDateTime.now();

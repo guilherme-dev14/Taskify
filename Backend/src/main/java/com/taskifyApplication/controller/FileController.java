@@ -19,7 +19,7 @@ public class FileController {
     @Autowired
     private FileService fileService;
 
-    @PostMapping(path = "/upload/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE) // <-- ADICIONE AQUI
+    @PostMapping(path = "/upload/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<String> uploadAvatar(@RequestParam("file") MultipartFile file) throws IOException {
         String avatarUrl = fileService.saveAvatar(file);
         return ResponseEntity.ok(avatarUrl);
@@ -31,7 +31,7 @@ public class FileController {
     public ResponseEntity<byte[]> getAvatar(@PathVariable String filename) throws IOException {
         byte[] file = fileService.getAvatar(filename);
         return ResponseEntity.ok()
-                .header("Content-Type", "image/jpeg") // O tipo de conteúdo deve ser dinâmico
+                .header("Content-Type", "image/jpeg")
                 .body(file);
     }
 }

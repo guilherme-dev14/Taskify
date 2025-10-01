@@ -59,8 +59,6 @@ public class TaskService {
     @PersistenceContext
     private EntityManager entityManager;
     @Autowired
-    private UserService userService;
-    @Autowired
     private NotificationOrchestratorService notifier;
 
     // endregion
@@ -140,7 +138,6 @@ public class TaskService {
         if (task.getAssignedTo() != null) {
             dto.getAssignedTo().setCreatedAt(task.getAssignedTo().getCreatedAt().toOffsetDateTime());
         }
-        dto.setCommentsCount(task.getComments() != null ? task.getComments().size() : 0);
         dto.setIsOverdue(task.getDueDate() != null &&
                 task.getDueDate().isBefore(LocalDateTime.now()) &&
                 (task.getStatus() != null && !task.getStatus().getName().equalsIgnoreCase("COMPLETED")));
@@ -235,10 +232,6 @@ public class TaskService {
         
         try {
             entityManager.createQuery("UPDATE Activity a SET a.task = null WHERE a.task.id = :taskId")
-                    .setParameter("taskId", taskId)
-                    .executeUpdate();
-
-            entityManager.createQuery("UPDATE Task t SET t.parentTask = null WHERE t.parentTask.id = :taskId")
                     .setParameter("taskId", taskId)
                     .executeUpdate();
 
@@ -357,7 +350,6 @@ public class TaskService {
         );
 
         TaskResponseDTO dto = convertToTaskResponseDto(task);
-        dto.setCommentsCount(task.getComments() != null ? task.getComments().size() : 0);
         dto.setIsOverdue(task.getDueDate() != null &&
                 task.getDueDate().isBefore(LocalDateTime.now()) &&
                 task.getStatus().getName().equalsIgnoreCase("COMPLETED"));
@@ -558,8 +550,6 @@ public class TaskService {
             dto.setIsOverdue(false);
         }
 
-        dto.setCommentsCount(task.getComments() != null ? task.getComments().size() : 0);
-
         if (task.getAttachments() != null && !task.getAttachments().isEmpty()) {
             dto.setAttachments(task.getAttachments().stream()
                     .map(this::convertToAttachmentResponseDto)
@@ -576,20 +566,14 @@ public class TaskService {
 
         dto.setId(attachment.getId());
 
-        // CORREÇÃO 1: Use os campos corretos.
-        // 'originalName' é o nome que o usuário vê. 'filePath' é a URL para download.
         dto.setOriginalName(attachment.getOriginalName());
-        dto.setFilePath(attachment.getFilePath()); // Adicionando o campo mais importante!
+        dto.setFilePath(attachment.getFilePath());
 
         dto.setMimeType(attachment.getMimeType());
         dto.setSize(attachment.getSize());
         dto.setUploadedAt(attachment.getUploadedAt());
-        dto.setDescription(attachment.getDescription());
-        dto.setVersion(attachment.getVersion());
 
-        // CORREÇÃO 2: Crie o DTO de usuário corretamente.
         if (attachment.getUploadedBy() != null) {
-            // Crie um UserSummaryDTO, que é o tipo esperado pelo AttachmentResponseDTO.
             User uploadedBy = attachment.getUploadedBy();
             UserSummaryDTO userDto = new UserSummaryDTO(
                     uploadedBy.getId(),
@@ -653,12 +637,10 @@ public class TaskService {
             dto.setIsOverdue(false);
         }
 
-        dto.setCommentsCount(task.getComments() != null ? task.getComments().size() : 0);
         dto.setNotes(task.getNotes());
 
         if (task.getAttachments() != null && !task.getAttachments().isEmpty()) {
             List<AttachmentResponseDTO> attachmentDtos = task.getAttachments().stream()
-                    .filter(Attachment::getIsLatestVersion)
                     .map(this::convertToAttachmentResponseDto)
                     .collect(Collectors.toList());
             dto.setAttachments(attachmentDtos);
@@ -769,7 +751,7 @@ public class TaskService {
             newStatus = taskStatusRepository.findById(bulkUpdateDTO.getStatusId())
                     .orElseThrow(() -> new ResourceNotFoundException("Status not found with id: " + bulkUpdateDTO.getStatusId()));
 
-            if (!tasks.isEmpty() && !newStatus.getWorkspace().getId().equals(tasks.get(0).getWorkspace().getId())) {
+            if (!tasks.isEmpty() && !newStatus.getWorkspace().getId().equals(tasks.getFirst().getWorkspace().getId())) {
                 throw new ForbiddenException("The selected status does not belong to the tasks' workspace.");
             }
         }
@@ -1020,7 +1002,7 @@ public class TaskService {
         
         LocalDateTime startDateTime = LocalDateTime.parse(startDate + "T00:00:00");
         LocalDateTime endDateTime = LocalDateTime.parse(endDate + "T23:59:59");
-        
+
         StringBuilder queryBuilder = new StringBuilder("SELECT DISTINCT t FROM Task t ");
         StringBuilder whereBuilder = new StringBuilder("WHERE 1=1 ");
         List<Object> parameters = new ArrayList<>();

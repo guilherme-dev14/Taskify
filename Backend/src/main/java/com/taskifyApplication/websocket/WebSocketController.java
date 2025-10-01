@@ -20,8 +20,6 @@ public class WebSocketController {
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
 
-    @Autowired
-    private JwtService jwtService;
 
     @Autowired
     private UserService userService;
@@ -29,9 +27,6 @@ public class WebSocketController {
     @Autowired
     private WebSocketSessionManager sessionManager;
 
-    /**
-     * Handle workspace join events
-     */
     @MessageMapping("/workspace.join")
     public void joinWorkspace(@Payload Map<String, Object> payload, Principal principal) {
         String workspaceId = (String) payload.get("workspaceId");
@@ -52,9 +47,6 @@ public class WebSocketController {
         }
     }
 
-    /**
-     * Handle workspace leave events
-     */
     @MessageMapping("/workspace.leave")
     public void leaveWorkspace(@Payload Map<String, Object> payload, Principal principal) {
         String workspaceId = (String) payload.get("workspaceId");
@@ -70,9 +62,6 @@ public class WebSocketController {
         }
     }
 
-    /**
-     * Handle task watching
-     */
     @MessageMapping("/task.watch")
     public void watchTask(@Payload Map<String, Object> payload, Principal principal) {
         String taskId = (String) payload.get("taskId");
@@ -83,9 +72,7 @@ public class WebSocketController {
         }
     }
 
-    /**
-     * Handle task unwatching
-     */
+
     @MessageMapping("/task.unwatch")
     public void unwatchTask(@Payload Map<String, Object> payload, Principal principal) {
         String taskId = (String) payload.get("taskId");
@@ -96,9 +83,6 @@ public class WebSocketController {
         }
     }
 
-    /**
-     * Handle cursor position updates
-     */
     @MessageMapping("/cursor.update")
     public void updateCursor(@Payload Map<String, Object> payload, Principal principal) {
         User user = getCurrentUser(principal);

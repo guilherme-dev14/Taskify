@@ -6,7 +6,6 @@ import com.taskifyApplication.dto.TaskStatusDto.TaskStatusDTO;
 import com.taskifyApplication.dto.UserDto.UserSummaryDTO;
 import com.taskifyApplication.dto.WorkspaceDto.WorkspaceNameDTO;
 import com.taskifyApplication.dto.AttachmentDto.AttachmentResponseDTO;
-import com.taskifyApplication.model.ChecklistItem;
 import com.taskifyApplication.model.PriorityEnum;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -42,5 +41,4 @@ public class TaskResponseDTO {
     private Integer estimatedHours;
     private Integer actualHours;
     private List<AttachmentResponseDTO> attachments;
-    private List<ChecklistItem> checklist;
 }

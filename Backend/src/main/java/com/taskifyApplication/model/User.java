@@ -52,10 +52,6 @@ public class User{
     @Builder.Default
     private List<WorkspaceMember> workspaceMemberships = new ArrayList<>();
 
-    @OneToMany(mappedBy = "author", fetch = FetchType.LAZY)
-    @Builder.Default
-    private List<TaskComment> comments = new ArrayList<>();
-
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private Set<PasswordResetToken> passwordResetTokens = new HashSet<>();

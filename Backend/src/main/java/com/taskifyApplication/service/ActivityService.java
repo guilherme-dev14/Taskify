@@ -171,8 +171,8 @@ public class ActivityService {
         );
     }
 
-    public Activity logTaskCreated(Task task, User user) {
-        return createActivity(
+    public void logTaskCreated(Task task, User user) {
+        createActivity(
                 "task_created",
                 "Task Created",
                 "Created task: " + task.getTitle(),
@@ -183,8 +183,8 @@ public class ActivityService {
         );
     }
 
-    public Activity logTaskUpdated(Task task, User user) {
-        return createActivity(
+    public void logTaskUpdated(Task task, User user) {
+        createActivity(
                 "task_updated",
                 "Task Updated",
                 "Updated task: " + task.getTitle(),
@@ -195,8 +195,8 @@ public class ActivityService {
         );
     }
 
-    public Activity logTaskCompleted(Task task, User user) {
-        return createActivity(
+    public void logTaskCompleted(Task task, User user) {
+        createActivity(
                 "task_completed",
                 "Task Completed",
                 "Completed task: " + task.getTitle(),

@@ -42,8 +42,6 @@ public class WorkspaceService {
     @Autowired
     private TaskHistoryRepository taskHistoryRepository;
     @Autowired
-    private TaskDependencyRepository taskDependencyRepository;
-    @Autowired
     private ActivityRepository activityRepository;
     @Autowired
     private CategoryRepository categoryRepository;
@@ -51,8 +49,6 @@ public class WorkspaceService {
     private EntityManager entityManager;
     @Autowired
     private ValidationService validationService;
-    @Autowired
-    private UserService userService;
     @Autowired
     private NotificationOrchestratorService notifier;
 
@@ -131,10 +127,6 @@ public class WorkspaceService {
             entityManager.createQuery("UPDATE Activity a SET a.task = null WHERE a.task.id IN :taskIds")
                     .setParameter("taskIds", taskIds)
                     .executeUpdate();
-
-            taskDependencyRepository.deleteAll(taskDependencyRepository.findByTaskIn(tasks));
-            taskDependencyRepository.deleteAll(taskDependencyRepository.findByDependsOnTaskIn(tasks));
-
             timeTrackingRepository.deleteByTaskIdIn(taskIds);
 
             taskHistoryRepository.deleteByTaskIdIn(taskIds);
