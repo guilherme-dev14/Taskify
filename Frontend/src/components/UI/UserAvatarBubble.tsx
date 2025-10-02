@@ -43,12 +43,13 @@ const getGradientColor = (name: string) => {
   return colors[Math.abs(hash) % colors.length];
 };
 
-export const UserAvatarBubble: React.FC<UserAvatarBubbleProps> = ({
+export const UserAvatarBubble: React.FC<UserAvatarBubbleProps & { ownerInfo?: string }> = ({
   user,
   size = "md",
   showName = false,
   showTooltip = true,
   className = "",
+  ownerInfo,
 }) => {
   const initials = getInitials(user.firstName, user.lastName);
   const fullName =
@@ -62,31 +63,20 @@ export const UserAvatarBubble: React.FC<UserAvatarBubbleProps> = ({
       className={`
       ${sizeClasses[size]}
       ${gradientColor}
-      rounded-full 
-      flex 
-      items-center 
-      justify-center 
-      text-white 
-      font-semibold 
-      shadow-md 
-      hover:shadow-lg 
-      transition-shadow 
+      rounded-full
+      flex
+      items-center
+      justify-center
+      text-white
+      font-semibold
+      shadow-md
+      hover:shadow-lg
+      transition-shadow
       cursor-pointer
       ${className}
     `}
     >
-      {user.profilePictureUrl ? (
-        <img
-          src={user.profilePictureUrl}
-          alt={fullName}
-          className="w-full h-full object-cover rounded-full"
-          onError={(e) => {
-            (e.target as HTMLImageElement).style.display = "none";
-          }}
-        />
-      ) : (
-        <span className="select-none leading-none">{initials}</span>
-      )}
+      <span className="select-none leading-none">{initials}</span>
     </div>
   );
 
@@ -108,35 +98,38 @@ export const UserAvatarBubble: React.FC<UserAvatarBubbleProps> = ({
 
   if (showTooltip && !showName) {
     return (
-      <div className="group relative" title={`${fullName} (${user.email})`}>
+      <div className="group relative" title={ownerInfo ? `${fullName} - ${ownerInfo}` : `${fullName} (${user.email})`}>
         {content}
 
         {/* Tooltip */}
         <div
           className="
-          invisible group-hover:visible 
-          absolute z-50 
-          bg-gray-900 dark:bg-gray-700 
-          text-white text-xs 
-          rounded-lg py-2 px-3 
-          -top-12 left-1/2 
+          invisible group-hover:visible
+          absolute z-50
+          bg-gray-900 dark:bg-gray-700
+          text-white text-xs
+          rounded-lg py-2 px-3
+          -top-12 left-1/2
           transform -translate-x-1/2
           whitespace-nowrap
           shadow-lg
           transition-opacity duration-200
-          before:content-[''] 
-          before:absolute 
-          before:top-full 
-          before:left-1/2 
-          before:transform 
-          before:-translate-x-1/2 
-          before:border-4 
-          before:border-transparent 
-          before:border-t-gray-900 
+          before:content-['']
+          before:absolute
+          before:top-full
+          before:left-1/2
+          before:transform
+          before:-translate-x-1/2
+          before:border-4
+          before:border-transparent
+          before:border-t-gray-900
           dark:before:border-t-gray-700
         "
         >
           <div className="font-medium">{fullName}</div>
+          {ownerInfo && (
+            <div className="text-yellow-400 font-semibold mt-1">{ownerInfo}</div>
+          )}
           <div className="text-gray-300 dark:text-gray-400">{user.email}</div>
         </div>
       </div>
@@ -151,19 +144,21 @@ export const UserAvatarGroup: React.FC<{
   size?: "xs" | "sm" | "md" | "lg";
   maxVisible?: number;
   className?: string;
-}> = ({ users, size = "sm", maxVisible = 3, className = "" }) => {
+  ownerName?: string;
+}> = ({ users, size = "sm", maxVisible = 3, className = "", ownerName }) => {
   const visibleUsers = users.slice(0, maxVisible);
   const remainingCount = users.length - maxVisible;
 
   return (
     <div className={`flex items-center ${className}`}>
       <div className="flex -space-x-2">
-        {visibleUsers.map((user) => (
+        {visibleUsers.map((user, index) => (
           <UserAvatarBubble
             key={user.id}
             user={user}
             size={size}
             className="ring-2 ring-white dark:ring-gray-800 hover:z-10 relative"
+            ownerInfo={index === 0 && ownerName ? `Owner: ${ownerName}` : undefined}
           />
         ))}
 

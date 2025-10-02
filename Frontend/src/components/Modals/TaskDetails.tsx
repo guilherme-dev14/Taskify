@@ -1019,15 +1019,9 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
                         >
                           {task.assignedTo ? (
                             <>
-                              {task.assignedTo.avatar ? (
-                                <img
-                                  src={task.assignedTo.avatar}
-                                  alt={`${task.assignedTo.firstName} ${task.assignedTo.lastName}`}
-                                  className="w-8 h-8 rounded-full"
-                                />
-                              ) : (
-                                <UserCircleIcon className="w-8 h-8 text-gray-400" />
-                              )}
+                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold">
+                                {task.assignedTo.firstName?.charAt(0)}{task.assignedTo.lastName?.charAt(0)}
+                              </div>
                               <div>
                                 <span className="text-gray-900 dark:text-white font-medium">
                                   {task.assignedTo.firstName}{" "}

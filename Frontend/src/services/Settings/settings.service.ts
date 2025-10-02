@@ -8,7 +8,6 @@ interface UserSettings {
   weeklyReports: boolean;
   taskReminders: boolean;
   teamUpdates: boolean;
-  showAvatars: boolean;
 }
 
 class SettingsService {
@@ -28,7 +27,6 @@ class SettingsService {
         teamUpdates: false,
         autoSave: true,
         compactView: false,
-        showAvatars: true,
         defaultWorkspace: "personal",
         taskAutoAssign: false,
         workspacePrivacy: "private",

@@ -100,20 +100,12 @@ const TaskEventCard: React.FC<{ task: Task; onClick?: () => void }> = ({
             </div>
             {task.assignedTo && (
               <div className="w-6 h-6 mt-1">
-                {task.assignedTo.avatar ? (
-                  <img
-                    src={task.assignedTo.avatar}
-                    alt={task.assignedTo.username}
-                    className="w-6 h-6 rounded-full"
-                  />
-                ) : (
-                  <div className="w-6 h-6 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
-                    <span className="text-xs text-gray-600 dark:text-gray-400">
-                      {task.assignedTo.firstName?.charAt(0) ||
-                        task.assignedTo.username.charAt(0)}
-                    </span>
-                  </div>
-                )}
+                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                  <span className="text-xs text-white font-semibold">
+                    {task.assignedTo.firstName?.charAt(0) ||
+                      task.assignedTo.username.charAt(0)}
+                  </span>
+                </div>
               </div>
             )}
           </div>

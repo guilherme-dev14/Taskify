@@ -1,8 +1,8 @@
 import React from "react";
 import { motion } from "framer-motion";
 import type { ITask } from "../../types/task.types";
-import { UserAvatar } from "../UI/UserAvatar";
 import { TrashIcon } from "@heroicons/react/24/outline";
+import { UserAvatarBubble } from "../UI/UserAvatarBubble";
 
 interface TaskListProps {
   tasks: ITask[];
@@ -101,10 +101,13 @@ export const TaskList: React.FC<TaskListProps> = (props) => {
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <UserAvatar
-                    user={task.assignedTo || task.creator}
-                    size="sm"
-                  />
+                  {task.assignedTo && (
+                    <UserAvatarBubble
+                      user={task.assignedTo}
+                      size="sm"
+                      showTooltip
+                    />
+                  )}
                 </div>
               </div>
             </div>

@@ -431,10 +431,8 @@ const KanbanView: React.FC = () => {
 
   const filteredColumns = columns.map((column) => ({
     ...column,
-    tasks: column.tasks.filter(
-      (task) =>
-        task.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        task.description?.toLowerCase().includes(searchTerm.toLowerCase())
+    tasks: column.tasks.filter((task) =>
+      task.title?.toLowerCase().includes(searchTerm.toLowerCase())
     ),
   }));
 

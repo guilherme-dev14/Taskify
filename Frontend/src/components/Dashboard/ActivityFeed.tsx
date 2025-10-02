@@ -210,19 +210,11 @@ const ActivityFeed: React.FC = () => {
 
                   {/* User Info */}
                   <div className="flex items-center space-x-2 mt-2">
-                    {activity.user.avatar ? (
-                      <img
-                        src={activity.user.avatar}
-                        alt={activity.user.name}
-                        className="w-4 h-4 rounded-full"
-                      />
-                    ) : (
-                      <div className="w-4 h-4 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
-                        <span className="text-xs text-gray-600 dark:text-gray-400">
-                          {activity.user.name.charAt(0).toUpperCase()}
-                        </span>
-                      </div>
-                    )}
+                    <div className="w-4 h-4 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                      <span className="text-xs text-white font-semibold">
+                        {activity.user.name.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
 
                     <span className="text-xs text-gray-500 dark:text-gray-400">
                       {activity.user.name}

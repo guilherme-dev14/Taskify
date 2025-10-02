@@ -3,12 +3,8 @@ package com.taskifyApplication.service;
 import com.taskifyApplication.exception.BadRequestException;
 import com.taskifyApplication.exception.InvalidFormatException;
 import com.taskifyApplication.exception.ResourceNotFoundException;
-import com.taskifyApplication.model.User;
-import com.taskifyApplication.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -29,9 +25,6 @@ import com.google.cloud.storage.Storage;
 public class FileService {
 
     @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
     private Storage storage;
 
     @Value("${gcs.bucket.name}")
@@ -40,8 +33,11 @@ public class FileService {
     @Value("${app.upload.dir:${user.home}/taskify-uploads}")
     private String uploadDir;
 
-    private final List<String> allowedImageTypes = Arrays.asList(
-            "image/jpeg", "image/jpg", "image/png", "image/gif"
+    private final List<String> allowedFileTypes = Arrays.asList(
+            "image/jpeg", "image/jpg", "image/png", "image/gif",
+            "application/pdf", "text/plain", "application/msword",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     );
 
     public String uploadFile(MultipartFile file) throws IOException {
@@ -56,32 +52,11 @@ public class FileService {
 
         return "https://storage.googleapis.com/" + bucketName + "/" + fileName;
     }
+
     public void deleteFile(String fileUrl) {
         String fileName = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
         BlobId blobId = BlobId.of(bucketName, fileName);
         storage.delete(blobId);
-    }
-    private final List<String> allowedFileTypes = Arrays.asList(
-            "image/jpeg", "image/jpg", "image/png", "image/gif",
-            "application/pdf", "text/plain", "application/msword",
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    );
-
-    public String saveAvatar(MultipartFile file) throws IOException {
-        validateImageFile(file);
-        
-        String fileName = generateFileName(file.getOriginalFilename());
-        String avatarDir = uploadDir + "/avatars";
-        
-        createDirectoryIfNotExists(avatarDir);
-        
-        Path filePath = Paths.get(avatarDir, fileName);
-        Files.write(filePath, file.getBytes());
-
-        updateUserAvatar(fileName);
-        
-        return fileName;
     }
 
     public String saveAttachment(MultipartFile file) throws IOException {
@@ -98,13 +73,6 @@ public class FileService {
         return fileName;
     }
 
-    public byte[] getAvatar(String filename) throws IOException {
-        Path filePath = Paths.get(uploadDir + "/avatars", filename);
-        if (!Files.exists(filePath)) {
-            throw new ResourceNotFoundException("File not found");
-        }
-        return Files.readAllBytes(filePath);
-    }
 
     public byte[] getAttachment(String filename) throws IOException {
         Path filePath = Paths.get(uploadDir + "/attachments", filename);
@@ -112,20 +80,6 @@ public class FileService {
             throw new ResourceNotFoundException("File not found");
         }
         return Files.readAllBytes(filePath);
-    }
-
-    private void validateImageFile(MultipartFile file) {
-        if (file.isEmpty()) {
-            throw new InvalidFormatException("File is empty");
-        }
-        
-        if (!allowedImageTypes.contains(file.getContentType())) {
-            throw new InvalidFormatException("Invalid file type. Only images are allowed");
-        }
-        
-        if (file.getSize() > 5 * 1024 * 1024) { // 5MB limit
-            throw new InvalidFormatException("File size too large. Maximum 5MB allowed");
-        }
     }
 
     private void validateFile(MultipartFile file) {
@@ -157,16 +111,5 @@ public class FileService {
                 throw new BadRequestException("Failed to create directory: " + dir);
             }
         }
-    }
-
-    private void updateUserAvatar(String fileName) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
-        
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        
-        user.setAvatar("/api/files/avatar/" + fileName);
-        userRepository.save(user);
     }
 }

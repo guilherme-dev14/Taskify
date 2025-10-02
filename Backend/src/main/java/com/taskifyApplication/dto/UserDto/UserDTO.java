@@ -12,6 +12,5 @@ public class UserDTO {
     private String bio;
     private String location;
     private String website;
-    private String avatar;
     private OffsetDateTime createdAt;
 }

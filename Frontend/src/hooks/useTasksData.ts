@@ -39,7 +39,13 @@ export function useTasksData() {
 
   useEffect(() => {
     loadTasks();
-  }, [currentPage, selectedWorkspace, statusFilter, priorityFilter, debouncedSearchTerm]);
+  }, [
+    currentPage,
+    selectedWorkspace,
+    statusFilter,
+    priorityFilter,
+    debouncedSearchTerm,
+  ]);
 
   const loadWorkspaces = async () => {
     try {
@@ -75,9 +81,6 @@ export function useTasksData() {
             ? (priorityFilter as ITask["priority"])
             : undefined,
       };
-
-      // If a specific workspace is selected, fetch tasks from that workspace
-      // Otherwise, fetch all tasks from all user workspaces
       const response = filters.workspaceId
         ? await taskService.getWorkspaceTasks(filters.workspaceId, {
             page: filters.page,
@@ -102,11 +105,7 @@ export function useTasksData() {
       return allTasks;
     }
     const search = debouncedSearchTerm.toLowerCase();
-    return allTasks.filter(
-      (task) =>
-        task.title.toLowerCase().includes(search) ||
-        task.description?.toLowerCase().includes(search)
-    );
+    return allTasks.filter((task) => task.title.toLowerCase().includes(search));
   }, [tasksResponse, debouncedSearchTerm]);
 
   return {

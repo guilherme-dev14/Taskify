@@ -31,7 +31,6 @@ interface FileUploadProps {
   onRemove?: (fileId: string) => void;
   className?: string;
   disabled?: boolean;
-  uploadType?: "attachment" | "avatar";
   workspaceId?: number;
   taskId?: number;
 }
@@ -44,7 +43,6 @@ export const FileUpload: React.FC<FileUploadProps> = ({
   onRemove,
   className = "",
   disabled = false,
-  uploadType = "attachment",
   workspaceId,
   taskId,
 }) => {
@@ -93,15 +91,10 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         )
       );
 
-      let response;
-      if (uploadType === "avatar") {
-        response = await fileService.uploadAvatar(uploadedFile.file);
-      } else {
-        response = await fileService.uploadAttachment(uploadedFile.file, {
-          workspaceId,
-          taskId,
-        });
-      }
+      const response = await fileService.uploadAttachment(uploadedFile.file, {
+        workspaceId,
+        taskId,
+      });
 
       setFiles((prev) =>
         prev.map((f) =>

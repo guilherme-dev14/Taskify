@@ -11,7 +11,7 @@ import {
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { useAuthStore } from "../../services/auth.store";
-import { useLanguage } from "../../context/LanguageContext";
+import { useLanguage, useI18nTranslation } from "../../context/LanguageContext";
 import { useTheme } from "../../context/ThemeContext";
 import type { UserSettings } from "../../services/Settings/settings.service";
 import settingsService from "../../services/Settings/settings.service";
@@ -30,6 +30,7 @@ const SettingsView: React.FC = () => {
   const { logout } = useAuthStore();
   const { theme, setTheme } = useTheme();
   const { language, setLanguage } = useLanguage();
+  const { t } = useI18nTranslation();
   const [activeTab, setActiveTab] = useState("general");
   const [settings, setSettings] = useState<UserSettings>({
     theme: theme,
@@ -39,7 +40,6 @@ const SettingsView: React.FC = () => {
     weeklyReports: true,
     taskReminders: true,
     teamUpdates: false,
-    showAvatars: true,
   });
   const [, setLoading] = useState(true);
   const [, setSaveStatus] = useState<"saved" | "saving" | "error">("saved");
@@ -94,17 +94,17 @@ const SettingsView: React.FC = () => {
   };
 
   const tabs = [
-    { id: "general", label: "General", icon: Cog6ToothIcon },
-    { id: "appearance", label: "Appearance", icon: PaintBrushIcon },
-    { id: "notifications", label: "Notifications", icon: BellIcon },
-    { id: "data", label: "Data & Account", icon: ArchiveBoxIcon },
+    { id: "general", label: t("settings.general"), icon: Cog6ToothIcon },
+    { id: "appearance", label: t("settings.appearance"), icon: PaintBrushIcon },
+    { id: "notifications", label: t("settings.notifications"), icon: BellIcon },
+    { id: "data", label: t("settings.dataAccount"), icon: ArchiveBoxIcon },
   ];
 
   const generalSettings: Setting[] = [
     {
       id: "language",
-      label: "Language",
-      description: "Choose your preferred language",
+      label: t("settings.language"),
+      description: t("settings.languageDescription"),
       type: "select",
       value: settings.language,
       options: [
@@ -119,58 +119,51 @@ const SettingsView: React.FC = () => {
   const appearanceSettings: Setting[] = [
     {
       id: "theme",
-      label: "Theme",
-      description: "Choose your preferred theme",
+      label: t("settings.theme"),
+      description: t("settings.themeDescription"),
       type: "select",
       value: settings.theme,
       options: [
-        { label: "System", value: "system" },
-        { label: "Light", value: "light" },
-        { label: "Dark", value: "dark" },
+        { label: t("settings.system"), value: "system" },
+        { label: t("settings.light"), value: "light" },
+        { label: t("settings.dark"), value: "dark" },
       ],
-    },
-    {
-      id: "showAvatars",
-      label: "Show Avatars",
-      description: "Display profile pictures in task cards",
-      type: "toggle",
-      value: settings.showAvatars,
     },
   ];
 
   const notificationSettings: Setting[] = [
     {
       id: "emailNotifications",
-      label: "Email Notifications",
-      description: "Receive notifications via email",
+      label: t("settings.emailNotifications"),
+      description: t("settings.emailNotificationsDescription"),
       type: "toggle",
       value: settings.emailNotifications,
     },
     {
       id: "pushNotifications",
-      label: "Push Notifications",
-      description: "Receive browser push notifications",
+      label: t("settings.pushNotifications"),
+      description: t("settings.pushNotificationsDescription"),
       type: "toggle",
       value: settings.pushNotifications,
     },
     {
       id: "taskReminders",
-      label: "Task Reminders",
-      description: "Get reminded about upcoming deadlines",
+      label: t("settings.taskReminders"),
+      description: t("settings.taskRemindersDescription"),
       type: "toggle",
       value: settings.taskReminders,
     },
     {
       id: "teamUpdates",
-      label: "Team Updates",
-      description: "Notifications about team activity",
+      label: t("settings.teamUpdates"),
+      description: t("settings.teamUpdatesDescription"),
       type: "toggle",
       value: settings.teamUpdates,
     },
     {
       id: "weeklyReports",
-      label: "Weekly Reports",
-      description: "Receive weekly productivity summaries",
+      label: t("settings.weeklyReports"),
+      description: t("settings.weeklyReportsDescription"),
       type: "toggle",
       value: settings.weeklyReports,
     },
@@ -252,21 +245,21 @@ const SettingsView: React.FC = () => {
   const renderTabContent = () => {
     switch (activeTab) {
       case "general":
-        return renderSettingsSection("General Settings", generalSettings);
+        return renderSettingsSection(t("settings.generalSettings"), generalSettings);
 
       case "appearance":
-        return renderSettingsSection("Appearance Settings", appearanceSettings);
+        return renderSettingsSection(t("settings.appearanceSettings"), appearanceSettings);
 
       case "notifications":
         return renderSettingsSection(
-          "Notification Settings",
+          t("settings.notificationSettings"),
           notificationSettings
         );
       case "data":
         return (
           <div className="space-y-6">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Data & Account
+              {t("settings.dataAccount")}
             </h3>
 
             {/* Danger Zone */}
@@ -274,18 +267,17 @@ const SettingsView: React.FC = () => {
               <div className="flex items-center gap-2 mb-4">
                 <ExclamationTriangleIcon className="w-5 h-5 text-red-600 dark:text-red-400" />
                 <h4 className="font-medium text-red-900 dark:text-red-100">
-                  Danger Zone
+                  {t("settings.dangerZone")}
                 </h4>
               </div>
 
               <div className="space-y-4">
                 <div>
                   <h5 className="font-medium text-red-900 dark:text-red-100 mb-2">
-                    Delete Account
+                    {t("settings.deleteAccount")}
                   </h5>
                   <p className="text-sm text-red-700 dark:text-red-300 mb-4">
-                    Permanently delete your account and all associated data.
-                    This action cannot be undone.
+                    {t("settings.deleteAccountDescription")}
                   </p>
 
                   {!showDangerZone ? (
@@ -293,13 +285,13 @@ const SettingsView: React.FC = () => {
                       onClick={() => setShowDangerZone(true)}
                       className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium"
                     >
-                      Delete Account
+                      {t("settings.deleteAccountButton")}
                     </button>
                   ) : (
                     <div className="space-y-3">
                       <div>
                         <label className="block text-sm font-medium text-red-900 dark:text-red-100 mb-2">
-                          Type "DELETE" to confirm:
+                          {t("settings.deleteConfirmation")}
                         </label>
                         <input
                           type="text"
@@ -330,7 +322,7 @@ const SettingsView: React.FC = () => {
                           className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white rounded-lg transition-colors font-medium flex items-center gap-2"
                         >
                           <CheckIcon className="w-4 h-4" />
-                          Confirm Delete
+                          {t("settings.confirmDelete")}
                         </button>
                         <button
                           onClick={() => {
@@ -340,7 +332,7 @@ const SettingsView: React.FC = () => {
                           className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors font-medium flex items-center gap-2"
                         >
                           <XMarkIcon className="w-4 h-4" />
-                          Cancel
+                          {t("common.cancel")}
                         </button>
                       </div>
                     </div>
@@ -367,10 +359,10 @@ const SettingsView: React.FC = () => {
           className="mb-8"
         >
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
-            Settings
+            {t("settings.title")}
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Customize your Taskify experience
+            {t("settings.subtitle")}
           </p>
         </motion.div>
 
@@ -403,14 +395,14 @@ const SettingsView: React.FC = () => {
               {/* Quick Actions */}
               <div className="border-t border-gray-200 dark:border-gray-700 p-4">
                 <h4 className="font-medium text-gray-900 dark:text-white mb-3">
-                  Quick Actions
+                  {t("settings.quickActions")}
                 </h4>
                 <div className="space-y-2">
                   <button
                     onClick={logout}
                     className="w-full text-left px-3 py-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors text-sm text-red-600 dark:text-red-400"
                   >
-                    Sign out
+                    {t("settings.signOut")}
                   </button>
                 </div>
               </div>
@@ -432,11 +424,11 @@ const SettingsView: React.FC = () => {
                 <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
                   <div className="flex items-center justify-between">
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Changes are saved automatically
+                      {t("settings.changesSaved")}
                     </p>
                     <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
                       <CheckIcon className="w-4 h-4" />
-                      <span className="text-sm font-medium">Saved</span>
+                      <span className="text-sm font-medium">{t("settings.saved")}</span>
                     </div>
                   </div>
                 </div>

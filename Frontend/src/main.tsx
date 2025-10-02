@@ -7,6 +7,7 @@ import { App } from "./App";
 import { ThemeProvider } from "./context/ThemeContext";
 import { LanguageProvider } from "./context/LanguageContext";
 import ErrorBoundary from "./components/ErrorBoundary/ErrorBoundary";
+import "./i18n/config";
 import "./index.css";
 
 const queryClient = new QueryClient({

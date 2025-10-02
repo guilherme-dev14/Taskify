@@ -23,7 +23,6 @@ export interface Task {
     email: string;
     firstName?: string;
     lastName?: string;
-    avatar?: string;
   };
   workspace: {
     id: number;

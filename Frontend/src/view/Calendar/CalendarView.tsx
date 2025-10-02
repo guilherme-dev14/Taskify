@@ -96,10 +96,19 @@ const CalendarView: React.FC = () => {
             size: filters.size,
             sort: filters.sortBy,
             direction: filters.sortDir === "desc" ? "DESC" : "ASC",
-            statusId: filters.statusId,
+            statusId:
+              filters.statusId && !isNaN(filters.statusId)
+                ? filters.statusId
+                : undefined,
             priority: filters.priority,
           })
-        : await taskService.getAllTasks(filters);
+        : await taskService.getAllTasks({
+            ...filters,
+            statusId:
+              filters.statusId && !isNaN(filters.statusId)
+                ? filters.statusId
+                : undefined,
+          });
       setTasks(response.content || []);
     } catch (error) {
       console.error("Error loading tasks:", error);
@@ -108,8 +117,6 @@ const CalendarView: React.FC = () => {
       setLoading(false);
     }
   }, [selectedWorkspace, selectedStatus, selectedPriority]);
-
-  // WebSocket integration for real-time updates
   const handleTaskUpdate = useCallback(() => {
     setTimeout(() => loadTasks(), 500);
   }, [loadTasks]);
@@ -127,8 +134,6 @@ const CalendarView: React.FC = () => {
       loadTasks();
     }
   }, [loadTasks, workspaces.length]);
-
-  // CORREÇÃO 1: A função foi envolvida em `useCallback` para estabilizar sua referência.
   const getTasksForDate = useCallback(
     (date: Date): ITask[] => {
       return tasks.filter((task) => {
@@ -142,9 +147,7 @@ const CalendarView: React.FC = () => {
       });
     },
     [tasks]
-  ); // A dependência agora é `tasks`, que é estável entre renders.
-
-  // CORREÇÃO 2: A declaração de `calendarDays` usa a função memoizada `getTasksForDate`.
+  );
   const calendarDays = useMemo((): CalendarDay[] => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
@@ -239,9 +242,8 @@ const CalendarView: React.FC = () => {
   };
 
   const getStatusColor = (status: ITaskStatus) => {
-    // Usando a cor definida no status, com fallback
     return {
-      backgroundColor: `${status.color}25`, // Adiciona opacidade
+      backgroundColor: `${status.color}25`,
       color: status.color,
     };
   };

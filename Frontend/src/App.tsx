@@ -4,6 +4,7 @@ import { Home } from "./view/Home/index";
 import { Login } from "./view/Home/Login/login";
 import { Register } from "./view/Home/Register/register";
 import ForgotPassword from "./view/Home/ForgotPassword/ForgotPassword";
+import { ResetPasswordView } from "./view/Auth/ResetPasswordView";
 import { Dashboard } from "./view/Dashboard/Dashboard";
 import { WorkspaceManagement } from "./view/WorkspaceManagement/WorkspaceManagement";
 import { ProtectedRoute } from "./components/ProtectedRoute";
@@ -21,6 +22,7 @@ export const App = () => {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPasswordView />} />
       <Route
         path="/dashboard"
         element={<ProtectedRoute> {<Dashboard />} </ProtectedRoute>}

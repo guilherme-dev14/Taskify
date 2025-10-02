@@ -19,14 +19,12 @@ export interface ITask {
     firstName: string;
     lastName: string;
     email: string;
-    avatar?: string;
   };
   creator?: {
     id: number;
     firstName: string;
     lastName: string;
     email: string;
-    avatar?: string;
   };
   attachments?: {
     id: string;

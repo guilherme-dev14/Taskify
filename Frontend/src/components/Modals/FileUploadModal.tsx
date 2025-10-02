@@ -10,7 +10,6 @@ interface FileUploadModalProps {
   accept?: string;
   maxSize?: number;
   maxFiles?: number;
-  uploadType?: "attachment" | "avatar";
   workspaceId?: number;
   taskId?: number;
   onComplete?: (files: UploadedFile[]) => void;
@@ -23,7 +22,6 @@ export const FileUploadModal: React.FC<FileUploadModalProps> = ({
   accept = "*/*",
   maxSize = 10,
   maxFiles = 5,
-  uploadType = "attachment",
   workspaceId,
   taskId,
   onComplete,
@@ -77,7 +75,7 @@ export const FileUploadModal: React.FC<FileUploadModalProps> = ({
                     {title}
                   </h2>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    Upload files to {uploadType === "attachment" ? "attach to task" : "update avatar"}
+                    Upload files to attach to task
                   </p>
                 </div>
                 <button
@@ -94,7 +92,6 @@ export const FileUploadModal: React.FC<FileUploadModalProps> = ({
                   accept={accept}
                   maxSize={maxSize}
                   maxFiles={maxFiles}
-                  uploadType={uploadType}
                   workspaceId={workspaceId}
                   taskId={taskId}
                   onUpload={handleUpload}
@@ -104,7 +101,9 @@ export const FileUploadModal: React.FC<FileUploadModalProps> = ({
                 {hasCompletedFiles && (
                   <div className="mt-6 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
                     <p className="text-sm text-green-800 dark:text-green-300">
-                      ✅ {completedFiles.length} file{completedFiles.length > 1 ? "s" : ""} uploaded successfully
+                      ✅ {completedFiles.length} file
+                      {completedFiles.length > 1 ? "s" : ""} uploaded
+                      successfully
                     </p>
                   </div>
                 )}

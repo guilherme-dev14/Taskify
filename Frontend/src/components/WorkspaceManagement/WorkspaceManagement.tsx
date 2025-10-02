@@ -7,7 +7,6 @@ import {
   PlusIcon,
   PencilIcon,
   TrashIcon,
-  UsersIcon,
   CalendarDaysIcon,
   ClipboardDocumentListIcon,
   EllipsisVerticalIcon,
@@ -26,8 +25,7 @@ import type {
 } from "../../types/workspace.types";
 import { WorkspaceModal } from "../Modals/WorkspaceModal";
 import { useToast } from "../../hooks/useToast";
-import { UserAvatarGroup } from "../UI/UserAvatarBubble";
-import type { IUserSummary } from "../../types/user.types";
+
 interface WorkspaceDetails extends IWorkspace {
   id: number;
 }
@@ -383,40 +381,6 @@ export const WorkspaceManagement: React.FC = () => {
                     )}
                   </div>
 
-                  {/* Owner */}
-                  {details?.ownerName && (
-                    <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
-                      <div className="flex items-center gap-2">
-                        <UsersIcon className="w-4 h-4 text-blue-500" />
-                        <span className="text-sm text-gray-600 dark:text-gray-400">
-                          Owner:
-                        </span>
-                        <span className="text-sm font-medium text-gray-900 dark:text-white">
-                          {details.ownerName}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Members Preview */}
-                  {workspaceMembers.length > 0 && (
-                    <div className="mt-4">
-                      <UserAvatarGroup
-                        users={
-                          workspaceMembers.map((member) => ({
-                            id: member.user.id,
-                            username: member.user.username,
-                            firstName: member.user.firstName,
-                            lastName: member.user.lastName,
-                            email: member.user.email,
-                            profilePictureUrl: undefined,
-                          })) as IUserSummary[]
-                        }
-                        size="sm"
-                        maxVisible={4}
-                      />
-                    </div>
-                  )}
                 </motion.div>
               );
             })}

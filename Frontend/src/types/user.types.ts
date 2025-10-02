@@ -4,7 +4,6 @@ export interface IUser {
   firstName: string;
   lastName: string;
   email: string;
-  profilePictureUrl?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -15,7 +14,6 @@ export interface IUserSummary {
   firstName: string;
   lastName: string;
   email: string;
-  profilePictureUrl?: string;
 }
 
 export interface IUserLoginRequest {
@@ -40,7 +38,6 @@ export interface IUpdateUserProfileRequest {
   firstName?: string;
   lastName?: string;
   username?: string;
-  profilePictureUrl?: string;
 }
 
 export const getFullName = (user: IUserSummary | IUser): string => {

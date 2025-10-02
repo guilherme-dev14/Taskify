@@ -21,7 +21,6 @@ export interface IUser {
   bio?: string;
   location?: string;
   website?: string;
-  avatar?: string;
   createdAt?: string;
 }
 
@@ -37,7 +36,6 @@ export interface IUpdateProfileRequest {
   bio?: string;
   location?: string;
   website?: string;
-  avatar?: string;
 }
 
 export interface IUserStats {

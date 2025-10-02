@@ -6,6 +6,7 @@ import React, {
   useState,
   type ReactNode,
 } from "react";
+import { useTranslation as useI18nTranslation } from "react-i18next";
 
 type Language = "en" | "pt" | "es" | "fr";
 
@@ -22,53 +23,25 @@ interface LanguageProviderProps {
   children: ReactNode;
 }
 
-const translations = {
-  en: {
-    welcome: "Welcome",
-    profile: "Profile",
-    settings: "Settings",
-    dashboard: "Dashboard",
-    tasks: "Tasks",
-    calendar: "Calendar",
-  },
-  pt: {
-    welcome: "Bem-vindo",
-    profile: "Perfil",
-    settings: "Configurações",
-    dashboard: "Dashboard",
-    tasks: "Tarefas",
-    calendar: "Calendário",
-  },
-  es: {
-    welcome: "Bienvenido",
-    profile: "Perfil",
-    settings: "Configuraciones",
-    dashboard: "Dashboard",
-    tasks: "Tareas",
-    calendar: "Calendario",
-  },
-  fr: {
-    welcome: "Bienvenue",
-    profile: "Profil",
-    settings: "Paramètres",
-    dashboard: "Tableau de bord",
-    tasks: "Tâches",
-    calendar: "Calendrier",
-  },
-};
-
 export const LanguageProvider: React.FC<LanguageProviderProps> = ({
   children,
 }) => {
-  const [language, setLanguage] = useState<Language>(() => {
+  const { i18n } = useI18nTranslation();
+  const [language, setLanguageState] = useState<Language>(() => {
     const stored = localStorage.getItem("language");
     return (stored as Language) || "en";
   });
 
   useEffect(() => {
+    i18n.changeLanguage(language);
     localStorage.setItem("language", language);
     document.documentElement.lang = language;
-  }, [language]);
+  }, [language, i18n]);
+
+  const setLanguage = (lang: Language) => {
+    setLanguageState(lang);
+    i18n.changeLanguage(lang);
+  };
 
   return (
     <LanguageContext.Provider value={{ language, setLanguage }}>
@@ -84,13 +57,4 @@ export const useLanguage = () => {
   }
   return context;
 };
-
-export const useTranslation = () => {
-  const { language } = useLanguage();
-
-  const t = (key: keyof typeof translations.en): string => {
-    return translations[language][key] || translations.en[key] || key;
-  };
-
-  return { t, language };
-};
+export { useTranslation as useI18nTranslation } from "react-i18next";

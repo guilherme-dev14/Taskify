@@ -28,6 +28,5 @@ public class ActivityDto {
     public static class UserDto {
         private Long id;
         private String name;
-        private String avatar;
     }
 }

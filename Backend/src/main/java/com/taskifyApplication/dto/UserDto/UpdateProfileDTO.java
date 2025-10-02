@@ -23,11 +23,7 @@ public class UpdateProfileDTO {
     
     @Size(max = 100, message = "Location must not exceed 100 characters")
     private String location;
-    
+
     @Size(max = 255, message = "Website must not exceed 255 characters")
     private String website;
-    
-    @Size(max = 255, message = "Avatar URL must not exceed 255 characters")
-    private String avatar;
-
 }

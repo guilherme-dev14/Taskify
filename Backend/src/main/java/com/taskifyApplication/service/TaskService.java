@@ -474,7 +474,6 @@ public class TaskService {
             assignedUser.setFirstName(task.getAssignedTo().getFirstName());
             assignedUser.setLastName(task.getAssignedTo().getLastName());
             assignedUser.setEmail(task.getAssignedTo().getEmail());
-            assignedUser.setProfilePictureUrl(task.getAssignedTo().getProfilePictureUrl());
             dto.setAssignedTo(assignedUser);
         }
 
@@ -575,8 +574,7 @@ public class TaskService {
                     uploadedBy.getUsername(),
                     uploadedBy.getFirstName(),
                     uploadedBy.getLastName(),
-                    uploadedBy.getEmail(),
-                    uploadedBy.getProfilePictureUrl()
+                    uploadedBy.getEmail()
             );
             dto.setUploadedBy(userDto);
         }
@@ -620,7 +618,6 @@ public class TaskService {
             userDto.setFirstName(task.getAssignedTo().getFirstName());
             userDto.setLastName(task.getAssignedTo().getLastName());
             userDto.setEmail(task.getAssignedTo().getEmail());
-            userDto.setProfilePictureUrl(task.getAssignedTo().getProfilePictureUrl());
             dto.setAssignedTo(userDto);
         }
 

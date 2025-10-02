@@ -159,7 +159,7 @@ public class WorkspaceController {
     }
 
     @PostMapping("/invitations/respond")
-    public ResponseEntity<?> respondToInvitation(@RequestBody InvitationResponseDTO response) {
+    public ResponseEntity<?> respondToInvitation(@Valid @RequestBody InvitationResponseDTO response) {
         try {
             workspaceService.respondToInvitation(response.getInvitationId(), response.isAccept());
             String message = response.isAccept() ? "Invitation accepted successfully" : "Invitation declined successfully";

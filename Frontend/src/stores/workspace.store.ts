@@ -9,7 +9,6 @@ export interface WorkspaceMember {
     email: string;
     firstName?: string;
     lastName?: string;
-    profilePictureUrl?: string;
   };
   role: "OWNER" | "ADMIN" | "MEMBER" | "VIEWER";
   joinedAt: string;

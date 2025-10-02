@@ -27,19 +27,18 @@ public class NotificationOrchestratorService {
     @Async("notificationExecutor")
     public void notifyUserOfTaskAssignment(User assigner, User assignee, Task task) {
         try {
+            String title = "Task Assigned";
             String message = assigner.getFirstName() + " atribuiu a tarefa '" + task.getTitle() + "' a você.";
-
-            // Save notification to database
             Notification notification = new Notification();
+            notification.setType(Notification.NotificationType.TASK_ASSIGNED);
+            notification.setTitle(title);
             notification.setUser(assignee);
+            notification.setTask(task);
+            notification.setWorkspace(task.getWorkspace());
             notification.setMessage(message);
             notification.setRead(false);
             notificationRepository.save(notification);
-
-            // Send real-time notification via WebSocket
             webSocketService.notifyTaskAssignment(task, assignee, assigner);
-
-            // Send email notification asynchronously
             sendTaskAssignmentEmail(assignee, assigner, task);
 
         } catch (Exception e) {
@@ -72,16 +71,16 @@ public class NotificationOrchestratorService {
     @Async("notificationExecutor")
     public void notifyUserOfWorkspaceInvite(User inviter, User invitedUser, Workspace workspace) {
         try {
+            String title = "Workspace Invite";
             String message = inviter.getFirstName() + " convidou você para o workspace '" + workspace.getName() + "'.";
-
-            // Save notification to database
             Notification notification = new Notification();
+            notification.setType(Notification.NotificationType.WORKSPACE_INVITE);
+            notification.setTitle(title);
             notification.setUser(invitedUser);
             notification.setMessage(message);
+            notification.setWorkspace(workspace);
             notification.setRead(false);
             notificationRepository.save(notification);
-
-            // Send real-time notification via WebSocket
             webSocketService.notifyWorkspaceInvite(workspace, invitedUser, inviter);
 
             // Send email notification asynchronously
@@ -96,7 +95,6 @@ public class NotificationOrchestratorService {
     @Async("emailExecutor")
     private void sendWorkspaceInviteEmail(User invitedUser, User inviter, Workspace workspace) {
         try {
-            // Use workspace invite code for direct join
             String inviteLink = frontendBaseUrl + "/workspaces/join?code=" + workspace.getInviteCode();
 
             emailService.sendWorkspaceInviteEmail(
@@ -115,20 +113,14 @@ public class NotificationOrchestratorService {
     public void notifyMembersOfNewJoinee(Workspace workspace, User newMember) {
         try {
             String message = newMember.getFirstName() + " " + newMember.getLastName() + " entrou no workspace.";
-
-            // Notify workspace owner if they're not the new member
             if (!workspace.getOwner().equals(newMember)) {
                 createAndSaveNotification(workspace.getOwner(), message);
             }
-
-            // Notify all existing members
             workspace.getMembers().forEach(member -> {
                 if (!member.getUser().equals(newMember)) {
                     createAndSaveNotification(member.getUser(), message);
                 }
             });
-
-            // Send real-time notification via WebSocket
             webSocketService.notifyWorkspaceActivity(workspace.getId(), message, newMember);
 
         } catch (Exception e) {
@@ -139,6 +131,8 @@ public class NotificationOrchestratorService {
 
     private void createAndSaveNotification(User user, String message) {
         Notification notification = new Notification();
+        notification.setType(Notification.NotificationType.MEMBER_JOINED);
+        notification.setTitle("New Member");
         notification.setUser(user);
         notification.setMessage(message);
         notification.setRead(false);

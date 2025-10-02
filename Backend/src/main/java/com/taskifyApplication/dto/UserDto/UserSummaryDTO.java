@@ -15,7 +15,6 @@ public class UserSummaryDTO {
     private String firstName;
     private String lastName;
     private String email;
-    private String profilePictureUrl;
 
     public String getFullName() {
         return firstName + " " + lastName;
@@ -27,7 +26,5 @@ public class UserSummaryDTO {
         this.firstName = user.getFirstName();
         this.lastName = user.getLastName();
         this.email = user.getEmail();
-        this.profilePictureUrl = user.getProfilePictureUrl();
-
     }
 }

@@ -51,7 +51,6 @@ export interface ITeamAnalytics {
   members: Array<{
     id: number;
     name: string;
-    avatar?: string;
     completed: number;
     timeSpent: number;
     efficiency: number;

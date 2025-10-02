@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
-  CameraIcon,
   PencilIcon,
   ShieldCheckIcon,
   KeyIcon,
@@ -10,8 +9,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { useAuthStore } from "../../services/auth.store";
 import userService from "../../services/User/user.service";
-import fileService from "../../services/File/file.service";
-import api from "../../services/api";
+
 interface ProfileData {
   firstName: string;
   lastName: string;
@@ -21,7 +19,6 @@ interface ProfileData {
   location: string;
   website: string;
   joinDate: string;
-  avatar: string;
 }
 
 const ProfileView: React.FC = () => {
@@ -37,8 +34,6 @@ const ProfileView: React.FC = () => {
   });
   const [passwordLoading, setPasswordLoading] = useState(false);
 
-  const [avatarUploading, setAvatarUploading] = useState(false);
-
   const [profileData, setProfileData] = useState<ProfileData>({
     firstName: user?.firstName || "",
     lastName: user?.lastName || "",
@@ -50,7 +45,6 @@ const ProfileView: React.FC = () => {
     joinDate: user?.createdAt
       ? new Date(user.createdAt).toISOString().split("T")[0]
       : "",
-    avatar: user?.avatar || "",
   });
 
   useEffect(() => {
@@ -66,7 +60,6 @@ const ProfileView: React.FC = () => {
         joinDate: user.createdAt
           ? new Date(user.createdAt).toISOString().split("T")[0]
           : "",
-        avatar: user.avatar || "",
       });
     }
   }, [user]);
@@ -80,7 +73,6 @@ const ProfileView: React.FC = () => {
         bio: profileData.bio,
         location: profileData.location,
         website: profileData.website,
-        avatar: profileData.avatar,
       });
       setIsEditing(false);
     } catch (error) {
@@ -95,35 +87,6 @@ const ProfileView: React.FC = () => {
       ...prev,
       [field]: value,
     }));
-  };
-
-  const handleAvatarUpload = async (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith("image/")) {
-      alert("Please select an image file");
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      alert("File size must be less than 5MB");
-      return;
-    }
-
-    try {
-      setAvatarUploading(true);
-      await fileService.uploadAvatar(file);
-
-      alert("Avatar updated successfully!");
-    } catch (error) {
-      console.error("Failed to upload avatar:", error);
-      alert("Failed to upload avatar. Please try again.");
-    } finally {
-      setAvatarUploading(false);
-    }
   };
 
   const handlePasswordChange = async () => {
@@ -176,49 +139,6 @@ const ProfileView: React.FC = () => {
       case "general":
         return (
           <div className="space-y-6">
-            {/* Profile Picture */}
-            <div className="flex items-center space-x-6">
-              <div className="relative">
-                {user?.avatar ? (
-                  <img
-                    src={`${api.defaults.baseURL}${user.avatar}`}
-                    alt="Profile"
-                    className="w-24 h-24 rounded-full object-cover border-2 border-gray-200 dark:border-gray-600"
-                  />
-                ) : (
-                  <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
-                    {profileData.firstName[0]}
-                    {profileData.lastName[0]}
-                  </div>
-                )}
-                <input
-                  type="file"
-                  id="avatar-upload"
-                  accept="image/*"
-                  onChange={handleAvatarUpload}
-                  className="hidden"
-                />
-                <label
-                  htmlFor="avatar-upload"
-                  className={`absolute bottom-0 right-0 w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white hover:bg-blue-700 transition-colors cursor-pointer ${
-                    avatarUploading ? "opacity-50 cursor-not-allowed" : ""
-                  }`}
-                >
-                  <CameraIcon className="w-4 h-4" />
-                </label>
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  Profile Picture
-                </h3>
-                <p className="text-gray-600 dark:text-gray-400 text-sm">
-                  {avatarUploading
-                    ? "Uploading..."
-                    : "Update your profile picture to personalize your account"}
-                </p>
-              </div>
-            </div>
-
             {/* Profile Form */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>

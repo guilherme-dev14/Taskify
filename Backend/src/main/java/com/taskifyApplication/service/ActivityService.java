@@ -156,8 +156,7 @@ public class ActivityService {
     private ActivityDto convertToDto(Activity activity) {
         ActivityDto.UserDto userDto = new ActivityDto.UserDto(
                 activity.getUser().getId(),
-                activity.getUser().getName(),
-                activity.getUser().getAvatar()
+                activity.getUser().getName()
         );
 
         return new ActivityDto(

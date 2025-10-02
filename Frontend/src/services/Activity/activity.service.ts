@@ -16,7 +16,6 @@ export interface IActivityItem {
   user: {
     id: number;
     name: string;
-    avatar?: string;
   };
   timestamp: string;
   metadata?: {
