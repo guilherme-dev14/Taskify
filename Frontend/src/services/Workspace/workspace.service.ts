@@ -10,6 +10,8 @@ import type {
   IWorkspaceMemberResponse,
   IUpdateMemberRoleRequest,
   IRemoveMemberRequest,
+  IWorkspaceInvitation,
+  IInvitationResponse,
 } from "../../types/workspace.types";
 import { categoryService } from "../Category/category.service";
 import type { ITaskStatus } from "../../types/task.types";
@@ -126,6 +128,13 @@ export const workspaceService = {
     workspaceId: number,
     data: IInviteUserRequest
   ): Promise<void> {
+    await api.post(`/workspace/${workspaceId}/inviteUsername`, data);
+  },
+
+  async inviteUserByEmail(
+    workspaceId: number,
+    data: IInviteUserRequest
+  ): Promise<void> {
     await api.post(`/workspace/${workspaceId}/invite`, data);
   },
 
@@ -159,5 +168,14 @@ export const workspaceService = {
       `/workspace/${workspaceId}/invite-code/regenerate`
     );
     return response.data;
+  },
+
+  async getPendingInvitations(): Promise<IWorkspaceInvitation[]> {
+    const response = await api.get("/workspace/invitations/pending");
+    return response.data;
+  },
+
+  async respondToInvitation(data: IInvitationResponse): Promise<void> {
+    await api.post("/workspace/invitations/respond", data);
   },
 };

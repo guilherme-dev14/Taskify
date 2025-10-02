@@ -67,15 +67,10 @@ public class TaskService {
 
     public PageResponse<TaskSummaryDTO> getAllTasksFromUser(Pageable pageable, Long workspaceId, Long statusId, PriorityEnum priority) {
         User currentUser = getCurrentUser();
-        
-        Page<Task> taskPage;
-        
-        if (workspaceId != null || statusId != null || priority != null) {
-            taskPage = taskRepository.findTasksWithFilters(currentUser, workspaceId, statusId, priority, pageable);
-        } else {
-            taskPage = taskRepository.findByAssignedTo(currentUser, pageable);
-        }
-        
+
+        // Use the new query that fetches all tasks from user workspaces, not just assigned tasks
+        Page<Task> taskPage = taskRepository.findAllTasksFromUserWorkspaces(currentUser, workspaceId, statusId, priority, pageable);
+
         List<TaskSummaryDTO> taskSummaries = taskPage.getContent().stream()
                 .map(this::convertToTaskSummaryDto)
                 .collect(Collectors.toList());

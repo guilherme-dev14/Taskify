@@ -69,11 +69,24 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
            "AND (:workspaceId IS NULL OR t.workspace.id = :workspaceId) " +
            "AND (:statusId IS NULL OR t.status.id = :statusId) " +
            "AND (:priority IS NULL OR t.priority = :priority)")
-    Page<Task> findTasksWithFilters(@Param("user") User assignedTo, 
+    Page<Task> findTasksWithFilters(@Param("user") User assignedTo,
                                    @Param("workspaceId") Long workspaceId,
                                    @Param("statusId") Long statusId,
                                    @Param("priority") PriorityEnum priority,
                                    Pageable pageable);
+
+    @Query("SELECT DISTINCT t FROM Task t " +
+           "JOIN t.workspace w " +
+           "JOIN w.members wm " +
+           "WHERE (wm.user = :user OR w.owner = :user) " +
+           "AND (:workspaceId IS NULL OR w.id = :workspaceId) " +
+           "AND (:statusId IS NULL OR t.status.id = :statusId) " +
+           "AND (:priority IS NULL OR t.priority = :priority)")
+    Page<Task> findAllTasksFromUserWorkspaces(@Param("user") User user,
+                                              @Param("workspaceId") Long workspaceId,
+                                              @Param("statusId") Long statusId,
+                                              @Param("priority") PriorityEnum priority,
+                                              Pageable pageable);
 
 
     @Query("SELECT t FROM Task t WHERE t.workspace.id = :workspaceId AND t.assignedTo.id = :userId AND t.createdAt BETWEEN :startDate AND :endDate")

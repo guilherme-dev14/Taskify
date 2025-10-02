@@ -45,6 +45,8 @@ public class WorkspaceService {
     private ActivityRepository activityRepository;
     @Autowired
     private CategoryRepository categoryRepository;
+    @Autowired
+    private WorkspaceInvitationRepository workspaceInvitationRepository;
     @PersistenceContext
     private EntityManager entityManager;
     @Autowired
@@ -174,12 +176,42 @@ public class WorkspaceService {
     // endregion
 
     // region MEMBERS CONFIG
-    public void addMemberToWorkspace(Long workspaceId, User userToAdd, RoleEnum role) {
+    public void inviteUserToWorkspace(Long workspaceId, User userToInvite, RoleEnum role) {
         Workspace workspace = getWorkspaceById(workspaceId);
         User requestingUser = getCurrentUser();
+
         if (!canUserManageWorkspace(workspace)) {
-            throw new ForbiddenException("You don't have permission to add members to this workspace");
+            throw new ForbiddenException("You don't have permission to invite members to this workspace");
         }
+
+        // Check if user is already a member
+        if (workspaceMemberRepository.existsByWorkspaceAndUser(workspace, userToInvite)) {
+            throw new DuplicateResourceException("User is already a member of this workspace");
+        }
+
+        // Check if there's already a pending invitation
+        if (workspaceInvitationRepository.existsByWorkspaceAndInvitedUserAndStatus(
+                workspace, userToInvite, WorkspaceInvitation.InvitationStatus.PENDING)) {
+            throw new DuplicateResourceException("User already has a pending invitation to this workspace");
+        }
+
+        // Create the invitation instead of adding directly
+        WorkspaceInvitation invitation = WorkspaceInvitation.builder()
+                .workspace(workspace)
+                .invitedUser(userToInvite)
+                .inviter(requestingUser)
+                .proposedRole(role)
+                .status(WorkspaceInvitation.InvitationStatus.PENDING)
+                .build();
+
+        workspaceInvitationRepository.save(invitation);
+
+        // Send notification and email
+        notifier.notifyUserOfWorkspaceInvite(requestingUser, userToInvite, workspace);
+    }
+
+    public void addMemberToWorkspace(Long workspaceId, User userToAdd, RoleEnum role) {
+        Workspace workspace = getWorkspaceById(workspaceId);
 
         if (workspaceMemberRepository.existsByWorkspaceAndUser(workspace, userToAdd)) {
             throw new DuplicateResourceException("User is already a member of this workspace");
@@ -192,8 +224,61 @@ public class WorkspaceService {
                 .build();
 
         workspaceMemberRepository.save(newMember);
+    }
 
-        notifier.notifyUserOfWorkspaceInvite(requestingUser, userToAdd, workspace);
+    @Transactional
+    public void respondToInvitation(Long invitationId, boolean accept) {
+        User currentUser = getCurrentUser();
+        WorkspaceInvitation invitation = workspaceInvitationRepository.findById(invitationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Invitation not found"));
+
+        if (!invitation.getInvitedUser().equals(currentUser)) {
+            throw new ForbiddenException("You can only respond to your own invitations");
+        }
+
+        if (invitation.getStatus() != WorkspaceInvitation.InvitationStatus.PENDING) {
+            throw new InvalidFormatException("This invitation has already been responded to");
+        }
+
+        invitation.setRespondedAt(java.time.LocalDateTime.now());
+
+        if (accept) {
+            invitation.setStatus(WorkspaceInvitation.InvitationStatus.ACCEPTED);
+
+            // Add user to workspace
+            addMemberToWorkspace(invitation.getWorkspace().getId(), currentUser, invitation.getProposedRole());
+
+            // Notify workspace members of new joinee
+            notifier.notifyMembersOfNewJoinee(invitation.getWorkspace(), currentUser);
+        } else {
+            invitation.setStatus(WorkspaceInvitation.InvitationStatus.DECLINED);
+        }
+
+        workspaceInvitationRepository.save(invitation);
+    }
+
+    public List<WorkspaceInvitationDTO> getPendingInvitations() {
+        User currentUser = getCurrentUser();
+        List<WorkspaceInvitation> invitations = workspaceInvitationRepository
+                .findByInvitedUserAndStatus(currentUser, WorkspaceInvitation.InvitationStatus.PENDING);
+
+        return invitations.stream()
+                .map(this::convertToDTO)
+                .toList();
+    }
+
+    private WorkspaceInvitationDTO convertToDTO(WorkspaceInvitation invitation) {
+        return WorkspaceInvitationDTO.builder()
+                .id(invitation.getId())
+                .workspaceId(invitation.getWorkspace().getId())
+                .workspaceName(invitation.getWorkspace().getName())
+                .inviterName(invitation.getInviter().getFirstName() + " " + invitation.getInviter().getLastName())
+                .inviterEmail(invitation.getInviter().getEmail())
+                .proposedRole(invitation.getProposedRole())
+                .status(invitation.getStatus())
+                .createdAt(invitation.getCreatedAt())
+                .respondedAt(invitation.getRespondedAt())
+                .build();
     }
 
     public void removeMemberFromWorkspace(Long workspaceId, User userToRemove) {

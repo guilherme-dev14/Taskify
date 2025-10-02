@@ -39,7 +39,7 @@ export function useTasksData() {
 
   useEffect(() => {
     loadTasks();
-  }, [currentPage]);
+  }, [currentPage, selectedWorkspace, statusFilter, priorityFilter, debouncedSearchTerm]);
 
   const loadWorkspaces = async () => {
     try {
@@ -76,7 +76,17 @@ export function useTasksData() {
             : undefined,
       };
 
-      const response = await taskService.getAllTasks(filters as ITaskFilters);
+      // If a specific workspace is selected, fetch tasks from that workspace
+      // Otherwise, fetch all tasks from all user workspaces
+      const response = filters.workspaceId
+        ? await taskService.getWorkspaceTasks(filters.workspaceId, {
+            page: filters.page,
+            size: filters.size,
+            statusId: filters.statusId,
+            priority: filters.priority,
+          })
+        : await taskService.getAllTasks(filters as ITaskFilters);
+
       setTasksResponse(response);
     } catch (error) {
       setErrorInfo(getOperationErrorInfo("load", error));

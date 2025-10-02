@@ -12,6 +12,7 @@ import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 public class EmailService {
@@ -25,26 +26,60 @@ public class EmailService {
     @Value("${spring.mail.from}")
     private String mailFrom;
 
-    @Async
-    protected void sendHtmlEmail(String to, String subject, String templateName, Map<String, Object> variables) {
-        try {
-            MimeMessage mimeMessage = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, "UTF-8");
+    @Value("${app.frontendBaseUrl}")
+    private String frontendBaseUrl;
 
-            Context context = new Context();
-            context.setVariables(variables);
+    @Async("emailExecutor")
+    protected CompletableFuture<Boolean> sendHtmlEmail(String to, String subject, String templateName, Map<String, Object> variables) {
+        return sendHtmlEmailWithRetry(to, subject, templateName, variables, 3);
+    }
 
-            String htmlContent = templateEngine.process(templateName, context);
+    private CompletableFuture<Boolean> sendHtmlEmailWithRetry(String to, String subject, String templateName, Map<String, Object> variables, int maxRetries) {
+        return CompletableFuture.supplyAsync(() -> {
+            for (int attempt = 1; attempt <= maxRetries; attempt++) {
+                try {
+                    MimeMessage mimeMessage = mailSender.createMimeMessage();
+                    MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, "UTF-8");
 
-            helper.setTo(to);
-            helper.setFrom(mailFrom);
-            helper.setSubject(subject);
-            helper.setText(htmlContent, true);
+                    Context context = new Context();
+                    context.setVariables(variables);
 
-            mailSender.send(mimeMessage);
-        } catch (MessagingException e) {
-            System.err.println("Erro ao enviar email para " + to + ": " + e.getMessage());
-        }
+                    String htmlContent = templateEngine.process(templateName, context);
+
+                    helper.setTo(to);
+                    helper.setFrom(mailFrom);
+                    helper.setSubject(subject);
+                    helper.setText(htmlContent, true);
+
+                    mailSender.send(mimeMessage);
+
+                    System.out.println("Email sent successfully to " + to + " on attempt " + attempt);
+                    return true; // Success
+
+                } catch (MessagingException e) {
+                    System.err.println("Email send attempt " + attempt + "/" + maxRetries + " failed for " + to + ": " + e.getMessage());
+
+                    if (attempt == maxRetries) {
+                        System.err.println("All email send attempts failed for " + to + ". Final error: " + e.getMessage());
+                        return false; // All attempts failed
+                    }
+
+                    // Wait before retry (exponential backoff)
+                    try {
+                        Thread.sleep(1000 * attempt); // 1s, 2s, 3s delays
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        return false;
+                    }
+                } catch (Exception e) {
+                    System.err.println("Unexpected error sending email to " + to + " on attempt " + attempt + ": " + e.getMessage());
+                    if (attempt == maxRetries) {
+                        return false;
+                    }
+                }
+            }
+            return false;
+        });
     }
 
     // --- MÉTODOS PÚBLICOS PARA CADA TIPO DE EMAIL ---
@@ -58,7 +93,7 @@ public class EmailService {
     }
 
     public void sendPasswordResetEmail(String to, String name, String token) {
-        String resetLink = "http://localhost:5173/reset-password?token=" + token; // URL do seu frontend
+        String resetLink = frontendBaseUrl + "/reset-password?token=" + token;
         sendHtmlEmail(to,
                 "Taskify - Redefinição de Senha",
                 "password-reset-email",

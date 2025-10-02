@@ -19,6 +19,7 @@ import type {
 import type { IWorkspaceName } from "../../types/workspace.types";
 import { taskService } from "../../services/Tasks/task.service";
 import { workspaceService } from "../../services/Workspace/workspace.service";
+import { useWebSocketEvent } from "../../hooks/useWebSocket";
 import { NewTaskModal } from "../../components/Modals/NewTask";
 import { TaskDetailsModal } from "../../components/Modals/TaskDetails";
 
@@ -107,6 +108,15 @@ const CalendarView: React.FC = () => {
       setLoading(false);
     }
   }, [selectedWorkspace, selectedStatus, selectedPriority]);
+
+  // WebSocket integration for real-time updates
+  const handleTaskUpdate = useCallback(() => {
+    setTimeout(() => loadTasks(), 500);
+  }, [loadTasks]);
+
+  useWebSocketEvent("task:created", handleTaskUpdate, [handleTaskUpdate]);
+  useWebSocketEvent("task:updated", handleTaskUpdate, [handleTaskUpdate]);
+  useWebSocketEvent("task:deleted", handleTaskUpdate, [handleTaskUpdate]);
 
   useEffect(() => {
     loadWorkspaces();

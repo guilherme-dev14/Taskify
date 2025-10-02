@@ -23,6 +23,7 @@ import {
 } from "../../services/Tasks/taskStatus.service";
 import { NewTaskModal } from "../../components/Modals/NewTask";
 import { formatDate } from "../../utils/dateUtils";
+import { useWebSocketEvent } from "../../hooks/useWebSocket";
 
 interface Column extends ITaskStatus {
   tasks: ITask[];
@@ -129,6 +130,17 @@ const KanbanView: React.FC = () => {
     },
     [currentDate]
   );
+
+  // WebSocket integration for real-time updates
+  const handleTaskUpdate = useCallback(() => {
+    if (selectedWorkspace) {
+      setTimeout(() => loadAllTasks(selectedWorkspace), 500);
+    }
+  }, [selectedWorkspace, loadAllTasks]);
+
+  useWebSocketEvent("task:created", handleTaskUpdate, [handleTaskUpdate]);
+  useWebSocketEvent("task:updated", handleTaskUpdate, [handleTaskUpdate]);
+  useWebSocketEvent("task:deleted", handleTaskUpdate, [handleTaskUpdate]);
 
   useEffect(() => {
     const initializeOrUpdateKanban = async () => {

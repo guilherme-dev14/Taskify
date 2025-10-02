@@ -16,6 +16,7 @@ import type {
   IJoinWorkspaceRequest,
 } from "../../types/workspace.types";
 import DashboardContainer from "../../components/Dashboard/DashboardContainer";
+import { WorkspaceInvitations } from "../../components/Notifications/WorkspaceInvitations";
 
 const HomeView: React.FC = () => {
   const [stats, setStats] = useState<IDashboardStats | null>(null);
@@ -193,7 +194,16 @@ const HomeView: React.FC = () => {
           </div>
         </motion.div>
       </div>
-      <motion.div className="mt-14">
+      <motion.div
+        className="mt-8"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.6 }}
+      >
+        <WorkspaceInvitations />
+      </motion.div>
+
+      <motion.div className="mt-8">
         <DashboardContainer />
       </motion.div>
       <NewTaskModal

@@ -25,6 +25,12 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(TooManyRequestsException.class)
+    public ResponseEntity<ErrorResponseDTO> handleTooManyRequestsException(TooManyRequestsException ex, WebRequest request) {
+        ErrorResponseDTO errorResponse = createErrorResponse(HttpStatus.TOO_MANY_REQUESTS, ex.getMessage(), request);
+        return new ResponseEntity<>(errorResponse, HttpStatus.TOO_MANY_REQUESTS);
+    }
+
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorResponseDTO> handleResourceNotFoundException(ResourceNotFoundException ex, WebRequest request) {
         ErrorResponseDTO errorResponse = createErrorResponse(HttpStatus.NOT_FOUND, ex.getMessage(), request);

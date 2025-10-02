@@ -1,8 +1,9 @@
-package com.taskifyApplication.websocket;
+package com.taskifyApplication.controller;
 
 import com.taskifyApplication.service.JwtService;
 import com.taskifyApplication.service.UserService;
 import com.taskifyApplication.model.User;
+import com.taskifyApplication.websocket.WebSocketSessionManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -31,18 +32,18 @@ public class WebSocketController {
     public void joinWorkspace(@Payload Map<String, Object> payload, Principal principal) {
         String workspaceId = (String) payload.get("workspaceId");
         User user = getCurrentUser(principal);
-        
+
         if (user != null && workspaceId != null) {
             sessionManager.addUserToWorkspace(user.getId(), Long.parseLong(workspaceId));
-            
+
             // Notify other workspace members that user is online
-            messagingTemplate.convertAndSend("/topic/workspace/" + workspaceId + "/presence", 
-                Map.of("type", "USER_ONLINE", "user", Map.of(
-                    "id", user.getId(),
-                    "username", user.getUsername(),
-                    "firstName", user.getFirstName(),
-                    "lastName", user.getLastName()
-                ))
+            messagingTemplate.convertAndSend("/topic/workspace/" + workspaceId + "/presence",
+                    Map.of("type", "USER_ONLINE", "user", Map.of(
+                            "id", user.getId(),
+                            "username", user.getUsername(),
+                            "firstName", user.getFirstName(),
+                            "lastName", user.getLastName()
+                    ))
             );
         }
     }
@@ -51,13 +52,13 @@ public class WebSocketController {
     public void leaveWorkspace(@Payload Map<String, Object> payload, Principal principal) {
         String workspaceId = (String) payload.get("workspaceId");
         User user = getCurrentUser(principal);
-        
+
         if (user != null && workspaceId != null) {
             sessionManager.removeUserFromWorkspace(user.getId(), Long.parseLong(workspaceId));
-            
+
             // Notify other workspace members that user is offline
-            messagingTemplate.convertAndSend("/topic/workspace/" + workspaceId + "/presence", 
-                Map.of("type", "USER_OFFLINE", "userId", user.getId())
+            messagingTemplate.convertAndSend("/topic/workspace/" + workspaceId + "/presence",
+                    Map.of("type", "USER_OFFLINE", "userId", user.getId())
             );
         }
     }
@@ -66,7 +67,7 @@ public class WebSocketController {
     public void watchTask(@Payload Map<String, Object> payload, Principal principal) {
         String taskId = (String) payload.get("taskId");
         User user = getCurrentUser(principal);
-        
+
         if (user != null && taskId != null) {
             sessionManager.addUserToTask(user.getId(), Long.parseLong(taskId));
         }
@@ -77,7 +78,7 @@ public class WebSocketController {
     public void unwatchTask(@Payload Map<String, Object> payload, Principal principal) {
         String taskId = (String) payload.get("taskId");
         User user = getCurrentUser(principal);
-        
+
         if (user != null && taskId != null) {
             sessionManager.removeUserFromTask(user.getId(), Long.parseLong(taskId));
         }
@@ -93,12 +94,12 @@ public class WebSocketController {
         String taskId = (String) payload.get("taskId");
 
         Map<String, Object> cursorData = Map.of(
-            "userId", user.getId(),
-            "username", user.getUsername(),
-            "firstName", user.getFirstName(),
-            "lastName", user.getLastName(),
-            "x", x != null ? x.doubleValue() : 0,
-            "y", y != null ? y.doubleValue() : 0
+                "userId", user.getId(),
+                "username", user.getUsername(),
+                "firstName", user.getFirstName(),
+                "lastName", user.getLastName(),
+                "x", x != null ? x.doubleValue() : 0,
+                "y", y != null ? y.doubleValue() : 0
         );
 
         // Broadcast cursor position to workspace or task
@@ -106,8 +107,8 @@ public class WebSocketController {
             messagingTemplate.convertAndSend("/topic/task/" + taskId + "/cursors", cursorData);
         } else {
             // Get user's current workspaces and broadcast to all
-            sessionManager.getUserWorkspaces(user.getId()).forEach(workspaceId -> 
-                messagingTemplate.convertAndSend("/topic/workspace/" + workspaceId + "/cursors", cursorData)
+            sessionManager.getUserWorkspaces(user.getId()).forEach(workspaceId ->
+                    messagingTemplate.convertAndSend("/topic/workspace/" + workspaceId + "/cursors", cursorData)
             );
         }
     }
@@ -121,13 +122,13 @@ public class WebSocketController {
         if (user == null) return;
 
         String taskId = (String) payload.get("taskId");
-        
+
         Map<String, Object> typingData = Map.of(
-            "type", "START",
-            "userId", user.getId(),
-            "username", user.getUsername(),
-            "firstName", user.getFirstName(),
-            "lastName", user.getLastName()
+                "type", "START",
+                "userId", user.getId(),
+                "username", user.getUsername(),
+                "firstName", user.getFirstName(),
+                "lastName", user.getLastName()
         );
 
         if (taskId != null) {
@@ -141,10 +142,10 @@ public class WebSocketController {
         if (user == null) return;
 
         String taskId = (String) payload.get("taskId");
-        
+
         Map<String, Object> typingData = Map.of(
-            "type", "STOP",
-            "userId", user.getId()
+                "type", "STOP",
+                "userId", user.getId()
         );
 
         if (taskId != null) {
@@ -186,7 +187,7 @@ public class WebSocketController {
 
     private User getCurrentUser(Principal principal) {
         if (principal == null) return null;
-        
+
         try {
             // Extract user from JWT token
             String username = principal.getName();
@@ -195,4 +196,6 @@ public class WebSocketController {
             return null;
         }
     }
+
+
 }

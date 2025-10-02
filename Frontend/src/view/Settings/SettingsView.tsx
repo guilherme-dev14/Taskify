@@ -5,8 +5,6 @@ import {
   Cog6ToothIcon,
   PaintBrushIcon,
   BellIcon,
-  ShieldCheckIcon,
-  UserGroupIcon,
   ArchiveBoxIcon,
   ExclamationTriangleIcon,
   CheckIcon,
@@ -17,7 +15,6 @@ import { useLanguage } from "../../context/LanguageContext";
 import { useTheme } from "../../context/ThemeContext";
 import type { UserSettings } from "../../services/Settings/settings.service";
 import settingsService from "../../services/Settings/settings.service";
-import { WorkspaceSettings } from "../../components/WorkspaceSettings/WorkspaceSettings";
 import userService from "../../services/User/user.service";
 
 interface Setting {
@@ -37,18 +34,12 @@ const SettingsView: React.FC = () => {
   const [settings, setSettings] = useState<UserSettings>({
     theme: theme,
     language: language,
-    timezone: "UTC-3",
     emailNotifications: true,
     pushNotifications: false,
     weeklyReports: true,
     taskReminders: true,
     teamUpdates: false,
-    autoSave: true,
-    compactView: false,
     showAvatars: true,
-    defaultWorkspace: "personal",
-    taskAutoAssign: false,
-    workspacePrivacy: "private",
   });
   const [, setLoading] = useState(true);
   const [, setSaveStatus] = useState<"saved" | "saving" | "error">("saved");
@@ -106,9 +97,7 @@ const SettingsView: React.FC = () => {
     { id: "general", label: "General", icon: Cog6ToothIcon },
     { id: "appearance", label: "Appearance", icon: PaintBrushIcon },
     { id: "notifications", label: "Notifications", icon: BellIcon },
-    { id: "privacy", label: "Privacy & Security", icon: ShieldCheckIcon },
-    { id: "workspace", label: "Workspace", icon: UserGroupIcon },
-    { id: "data", label: "Data & Storage", icon: ArchiveBoxIcon },
+    { id: "data", label: "Data & Account", icon: ArchiveBoxIcon },
   ];
 
   const generalSettings: Setting[] = [
@@ -125,26 +114,6 @@ const SettingsView: React.FC = () => {
         { label: "Français", value: "fr" },
       ],
     },
-    {
-      id: "timezone",
-      label: "Timezone",
-      description: "Set your local timezone",
-      type: "select",
-      value: settings.timezone,
-      options: [
-        { label: "UTC-3 (São Paulo)", value: "UTC-3" },
-        { label: "UTC-5 (New York)", value: "UTC-5" },
-        { label: "UTC+0 (London)", value: "UTC+0" },
-        { label: "UTC+1 (Paris)", value: "UTC+1" },
-      ],
-    },
-    {
-      id: "autoSave",
-      label: "Auto Save",
-      description: "Automatically save your changes",
-      type: "toggle",
-      value: settings.autoSave,
-    },
   ];
 
   const appearanceSettings: Setting[] = [
@@ -159,13 +128,6 @@ const SettingsView: React.FC = () => {
         { label: "Light", value: "light" },
         { label: "Dark", value: "dark" },
       ],
-    },
-    {
-      id: "compactView",
-      label: "Compact View",
-      description: "Use a more compact layout to show more content",
-      type: "toggle",
-      value: settings.compactView,
     },
     {
       id: "showAvatars",
@@ -211,21 +173,6 @@ const SettingsView: React.FC = () => {
       description: "Receive weekly productivity summaries",
       type: "toggle",
       value: settings.weeklyReports,
-    },
-  ];
-
-  const privacySettings: Setting[] = [
-    {
-      id: "workspacePrivacy",
-      label: "Default Workspace Privacy",
-      description: "Privacy level for new workspaces",
-      type: "select",
-      value: settings.workspacePrivacy,
-      options: [
-        { label: "Private", value: "private" },
-        { label: "Team Only", value: "team" },
-        { label: "Public", value: "public" },
-      ],
     },
   ];
 
@@ -315,79 +262,12 @@ const SettingsView: React.FC = () => {
           "Notification Settings",
           notificationSettings
         );
-
-      case "privacy":
-        return renderSettingsSection(
-          "Privacy & Security Settings",
-          privacySettings
-        );
-
-      case "workspace":
-        return (
-          <div className="space-y-6">
-            <WorkspaceSettings />
-          </div>
-        );
-
       case "data":
         return (
           <div className="space-y-6">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Data & Storage
+              Data & Account
             </h3>
-
-            {/* Data Export */}
-            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-6">
-              <h4 className="font-medium text-gray-900 dark:text-white mb-2">
-                Export Your Data
-              </h4>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                Download a copy of all your data including tasks, workspaces,
-                and settings.
-              </p>
-              <button
-                onClick={async () => {
-                  try {
-                    const blob = await settingsService.exportUserData();
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement("a");
-                    a.href = url;
-                    a.download = "taskify-data-export.json";
-                    a.click();
-                    window.URL.revokeObjectURL(url);
-                  } catch (error) {
-                    console.error("Failed to export data:", error);
-                  }
-                }}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
-              >
-                Export Data
-              </button>
-            </div>
-
-            {/* Clear Cache */}
-            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-6">
-              <h4 className="font-medium text-gray-900 dark:text-white mb-2">
-                Clear Local Cache
-              </h4>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                Clear your browser's local cache to free up space and resolve
-                issues.
-              </p>
-              <button
-                onClick={async () => {
-                  try {
-                    await settingsService.clearCache();
-                    alert("Cache cleared successfully!");
-                  } catch (error) {
-                    console.error("Failed to clear cache:", error);
-                  }
-                }}
-                className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors font-medium"
-              >
-                Clear Cache
-              </button>
-            </div>
 
             {/* Danger Zone */}
             <div className="border-2 border-red-200 dark:border-red-800 rounded-lg p-6 bg-red-50 dark:bg-red-900/10">
@@ -494,86 +374,76 @@ const SettingsView: React.FC = () => {
           </p>
         </motion.div>
 
-        {activeTab === "workspace" ? (
-          <WorkspaceSettings />
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-            {/* Sidebar */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-              className="lg:col-span-1"
-            >
-              <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl border border-gray-200/50 dark:border-gray-700/50 overflow-hidden sticky top-8">
-                <nav className="space-y-1 p-4">
-                  {tabs.map((tab) => (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
-                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
-                        activeTab === tab.id
-                          ? "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
-                          : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/30"
-                      }`}
-                    >
-                      <tab.icon className="w-5 h-5" />
-                      {tab.label}
-                    </button>
-                  ))}
-                </nav>
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Sidebar */}
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="lg:col-span-1"
+          >
+            <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl border border-gray-200/50 dark:border-gray-700/50 overflow-hidden sticky top-8">
+              <nav className="space-y-1 p-4">
+                {tabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
+                      activeTab === tab.id
+                        ? "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
+                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/30"
+                    }`}
+                  >
+                    <tab.icon className="w-5 h-5" />
+                    {tab.label}
+                  </button>
+                ))}
+              </nav>
 
-                {/* Quick Actions */}
-                <div className="border-t border-gray-200 dark:border-gray-700 p-4">
-                  <h4 className="font-medium text-gray-900 dark:text-white mb-3">
-                    Quick Actions
-                  </h4>
-                  <div className="space-y-2">
-                    <button className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors text-sm text-gray-700 dark:text-gray-300">
-                      Reset to defaults
-                    </button>
-                    <button className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors text-sm text-gray-700 dark:text-gray-300">
-                      Import settings
-                    </button>
-                    <button
-                      onClick={logout}
-                      className="w-full text-left px-3 py-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors text-sm text-red-600 dark:text-red-400"
-                    >
-                      Sign out
-                    </button>
-                  </div>
+              {/* Quick Actions */}
+              <div className="border-t border-gray-200 dark:border-gray-700 p-4">
+                <h4 className="font-medium text-gray-900 dark:text-white mb-3">
+                  Quick Actions
+                </h4>
+                <div className="space-y-2">
+                  <button
+                    onClick={logout}
+                    className="w-full text-left px-3 py-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors text-sm text-red-600 dark:text-red-400"
+                  >
+                    Sign out
+                  </button>
                 </div>
               </div>
-            </motion.div>
+            </div>
+          </motion.div>
 
-            {/* Main Content */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="lg:col-span-3"
-            >
-              <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl p-8 border border-gray-200/50 dark:border-gray-700/50">
-                {renderTabContent()}
+          {/* Main Content */}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="lg:col-span-3"
+          >
+            <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl p-8 border border-gray-200/50 dark:border-gray-700/50">
+              {renderTabContent()}
 
-                {/* Save Button */}
-                {activeTab !== "data" && (
-                  <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Changes are saved automatically
-                      </p>
-                      <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
-                        <CheckIcon className="w-4 h-4" />
-                        <span className="text-sm font-medium">Saved</span>
-                      </div>
+              {/* Save Button */}
+              {activeTab !== "data" && (
+                <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Changes are saved automatically
+                    </p>
+                    <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+                      <CheckIcon className="w-4 h-4" />
+                      <span className="text-sm font-medium">Saved</span>
                     </div>
                   </div>
-                )}
-              </div>
-            </motion.div>
-          </div>
-        )}
+                </div>
+              )}
+            </div>
+          </motion.div>
+        </div>
       </div>
     </div>
   );

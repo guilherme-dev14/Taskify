@@ -16,6 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -75,15 +76,41 @@ public class WorkspaceController {
     }
     @PostMapping("/{workspaceId}/inviteUsername")
     public ResponseEntity<?> inviteUserByUsername(@PathVariable Long workspaceId, @RequestBody InviteUserDTO inviteUserDTO) {
-            User userToInvite = userService.findByUsername(inviteUserDTO.getUsername()).orElse(null);
-            workspaceService.addMemberToWorkspace(workspaceId, userToInvite, inviteUserDTO.getRole());
+        try {
+            User userToInvite = userService.findByUsername(inviteUserDTO.getUsername())
+                .orElseThrow(() -> new RuntimeException("User with username " + inviteUserDTO.getUsername() + " not found"));
+
+            workspaceService.inviteUserToWorkspace(workspaceId, userToInvite, inviteUserDTO.getRole());
             return ResponseEntity.ok("User invited successfully");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(new ErrorResponseDTO(
+                    LocalDateTime.now(),
+                    400,
+                    "Bad Request",
+                    e.getMessage(),
+                    "/api/workspace/" + workspaceId + "/inviteUsername"
+                ));
+        }
     }
     @PostMapping("/{workspaceId}/invite")
     public ResponseEntity<?> inviteUserByEmail(@PathVariable Long workspaceId, @RequestBody InviteUserDTO inviteUserDTO) {
-            User userToInvite = userService.findByEmail(inviteUserDTO.getEmail()).orElse(null);
-            workspaceService.addMemberToWorkspace(workspaceId, userToInvite, inviteUserDTO.getRole());
+        try {
+            User userToInvite = userService.findByEmail(inviteUserDTO.getEmail())
+                .orElseThrow(() -> new RuntimeException("User with email " + inviteUserDTO.getEmail() + " not found"));
+
+            workspaceService.inviteUserToWorkspace(workspaceId, userToInvite, inviteUserDTO.getRole());
             return ResponseEntity.ok("User invited successfully");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(new ErrorResponseDTO(
+                    LocalDateTime.now(),
+                    400,
+                    "Bad Request",
+                    e.getMessage(),
+                    "/api/workspace/" + workspaceId + "/invite"
+                ));
+        }
     }
 
     @GetMapping("/{workspaceId}/members")
@@ -123,5 +150,29 @@ public class WorkspaceController {
     public ResponseEntity<?> getInviteCode(@PathVariable Long workspaceId) {
             String inviteCode = workspaceService.getWorkspaceInviteCode(workspaceId);
             return ResponseEntity.ok(inviteCode);
+    }
+
+    @GetMapping("/invitations/pending")
+    public ResponseEntity<?> getPendingInvitations() {
+        List<WorkspaceInvitationDTO> invitations = workspaceService.getPendingInvitations();
+        return ResponseEntity.ok(invitations);
+    }
+
+    @PostMapping("/invitations/respond")
+    public ResponseEntity<?> respondToInvitation(@RequestBody InvitationResponseDTO response) {
+        try {
+            workspaceService.respondToInvitation(response.getInvitationId(), response.isAccept());
+            String message = response.isAccept() ? "Invitation accepted successfully" : "Invitation declined successfully";
+            return ResponseEntity.ok(message);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(new ErrorResponseDTO(
+                    LocalDateTime.now(),
+                    400,
+                    "Bad Request",
+                    e.getMessage(),
+                    "/api/workspace/invitations/respond"
+                ));
+        }
     }
 }

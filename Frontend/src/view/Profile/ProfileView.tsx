@@ -6,16 +6,12 @@ import {
   PencilIcon,
   ShieldCheckIcon,
   KeyIcon,
-  GlobeAltIcon,
-  UserGroupIcon,
-  ChartBarIcon,
   Cog6ToothIcon,
 } from "@heroicons/react/24/outline";
 import { useAuthStore } from "../../services/auth.store";
 import userService from "../../services/User/user.service";
 import fileService from "../../services/File/file.service";
-import type { IUserStats } from "../../types/auth.types";
-
+import api from "../../services/api";
 interface ProfileData {
   firstName: string;
   lastName: string;
@@ -32,7 +28,6 @@ const ProfileView: React.FC = () => {
   const { user } = useAuthStore();
   const [activeTab, setActiveTab] = useState("general");
   const [isEditing, setIsEditing] = useState(false);
-  const [profileStats, setProfileStats] = useState<IUserStats | null>(null);
   const [, setLoading] = useState(true);
 
   const [passwordData, setPasswordData] = useState({
@@ -57,21 +52,6 @@ const ProfileView: React.FC = () => {
       : "",
     avatar: user?.avatar || "",
   });
-
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const stats = await userService.getUserStats();
-        setProfileStats(stats);
-      } catch (error) {
-        console.error("Failed to fetch user stats:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchStats();
-  }, []);
 
   useEffect(() => {
     if (user) {
@@ -201,7 +181,7 @@ const ProfileView: React.FC = () => {
               <div className="relative">
                 {user?.avatar ? (
                   <img
-                    src={`http://localhost:8080${user.avatar}`}
+                    src={`${api.defaults.baseURL}${user.avatar}`}
                     alt="Profile"
                     className="w-24 h-24 rounded-full object-cover border-2 border-gray-200 dark:border-gray-600"
                   />
@@ -440,19 +420,6 @@ const ProfileView: React.FC = () => {
                 </button>
               </div>
             </div>
-
-            <div className="bg-white/60 dark:bg-gray-800/60 rounded-lg p-6 border border-gray-200/50 dark:border-gray-700/50">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                Two-Factor Authentication
-              </h3>
-              <p className="text-gray-600 dark:text-gray-400 mb-4">
-                Add an extra layer of security to your account by enabling
-                two-factor authentication.
-              </p>
-              <button className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium">
-                Enable 2FA
-              </button>
-            </div>
           </div>
         );
 
@@ -477,61 +444,6 @@ const ProfileView: React.FC = () => {
           <p className="text-gray-600 dark:text-gray-400">
             Manage your account settings and preferences
           </p>
-        </motion.div>
-
-        {/* Profile Stats */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-          className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8"
-        >
-          {(profileStats
-            ? [
-                {
-                  label: "Tasks Completed",
-                  value: profileStats.tasksCompleted,
-                  icon: ChartBarIcon,
-                  color: "blue",
-                },
-                {
-                  label: "Active Projects",
-                  value: profileStats.projectsActive,
-                  icon: Cog6ToothIcon,
-                  color: "green",
-                },
-                {
-                  label: "Team Members",
-                  value: profileStats.teamMembers,
-                  icon: UserGroupIcon,
-                  color: "purple",
-                },
-                {
-                  label: "Workspaces",
-                  value: profileStats.totalWorkspaces,
-                  icon: GlobeAltIcon,
-                  color: "orange",
-                },
-              ]
-            : []
-          ).map((stat) => (
-            <div
-              key={stat.label}
-              className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl p-6 border border-gray-200/50 dark:border-gray-700/50"
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                    {stat.label}
-                  </p>
-                  <p className={`text-3xl font-bold text-${stat.color}-500`}>
-                    {stat.value}
-                  </p>
-                </div>
-                <stat.icon className={`w-8 h-8 text-${stat.color}-500`} />
-              </div>
-            </div>
-          ))}
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">

@@ -25,7 +25,7 @@ import {
   ArrowPathIcon,
 } from "@heroicons/react/24/outline";
 import { useDashboardAnalytics } from "../../hooks/useAnalytics";
-import { useWebSocket } from "../../hooks/useWebSocket";
+import { useWebSocketEvent } from "../../hooks/useWebSocket";
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -59,7 +59,6 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
       workspaceId,
       period: selectedPeriod,
     });
-  const { on, off, isConnected } = useWebSocket();
 
   const prevPeriod = useRef(selectedPeriod);
   useEffect(() => {
@@ -69,23 +68,14 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
     }
   }, [selectedPeriod, refetchAll]);
 
-  useEffect(() => {
-    const handleDataUpdate = () => {
-      setTimeout(() => refetchAll(), 1000);
-    };
+  // Use WebSocket events to refresh data when tasks change
+  const handleDataUpdate = () => {
+    setTimeout(() => refetchAll(), 1000);
+  };
 
-    on("task:created", handleDataUpdate);
-    on("task:updated", handleDataUpdate);
-    on("task:deleted", handleDataUpdate);
-    on("workspace:updated", handleDataUpdate);
-
-    return () => {
-      off("task:created", handleDataUpdate);
-      off("task:updated", handleDataUpdate);
-      off("task:deleted", handleDataUpdate);
-      off("workspace:updated", handleDataUpdate);
-    };
-  }, [on, off, refetchAll]);
+  useWebSocketEvent("task:created", handleDataUpdate, [refetchAll]);
+  useWebSocketEvent("task:updated", handleDataUpdate, [refetchAll]);
+  useWebSocketEvent("task:deleted", handleDataUpdate, [refetchAll]);
 
   if (isError) {
     return (
@@ -229,13 +219,9 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
               Analytics Dashboard
             </h1>
             <div className="flex items-center space-x-2">
-              <div
-                className={`w-2 h-2 rounded-full ${
-                  isConnected ? "bg-green-500 animate-pulse" : "bg-red-500"
-                }`}
-              />
+              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
               <span className="text-sm text-gray-500 dark:text-gray-400">
-                {isConnected ? "Live Updates" : "Offline"}
+                Live Updates
               </span>
             </div>
           </div>

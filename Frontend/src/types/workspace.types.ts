@@ -69,3 +69,20 @@ export interface IRemoveMemberRequest {
   workspaceId: number;
   userId: number;
 }
+
+export interface IWorkspaceInvitation {
+  id: number;
+  workspaceId: number;
+  workspaceName: string;
+  inviterName: string;
+  inviterEmail: string;
+  proposedRole: "ADMIN" | "MEMBER";
+  status: "PENDING" | "ACCEPTED" | "DECLINED" | "EXPIRED";
+  createdAt: string;
+  respondedAt?: string;
+}
+
+export interface IInvitationResponse {
+  invitationId: number;
+  accept: boolean;
+}

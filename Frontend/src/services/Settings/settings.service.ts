@@ -3,18 +3,12 @@ import api from "../api";
 interface UserSettings {
   theme: string;
   language: string;
-  timezone: string;
   emailNotifications: boolean;
   pushNotifications: boolean;
   weeklyReports: boolean;
   taskReminders: boolean;
   teamUpdates: boolean;
-  autoSave: boolean;
-  compactView: boolean;
   showAvatars: boolean;
-  defaultWorkspace: string;
-  taskAutoAssign: boolean;
-  workspacePrivacy: string;
 }
 
 class SettingsService {

@@ -1,51 +1,83 @@
-import { useEffect, useRef } from 'react';
-import { useAuthStore } from '../services/auth.store';
-import websocketService, { type WebSocketEvents } from '../services/websocket.service';
+import { useEffect, useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import webSocketService, {
+  type WebSocketEvents,
+} from "../services/websocket.service";
+import { type ITask } from "../types/task.types";
 
-export function useWebSocket() {
-  const { user } = useAuthStore();
-  const connectionAttempted = useRef(false);
+export const useWebSocket = (workspaceId?: string) => {
+  const queryClient = useQueryClient();
 
   useEffect(() => {
-    if (user && !connectionAttempted.current) {
-      connectionAttempted.current = true;
-      websocketService.connect().catch(console.error);
+    if (workspaceId) {
+      const callback = (message: any) => {
+        // Handle task updates from backend format
+        if (
+          message.action &&
+          (message.action === "CREATED" ||
+            message.action === "UPDATED" ||
+            message.action === "DELETED" ||
+            message.action === "ASSIGNED")
+        ) {
+          queryClient.invalidateQueries({ queryKey: ["tasks", workspaceId] });
+          queryClient.invalidateQueries({
+            queryKey: ["workspace", workspaceId],
+          });
+        }
+
+        // Handle presence updates
+        if (message.type === "USER_ONLINE" || message.type === "USER_OFFLINE") {
+          queryClient.invalidateQueries({
+            queryKey: ["workspace", workspaceId, "members"],
+          });
+        }
+
+        // Handle activity updates
+        if (message.activity) {
+          queryClient.invalidateQueries({
+            queryKey: ["workspace", workspaceId, "activities"],
+          });
+        }
+      };
+
+      webSocketService.subscribeToWorkspaceChannel(workspaceId, callback);
+
+      return () => {
+        if (workspaceId) {
+          webSocketService.leaveWorkspace(workspaceId);
+          webSocketService.unsubscribeFromWorkspaceChannel(workspaceId);
+        }
+      };
     }
+  }, [workspaceId, queryClient]);
 
-    return () => {
-      if (!user) {
-        websocketService.disconnect();
-        connectionAttempted.current = false;
-      }
-    };
-  }, [user]);
-
-  return {
-    isConnected: websocketService.isConnected,
-    joinWorkspace: websocketService.joinWorkspace.bind(websocketService),
-    leaveWorkspace: websocketService.leaveWorkspace.bind(websocketService),
-    watchTask: websocketService.watchTask.bind(websocketService),
-    unwatchTask: websocketService.unwatchTask.bind(websocketService),
-    updateCursor: websocketService.updateCursor.bind(websocketService),
-    startTyping: websocketService.startTyping.bind(websocketService),
-    stopTyping: websocketService.stopTyping.bind(websocketService),
-    on: websocketService.on.bind(websocketService),
-    off: websocketService.off.bind(websocketService),
-    emit: websocketService.emit.bind(websocketService)
+  const notifyTaskChange = (
+    spaceId: string,
+    actionType: "TASK_CREATED" | "TASK_UPDATED" | "TASK_DELETED",
+    task: Partial<ITask>
+  ) => {
+    if (webSocketService.isInitialized()) {
+      // Note: The backend automatically broadcasts task changes via WebSocketService
+      // This function can be used for custom notifications if needed
+      console.log(`Task ${actionType} for workspace ${spaceId}:`, task);
+    }
   };
-}
 
-export function useWebSocketEvent<K extends keyof WebSocketEvents>(
+  return { notifyTaskChange };
+};
+
+export const useWebSocketEvent = <K extends keyof WebSocketEvents>(
   event: K,
   callback: WebSocketEvents[K],
-  deps: React.DependencyList = []
-) {
-  const websocket = useWebSocket();
+  dependencies: any[] = []
+) => {
+  const callbackRef = useCallback(callback, dependencies);
 
   useEffect(() => {
-    websocket.on(event, callback);
+    webSocketService.on(event, callbackRef);
+
     return () => {
-      websocket.off(event, callback);
+      webSocketService.off(event, callbackRef);
     };
-  }, [websocket, event, ...deps]);
-}
+  }, [event, callbackRef]);
+};

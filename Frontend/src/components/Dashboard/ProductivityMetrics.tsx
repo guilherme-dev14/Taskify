@@ -10,7 +10,7 @@ import {
 } from "@heroicons/react/24/outline";
 import type { TaskStats } from "../../stores/task.store";
 import { useProductivityMetrics } from "../../hooks/useAnalytics";
-import { useWebSocket } from "../../hooks/useWebSocket";
+import { useWebSocketEvent } from "../../hooks/useWebSocket";
 
 interface ProductivityMetricsProps {
   stats: TaskStats | null;
@@ -23,23 +23,15 @@ const ProductivityMetrics: React.FC<ProductivityMetricsProps> = () => {
     error,
     refetch,
   } = useProductivityMetrics();
-  const { on, off, isConnected } = useWebSocket();
 
-  useEffect(() => {
-    const handleTaskUpdate = () => {
-      setTimeout(() => refetch(), 500);
-    };
+  // Use WebSocket events to refresh data when tasks change
+  const handleTaskUpdate = () => {
+    setTimeout(() => refetch(), 500);
+  };
 
-    on("task:created", handleTaskUpdate);
-    on("task:updated", handleTaskUpdate);
-    on("task:deleted", handleTaskUpdate);
-
-    return () => {
-      off("task:created", handleTaskUpdate);
-      off("task:updated", handleTaskUpdate);
-      off("task:deleted", handleTaskUpdate);
-    };
-  }, [on, off, refetch]);
+  useWebSocketEvent("task:created", handleTaskUpdate, [refetch]);
+  useWebSocketEvent("task:updated", handleTaskUpdate, [refetch]);
+  useWebSocketEvent("task:deleted", handleTaskUpdate, [refetch]);
 
   if (error) {
     return (
@@ -220,13 +212,9 @@ const ProductivityMetrics: React.FC<ProductivityMetricsProps> = () => {
             Productivity Metrics
           </h2>
           <div className="flex items-center space-x-2">
-            <div
-              className={`w-2 h-2 rounded-full ${
-                isConnected ? "bg-green-500 animate-pulse" : "bg-red-500"
-              }`}
-            />
+            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
             <span className="text-xs text-gray-500 dark:text-gray-400">
-              {isConnected ? "Live" : "Offline"}
+              Live
             </span>
           </div>
         </div>
