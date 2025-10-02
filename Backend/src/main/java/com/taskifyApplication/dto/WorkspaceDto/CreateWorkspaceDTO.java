@@ -1,7 +1,5 @@
 package com.taskifyApplication.dto.WorkspaceDto;
 
-
-import com.taskifyApplication.model.User;
 import lombok.Data;
 import jakarta.validation.constraints.*;
 

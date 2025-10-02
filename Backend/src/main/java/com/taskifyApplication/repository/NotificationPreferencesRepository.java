@@ -1,7 +1,6 @@
 package com.taskifyApplication.repository;
 
 import com.taskifyApplication.model.NotificationPreferences;
-import com.taskifyApplication.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

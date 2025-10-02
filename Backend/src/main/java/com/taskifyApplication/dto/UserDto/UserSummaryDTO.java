@@ -16,10 +16,6 @@ public class UserSummaryDTO {
     private String lastName;
     private String email;
 
-    public String getFullName() {
-        return firstName + " " + lastName;
-    }
-
     public UserSummaryDTO(User user) {
         this.id = user.getId();
         this.username = user.getUsername();

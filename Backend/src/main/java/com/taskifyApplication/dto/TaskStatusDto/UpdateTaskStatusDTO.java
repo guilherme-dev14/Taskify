@@ -1,6 +1,5 @@
 package com.taskifyApplication.dto.TaskStatusDto;
 
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 

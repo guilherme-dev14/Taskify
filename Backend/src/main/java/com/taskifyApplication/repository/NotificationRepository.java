@@ -2,7 +2,6 @@ package com.taskifyApplication.repository;
 
 import com.taskifyApplication.model.Notification;
 import com.taskifyApplication.model.User;
-import com.taskifyApplication.model.Workspace;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -10,9 +9,6 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-
-import java.time.OffsetDateTime;
-import java.util.List;
 
 @Repository
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
@@ -34,8 +30,4 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
                                      @Param("type") Notification.NotificationType type,
                                      @Param("workspaceId") Long workspaceId,
                                      Pageable pageable);
-
-    @Modifying
-    @Query("DELETE FROM Notification n WHERE n.createdAt < :cutoffDate")
-    void deleteOldNotifications(@Param("cutoffDate") OffsetDateTime cutoffDate);
 }

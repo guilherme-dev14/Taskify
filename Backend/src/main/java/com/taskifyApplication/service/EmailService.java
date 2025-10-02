@@ -2,7 +2,7 @@ package com.taskifyApplication.service;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -15,13 +15,12 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 @Service
+@RequiredArgsConstructor
 public class EmailService {
 
-    @Autowired
-    private JavaMailSender mailSender;
+    private final JavaMailSender mailSender;
 
-    @Autowired
-    private TemplateEngine templateEngine;
+    private final TemplateEngine templateEngine;
 
     @Value("${spring.mail.from}")
     private String mailFrom;

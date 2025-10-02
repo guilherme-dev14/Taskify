@@ -3,7 +3,7 @@ package com.taskifyApplication.controller;
 import com.taskifyApplication.dto.TimeTrackingDto.*;
 import com.taskifyApplication.service.TimeTrackingService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,10 +13,10 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/tasks/time-tracking")
+@RequiredArgsConstructor
 public class TimeTrackingController {
 
-    @Autowired
-    private TimeTrackingService timeTrackingService;
+    private final TimeTrackingService timeTrackingService;
 
     @PostMapping("/start")
     public ResponseEntity<TimeTrackingResponseDTO> startTimeTracking(@Valid @RequestBody TimeTrackingRequestDTO request) {

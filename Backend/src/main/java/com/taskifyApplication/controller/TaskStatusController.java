@@ -7,7 +7,7 @@ import com.taskifyApplication.dto.TaskStatusDto.UpdateTaskStatusDTO;
 import com.taskifyApplication.service.TaskStatusService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,10 +18,11 @@ import java.util.List;
 @RequestMapping("/api/workspaces/{workspaceId}/statuses")
 @CrossOrigin(origins = "http://localhost:5173")
 @SecurityRequirement(name = "bearerAuth")
+@RequiredArgsConstructor
 public class TaskStatusController {
 
-    @Autowired
-    private TaskStatusService taskStatusService;
+
+    private final TaskStatusService taskStatusService;
 
     @GetMapping
     public ResponseEntity<List<TaskStatusDTO>> getStatuses(@PathVariable Long workspaceId) {
@@ -52,7 +53,7 @@ public class TaskStatusController {
     }
 
     @DeleteMapping("/{statusId}")
-    public ResponseEntity<?> deleteStatus(@PathVariable Long workspaceId, @PathVariable Long statusId) {
+    public ResponseEntity<?> deleteStatus(@PathVariable Long ignoredWorkspaceId, @PathVariable Long statusId) {
             taskStatusService.deleteStatus(statusId);
             return ResponseEntity.noContent().build();
     }

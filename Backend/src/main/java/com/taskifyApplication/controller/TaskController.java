@@ -8,27 +8,25 @@ import com.taskifyApplication.service.TaskService;
 import com.taskifyApplication.service.TimeTrackingService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/tasks")
 @SecurityRequirement(name = "bearerAuth")
+@RequiredArgsConstructor
 public class TaskController {
 
-    @Autowired
-    private TaskService taskService;
+    private final TaskService taskService;
 
-    @Autowired
-    private TimeTrackingService timeTrackingService;
+    private final TimeTrackingService timeTrackingService;
 
     @GetMapping
     public ResponseEntity<PageResponse<TaskSummaryDTO>> getAllTasksFromUser(

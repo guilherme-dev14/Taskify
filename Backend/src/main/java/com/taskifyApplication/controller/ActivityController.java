@@ -2,6 +2,7 @@ package com.taskifyApplication.controller;
 
 import com.taskifyApplication.dto.activity.ActivityDto;
 import com.taskifyApplication.service.ActivityService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -15,10 +16,10 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/activities")
 @CrossOrigin(origins = "*")
+@RequiredArgsConstructor
 public class ActivityController {
 
-    @Autowired
-    private ActivityService activityService;
+    private final ActivityService activityService;
 
     @GetMapping
     public ResponseEntity<Page<ActivityDto>> getActivities(

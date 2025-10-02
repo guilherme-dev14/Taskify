@@ -7,6 +7,7 @@ import com.taskifyApplication.exception.ResourceNotFoundException;
 import com.taskifyApplication.model.*;
 import com.taskifyApplication.repository.*;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -25,25 +26,20 @@ import java.util.Objects;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class AttachmentService {
 
-    @Autowired
-    private AttachmentRepository attachmentRepository;
+    private final AttachmentRepository attachmentRepository;
 
-    @Autowired
-    private ValidationService validationService;
+    private final ValidationService validationService;
 
-    @Autowired
-    private UserService userService;
+    private final UserService userService;
 
-    @Autowired
-    private TaskRepository taskRepository;
+    private final TaskRepository taskRepository;
 
-    @Autowired
-    private WorkspaceRepository workspaceRepository;
+    private final WorkspaceRepository workspaceRepository;
 
-    @Autowired
-    private FileService fileService;
+    private final FileService fileService;
 
     public List<Attachment> getAttachmentsForTask(Long taskId) {
         if (!taskRepository.existsById(taskId)) {

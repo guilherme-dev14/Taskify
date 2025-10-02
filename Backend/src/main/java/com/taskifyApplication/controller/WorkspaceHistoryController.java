@@ -4,6 +4,7 @@ package com.taskifyApplication.controller;
 import com.taskifyApplication.dto.TaskDto.TaskHistoryDTO;
 import com.taskifyApplication.service.TaskHistoryService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -16,10 +17,11 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/workspace/{workspaceId}/history")
 @CrossOrigin(origins = "http://localhost:5173")
 @SecurityRequirement(name = "bearerAuth")
+@RequiredArgsConstructor
 class WorkspaceHistoryController {
 
-    @Autowired
-    private TaskHistoryService taskHistoryService;
+
+    private final TaskHistoryService taskHistoryService;
 
     @GetMapping
     public ResponseEntity<Page<TaskHistoryDTO>> getWorkspaceHistory(

@@ -1,9 +1,6 @@
 package com.taskifyApplication.repository;
 
-
-import com.taskifyApplication.dto.CategoryDto.CategoryResponseDTO;
 import com.taskifyApplication.model.Category;
-import com.taskifyApplication.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

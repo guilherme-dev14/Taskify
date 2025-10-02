@@ -4,10 +4,10 @@ import com.taskifyApplication.annotation.RateLimit;
 import com.taskifyApplication.exception.TooManyRequestsException;
 import com.taskifyApplication.service.JwtService;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -17,12 +17,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 @Aspect
 @Component
+@RequiredArgsConstructor
 public class RateLimitAspect {
 
-    @Autowired
-    private JwtService jwtService;
+    private final JwtService jwtService;
 
-    // Simple in-memory rate limiting storage
     private final ConcurrentHashMap<String, RateLimitInfo> rateLimitStore = new ConcurrentHashMap<>();
 
     @Around("@annotation(rateLimit)")
@@ -66,18 +65,18 @@ public class RateLimitAspect {
         long timeWindowMs = rateLimit.timeWindow() * 1000L;
 
         rateLimitStore.compute(key, (k, info) -> {
-            if (info == null || currentTime - info.getWindowStart() > timeWindowMs) {
+            if (info == null || currentTime - info.windowStart() > timeWindowMs) {
                 // New window or expired window
                 return new RateLimitInfo(currentTime, new AtomicInteger(1));
             } else {
                 // Within current window
-                info.getCount().incrementAndGet();
+                info.count().incrementAndGet();
                 return info;
             }
         });
 
         RateLimitInfo info = rateLimitStore.get(key);
-        return info != null && info.getCount().get() > rateLimit.requests();
+        return info != null && info.count().get() > rateLimit.requests();
     }
 
     private String getUserIdentifier() {
@@ -124,29 +123,7 @@ public class RateLimitAspect {
         return "unknown";
     }
 
-    // Cleanup method to remove expired entries (should be called periodically)
-    public void cleanupExpiredEntries() {
-        long currentTime = System.currentTimeMillis();
-        rateLimitStore.entrySet().removeIf(entry ->
-            currentTime - entry.getValue().getWindowStart() > 3600000 // Remove entries older than 1 hour
-        );
-    }
+    private record RateLimitInfo(long windowStart, AtomicInteger count) {
 
-    private static class RateLimitInfo {
-        private final long windowStart;
-        private final AtomicInteger count;
-
-        public RateLimitInfo(long windowStart, AtomicInteger count) {
-            this.windowStart = windowStart;
-            this.count = count;
-        }
-
-        public long getWindowStart() {
-            return windowStart;
-        }
-
-        public AtomicInteger getCount() {
-            return count;
-        }
     }
 }

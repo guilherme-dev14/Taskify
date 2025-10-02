@@ -5,6 +5,7 @@ import com.taskifyApplication.dto.UserDto.UserSummaryDTO;
 import com.taskifyApplication.model.Attachment;
 import com.taskifyApplication.service.AttachmentService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -17,10 +18,10 @@ import java.util.stream.Collectors;
 @RequestMapping("/api")
 @CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://localhost:5176", "http://localhost:5177"})
 @SecurityRequirement(name = "bearerAuth")
+@RequiredArgsConstructor
 public class AttachmentController {
 
-    @Autowired
-    private AttachmentService attachmentService;
+    private final AttachmentService attachmentService;
 
     @GetMapping("/tasks/{taskId}/attachments")
     public ResponseEntity<List<AttachmentResponseDTO>> getAttachmentsForTask(@PathVariable Long taskId) {

@@ -3,11 +3,10 @@ package com.taskifyApplication.controller;
 import com.taskifyApplication.dto.CategoryDto.CategoryResponseDTO;
 import com.taskifyApplication.dto.CategoryDto.CreateCategoryDTO;
 import com.taskifyApplication.dto.CategoryDto.UpdateCategoryDTO;
-import com.taskifyApplication.exception.ForbiddenException;
 import com.taskifyApplication.service.CategoryService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,10 +17,10 @@ import java.util.List;
 @RequestMapping("/api/category")
 @CrossOrigin(origins = "http://localhost:5173")
 @SecurityRequirement(name = "bearerAuth")
+@RequiredArgsConstructor
 public class CategoryController {
 
-    @Autowired
-    private CategoryService categoryService;
+    private final CategoryService categoryService;
 
     @GetMapping("/workspace/{workspaceId}")
     public ResponseEntity<List<CategoryResponseDTO>> getAllCategoriesFromWorkspace(@PathVariable Long workspaceId) {

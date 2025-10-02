@@ -12,5 +12,5 @@ public class InvitationResponseDTO {
     @NotNull(message = "Invitation ID is required")
     private Long invitationId;
 
-    private boolean accept; // true para aceitar, false para recusar
+    private boolean accept;
 }

@@ -6,5 +6,4 @@ import lombok.Data;
 public class StatusOrderUpdateDTO {
     private Long id;
     private int order;
-    // Lombok vai gerar os getters e setters
 }

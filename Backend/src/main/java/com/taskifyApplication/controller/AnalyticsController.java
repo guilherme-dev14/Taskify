@@ -1,15 +1,10 @@
 package com.taskifyApplication.controller;
 
 import com.taskifyApplication.dto.analytics.*;
-import com.taskifyApplication.model.User;
-import com.taskifyApplication.repository.WorkspaceRepository;
 import com.taskifyApplication.service.AnalyticsService;
-import com.taskifyApplication.service.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -17,16 +12,10 @@ import java.time.LocalDate;
 @RestController
 @RequestMapping("/api/analytics")
 @CrossOrigin(origins = "*")
+@RequiredArgsConstructor
 public class AnalyticsController {
 
-    @Autowired
-    private AnalyticsService analyticsService;
-    
-    @Autowired
-    private UserService userService;
-    
-    @Autowired
-    private WorkspaceRepository workspaceRepository;
+    private final AnalyticsService analyticsService;
 
 
     @GetMapping("/productivity")
@@ -45,8 +34,7 @@ public class AnalyticsController {
     public ResponseEntity<AnalyticsOverviewDto> getAnalyticsOverview(
             @RequestParam(required = false) Long workspaceId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
-            @RequestParam(defaultValue = "month") String period) {
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
 
         AnalyticsOverviewDto overview = analyticsService.getAnalyticsOverview(
                 workspaceId, startDate, endDate);

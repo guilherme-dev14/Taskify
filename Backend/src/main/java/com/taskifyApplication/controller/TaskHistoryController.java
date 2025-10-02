@@ -3,7 +3,7 @@ package com.taskifyApplication.controller;
 import com.taskifyApplication.dto.TaskDto.TaskHistoryDTO;
 import com.taskifyApplication.service.TaskHistoryService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -17,10 +17,10 @@ import java.util.List;
 @RequestMapping("/api/tasks/{taskId}/history")
 @CrossOrigin(origins = "http://localhost:5173")
 @SecurityRequirement(name = "bearerAuth")
+@RequiredArgsConstructor
 public class TaskHistoryController {
 
-    @Autowired
-    private TaskHistoryService taskHistoryService;
+    private final TaskHistoryService taskHistoryService;
 
     @GetMapping
     public ResponseEntity<List<TaskHistoryDTO>> getTaskHistory(@PathVariable Long taskId) {

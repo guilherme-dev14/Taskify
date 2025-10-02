@@ -3,7 +3,7 @@ package com.taskifyApplication.service;
 import com.taskifyApplication.exception.ResourceNotFoundException;
 import com.taskifyApplication.model.User;
 import com.taskifyApplication.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -11,10 +11,11 @@ import org.springframework.security.core.userdetails.User.UserBuilder;
 import org.springframework.stereotype.Service;
 
 @Service
+@RequiredArgsConstructor
 public class CustomUserDetailsService implements UserDetailsService {
     // region REPOSITORIES
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
+
     // endregion
 
     // region PUBLIC FUNCTION

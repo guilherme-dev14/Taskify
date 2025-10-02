@@ -7,6 +7,7 @@ import com.taskifyApplication.service.UserService;
 import com.taskifyApplication.model.User;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -23,13 +24,14 @@ import java.util.List;
 @RequestMapping("/api/workspace")
 @CrossOrigin(origins = "http://localhost:5173")
 @SecurityRequirement(name = "bearerAuth")
+@RequiredArgsConstructor
 public class WorkspaceController {
 
-    @Autowired
-    private WorkspaceService workspaceService;
+
+    private final WorkspaceService workspaceService;
     
-    @Autowired
-    private UserService userService;
+
+    private final UserService userService;
 
     @GetMapping
     public ResponseEntity<?> getWorkspacesFromUser(

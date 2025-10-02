@@ -14,7 +14,7 @@ import com.taskifyApplication.repository.TaskRepository;
 import com.taskifyApplication.repository.UserRepository;
 import com.taskifyApplication.repository.WorkspaceRepository;
 import jakarta.transaction.Transactional;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -24,19 +24,19 @@ import java.util.stream.Collectors;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class CategoryService {
 
     // region REPOSITORIES
-    @Autowired
-    private CategoryRepository categoryRepository;
-    @Autowired
-    private WorkspaceRepository workspaceRepository;
-    @Autowired
-    private UserRepository userRepository;
-    @Autowired
-    private TaskRepository taskRepository;
-    @Autowired
-    private ValidationService validationService;
+    private final CategoryRepository categoryRepository;
+
+    private final WorkspaceRepository workspaceRepository;
+
+    private final UserRepository userRepository;
+
+    private final TaskRepository taskRepository;
+
+    private final ValidationService validationService;
     // endregion
 
     // region CRUD

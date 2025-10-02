@@ -1,11 +1,9 @@
 package com.taskifyApplication.controller;
 
-import com.taskifyApplication.service.JwtService;
 import com.taskifyApplication.service.UserService;
 import com.taskifyApplication.model.User;
 import com.taskifyApplication.websocket.WebSocketSessionManager;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.messaging.handler.annotation.Header;
+import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -16,17 +14,14 @@ import java.security.Principal;
 import java.util.Map;
 
 @Controller
+@RequiredArgsConstructor
 public class WebSocketController {
 
-    @Autowired
-    private SimpMessagingTemplate messagingTemplate;
+    private final SimpMessagingTemplate messagingTemplate;
 
+    private final UserService userService;
 
-    @Autowired
-    private UserService userService;
-
-    @Autowired
-    private WebSocketSessionManager sessionManager;
+    private final WebSocketSessionManager sessionManager;
 
     @MessageMapping("/workspace.join")
     public void joinWorkspace(@Payload Map<String, Object> payload, Principal principal) {

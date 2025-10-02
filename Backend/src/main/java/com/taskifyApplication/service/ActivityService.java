@@ -32,20 +32,19 @@ import java.util.stream.Collectors;
 @Slf4j
 public class ActivityService {
 
-    @Autowired
-    private ActivityRepository activityRepository;
+    private final ActivityRepository activityRepository;
 
-    @Autowired
-    private SimpMessagingTemplate messagingTemplate;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    private final SimpMessagingTemplate messagingTemplate;
 
-    @Autowired
-    private UserRepository userRepository;
 
-    public Activity createActivity(String type, String title, String description,
-                                   User user, Task task, Workspace workspace, Map<String, Object> metadata) {
+    private final ObjectMapper objectMapper;
+
+
+    private final UserRepository userRepository;
+
+    public void createActivity(String type, String title, String description,
+                               User user, Task task, Workspace workspace, Map<String, Object> metadata) {
         Activity activity = new Activity(type, title, description, user);
         activity.setTask(task);
         activity.setWorkspace(workspace);
@@ -63,7 +62,6 @@ public class ActivityService {
 
         sendRealTimeUpdate(savedActivity);
 
-        return savedActivity;
     }
     private void sendRealTimeUpdate(Activity activity) {
         try {
@@ -203,42 +201,6 @@ public class ActivityService {
                 task,
                 task.getWorkspace(),
                 Map.of("taskId", task.getId())
-        );
-    }
-
-    public Activity logTaskDeleted(Task task, User user) {
-        return createActivity(
-                "task_deleted",
-                "Task Deleted",
-                "Deleted task: " + task.getTitle(),
-                user,
-                task,
-                task.getWorkspace(),
-                Map.of("taskId", task.getId())
-        );
-    }
-
-    public Activity logUserJoined(User user, Workspace workspace) {
-        return createActivity(
-                "user_joined",
-                "User Joined",
-                user.getName() + " joined the workspace",
-                user,
-                null,
-                workspace,
-                Map.of("workspaceId", workspace.getId())
-        );
-    }
-
-    public Activity logCommentAdded(Task task, User user, String comment) {
-        return createActivity(
-                "comment_added",
-                "Comment Added",
-                "Added comment on: " + task.getTitle(),
-                user,
-                task,
-                task.getWorkspace(),
-                Map.of("taskId", task.getId(), "comment", comment)
         );
     }
 }

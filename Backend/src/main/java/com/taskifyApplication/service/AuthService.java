@@ -9,6 +9,7 @@ import com.taskifyApplication.exception.InvalidFormatException;
 import com.taskifyApplication.model.User;
 import com.taskifyApplication.repository.UserRepository;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
@@ -22,26 +23,23 @@ import org.springframework.stereotype.Service;
 import static com.taskifyApplication.service.UserService.getUserDTO;
 
 @Service
+@RequiredArgsConstructor
 public class AuthService {
 
     // region REPOSITORIES
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
 
-    @Autowired
-    private JwtService jwtService;
+    private final JwtService jwtService;
 
-    @Autowired
-    private AuthenticationManager authenticationManager;
-    @Autowired
-    private CustomUserDetailsService userDetailsService;
-    @Autowired
-    private ValidationService validationService;
-    @Autowired
-    private EmailService emailService;
+    private final AuthenticationManager authenticationManager;
+
+    private final CustomUserDetailsService userDetailsService;
+
+    private final ValidationService validationService;
+
+    private final EmailService emailService;
 
     @Value("${spring.mail.from}")
     private String mailFrom;

@@ -50,7 +50,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ErrorResponseDTO> handleAccessDeniedException(AccessDeniedException ex, WebRequest request) {
+    public ResponseEntity<ErrorResponseDTO> handleAccessDeniedException(WebRequest request) {
         ErrorResponseDTO errorResponse = createErrorResponse(HttpStatus.FORBIDDEN, "You do not have permission to access this resource.", request);
         return new ResponseEntity<>(errorResponse, HttpStatus.FORBIDDEN);
     }

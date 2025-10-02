@@ -6,7 +6,7 @@ import com.taskifyApplication.dto.UserDto.CreateUserRequestDTO;
 import com.taskifyApplication.dto.UserDto.LoginRequestDTO;
 import com.taskifyApplication.service.AuthService;
 import com.taskifyApplication.service.PasswordResetService;
-import jakarta.servlet.http.HttpServletResponse; // Importar para o cookie
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

@@ -6,10 +6,9 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -19,13 +18,12 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 @Component
+@RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    @Autowired
-    private JwtService jwtService;
+    private final JwtService jwtService;
 
-    @Autowired
-    private CustomUserDetailsService userDetailsService;
+    private final CustomUserDetailsService userDetailsService;
 
     @Override
     protected void doFilterInternal(
@@ -68,17 +66,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 }
             }
-        } catch (io.jsonwebtoken.MalformedJwtException e) {
-            // Token JWT malformado - apenas continua sem autenticação
-            // O Spring Security irá tratar como não autenticado (403/401)
-        } catch (io.jsonwebtoken.ExpiredJwtException e) {
-            // Token JWT expirado - apenas continua sem autenticação
-        } catch (io.jsonwebtoken.UnsupportedJwtException e) {
-            // Token JWT não suportado - apenas continua sem autenticação
-        } catch (IllegalArgumentException e) {
-            // Token JWT vazio ou nulo - apenas continua sem autenticação
-        } catch (Exception e) {
-            // Qualquer outra exceção relacionada ao JWT - apenas continua sem autenticação
+        } catch (Exception ignored) {
+
         }
         
         filterChain.doFilter(request, response);

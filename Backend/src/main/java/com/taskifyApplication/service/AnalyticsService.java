@@ -5,16 +5,9 @@ import com.taskifyApplication.exception.ForbiddenException;
 import com.taskifyApplication.exception.ResourceNotFoundException;
 import com.taskifyApplication.model.Task;
 import com.taskifyApplication.model.User;
-import com.taskifyApplication.model.Workspace;
-import com.taskifyApplication.model.WorkspaceMember;
 import com.taskifyApplication.repository.TaskRepository;
-import com.taskifyApplication.repository.TimeTrackingRepository;
-import com.taskifyApplication.repository.UserRepository;
 import com.taskifyApplication.repository.WorkspaceRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -24,19 +17,18 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class AnalyticsService {
 
-    @Autowired
-    private TaskRepository taskRepository;
 
-    @Autowired
-    private UserService userService;
+    private final TaskRepository taskRepository;
 
-    @Autowired
-    private WorkspaceRepository workspaceRepository;
 
-    @Autowired
-    private TimeTrackingRepository timeTrackingRepository;
+    private final UserService userService;
+
+
+    private final WorkspaceRepository workspaceRepository;
+
 
     public ProductivityMetricsDto getProductivityMetrics(Long workspaceId, Long userId, LocalDate startDate, LocalDate endDate) {
 

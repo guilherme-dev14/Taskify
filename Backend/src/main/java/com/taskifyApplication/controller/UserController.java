@@ -1,13 +1,10 @@
 package com.taskifyApplication.controller;
 
 import com.taskifyApplication.dto.UserDto.*;
-import com.taskifyApplication.dto.ErrorResponseDTO;
-import com.taskifyApplication.model.User;
 import com.taskifyApplication.service.UserService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 
@@ -15,10 +12,10 @@ import jakarta.validation.Valid;
 @RequestMapping("/api/users")
 @CrossOrigin(origins = "http://localhost:5173")
 @SecurityRequirement(name = "bearerAuth")
+@RequiredArgsConstructor
 public class UserController {
 
-    @Autowired
-    private UserService userService;
+    private final UserService userService;
 
     @GetMapping("/profile")
     public ResponseEntity<?> getCurrentUser() {

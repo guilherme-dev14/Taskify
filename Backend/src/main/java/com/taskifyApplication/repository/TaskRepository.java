@@ -13,17 +13,7 @@ import java.util.List;
 
 @Repository
 public interface TaskRepository extends JpaRepository<Task, Long> {
-    @Query("SELECT t FROM Task t WHERE t.workspace = :workspace AND t.assignedTo = :user " +
-           "AND (:statusId IS NULL OR t.status.id = :statusId) " +
-           "AND (:priority IS NULL OR t.priority = :priority)")
-    List<Task> findByWorkspaceAndAssignedTo(@Param("workspace") Workspace workspace, 
-                                           @Param("user") User currentUser,
-                                           @Param("statusId") Long statusId,
-                                           @Param("priority") PriorityEnum priority);
-
     List<Task> findByAssignedTo(User assignedTo);
-
-    Page<Task> findByAssignedTo(User assignedTo, Pageable pageable);
 
     List<Task> findByWorkspace(Workspace workspace);
     
@@ -64,16 +54,6 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     Integer countByCategoryId(@Param("categoryId") Long categoryId);
 
     long countByStatus(TaskStatus status);
-
-    @Query("SELECT t FROM Task t WHERE t.assignedTo = :user " +
-           "AND (:workspaceId IS NULL OR t.workspace.id = :workspaceId) " +
-           "AND (:statusId IS NULL OR t.status.id = :statusId) " +
-           "AND (:priority IS NULL OR t.priority = :priority)")
-    Page<Task> findTasksWithFilters(@Param("user") User assignedTo,
-                                   @Param("workspaceId") Long workspaceId,
-                                   @Param("statusId") Long statusId,
-                                   @Param("priority") PriorityEnum priority,
-                                   Pageable pageable);
 
     @Query("SELECT DISTINCT t FROM Task t " +
            "JOIN t.workspace w " +
