@@ -48,7 +48,7 @@ public class NotificationOrchestratorService {
     }
 
     @Async("emailExecutor")
-    private void sendTaskAssignmentEmail(User assignee, User assigner, Task task) {
+    protected void sendTaskAssignmentEmail(User assignee, User assigner, Task task) {
         try {
             String dueDate = (task.getDueDate() != null) ? task.getDueDate().toString() : "N/A";
             String taskLink = frontendBaseUrl + "/workspaces/" + task.getWorkspace().getId() + "/tasks/" + task.getId();
@@ -93,7 +93,7 @@ public class NotificationOrchestratorService {
     }
 
     @Async("emailExecutor")
-    private void sendWorkspaceInviteEmail(User invitedUser, User inviter, Workspace workspace) {
+    protected void sendWorkspaceInviteEmail(User invitedUser, User inviter, Workspace workspace) {
         try {
             String inviteLink = frontendBaseUrl + "/workspaces/join?code=" + workspace.getInviteCode();
 
