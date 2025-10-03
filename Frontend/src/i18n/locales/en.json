@@ -8,7 +8,17 @@
     "search": "Search",
     "loading": "Loading...",
     "error": "Error",
-    "success": "Success"
+    "success": "Success",
+    "close": "Close",
+    "filter": "Filter",
+    "update": "Update",
+    "submit": "Submit",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "yes": "Yes",
+    "no": "No",
+    "confirm": "Confirm"
   },
   "nav": {
     "home": "Home",
@@ -22,17 +32,159 @@
     "logout": "Logout"
   },
   "auth": {
-    "login": "Login",
-    "register": "Register",
-    "email": "Email",
-    "password": "Password",
-    "confirmPassword": "Confirm Password",
-    "firstName": "First Name",
-    "lastName": "Last Name",
-    "forgotPassword": "Forgot password?",
-    "resetPassword": "Reset Password",
-    "alreadyHaveAccount": "Already have an account?",
-    "dontHaveAccount": "Don't have an account?"
+    "login": {
+      "title": "Welcome back to Taskify!",
+      "subtitle": "We're glad to see you again! Let's get you logged in.",
+      "signIn": "Sign In",
+      "enterCredentials": "Enter your credentials to continue",
+      "emailLabel": "Email",
+      "emailPlaceholder": "Enter your email",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "Enter your password",
+      "rememberMe": "Remember me",
+      "forgotPassword": "Forgot password?",
+      "validatingCredentials": "Validating credentials...",
+      "welcomeBack": "Welcome back!",
+      "successMessage": "You have successfully logged in!",
+      "loginDetails": "Login Details:",
+      "loginTime": "Login time:",
+      "status": "Status:",
+      "authenticated": "Authenticated",
+      "goToDashboard": "Go to Dashboard",
+      "dontHaveAccount": "Don't have an account? Sign up",
+      "invalidCredentials": "Invalid email or password. Please try again.",
+      "loginFailed": "Login Failed"
+    },
+    "register": {
+      "title": "Welcome to Taskify!",
+      "subtitle": "Let's start with a few steps to register your account!",
+      "personalInformation": "Personal Information",
+      "tellAboutYourself": "Tell us a little about yourself",
+      "firstNameLabel": "First Name",
+      "firstNamePlaceholder": "Enter your first name",
+      "lastNameLabel": "Last Name",
+      "lastNamePlaceholder": "Enter your last name (optional)",
+      "accountDetails": "Account Details",
+      "setupCredentials": "Set up your login credentials",
+      "emailLabel": "Email",
+      "emailPlaceholder": "Enter your email",
+      "usernameLabel": "Username",
+      "usernamePlaceholder": "Choose a username",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "Create a strong password",
+      "creatingAccount": "Creating account...",
+      "congratulations": "Congratulations!",
+      "accountCreated": "Your account was created successfully!",
+      "accountSummary": "Account Summary:",
+      "name": "Name:",
+      "username": "Username:",
+      "accountCreatedStatus": "Account Created",
+      "goToLogin": "Go to Login",
+      "alreadyHaveAccount": "Already have an account?",
+      "registrationFailed": "Registration failed. Please try again."
+    },
+    "validation": {
+      "usernameRequired": "Username is required",
+      "passwordRequired": "Password is required",
+      "emailRequired": "Email is required",
+      "emailInvalid": "Invalid Email",
+      "usernameMinLength": "Username need at least three characters",
+      "usernameMaxLength": "Username must be maximum 30 characters",
+      "passwordMinLength": "Password need at least 6 characters",
+      "firstNameRequired": "First name is required"
+    },
+    "stepper": {
+      "previous": "Previous",
+      "next": "Next"
+    }
+  },
+  "dashboard": {
+    "welcome": "Welcome to",
+    "appName": "Taskify",
+    "title": "Dashboard",
+    "subtitle": "Welcome back! Here's what's happening with your tasks.",
+    "stats": {
+      "totalTasks": "Total Tasks",
+      "toDoToday": "To do Today",
+      "inProgress": "In Progress",
+      "overdue": "Overdue"
+    },
+    "quickActions": "Quick Actions",
+    "actions": {
+      "createTask": {
+        "title": "Create New Task",
+        "description": "Add a new task to your workflow"
+      },
+      "newWorkspace": {
+        "title": "New Workspace",
+        "description": "Create a workspace for team collaboration"
+      },
+      "joinWorkspace": {
+        "title": "Join Workspace",
+        "description": "Join an existing workspace with invite code"
+      },
+      "viewCalendar": {
+        "title": "View Calendar",
+        "description": "Check your upcoming deadlines"
+      }
+    },
+    "typingText": {
+      "organize": "Organize your tasks efficiently",
+      "collaborate": "Collaborate with your team",
+      "track": "Track your progress",
+      "achieve": "Achieve your goals"
+    }
+  },
+  "kanban": {
+    "title": "Dynamic Kanban Board",
+    "subtitle": "Customize your workflow with dynamic status columns",
+    "searchPlaceholder": "Search tasks...",
+    "selectWorkspace": "Select Workspace",
+    "loadingTasks": "Loading tasks...",
+    "addTask": "Add task",
+    "addNewStatus": "+ New Status",
+    "statusNamePlaceholder": "Status name...",
+    "colorLabel": "Color:",
+    "untitled": "Untitled",
+    "cannotDeleteStatus": "Cannot delete status with tasks or in 'All Workspaces' view",
+    "confirmDeleteStatus": "Are you sure you want to delete this status?"
+  },
+  "calendar": {
+    "title": "Calendar",
+    "subtitle": "View and manage your tasks by date",
+    "filters": "Filters",
+    "newTask": "New Task",
+    "weekdays": {
+      "sunday": "Sunday",
+      "monday": "Monday",
+      "tuesday": "Tuesday",
+      "wednesday": "Wednesday",
+      "thursday": "Thursday",
+      "friday": "Friday",
+      "saturday": "Saturday"
+    },
+    "workspace": "Workspace",
+    "allWorkspaces": "All Workspaces",
+    "status": "Status",
+    "allStatus": "All Status",
+    "priority": "Priority",
+    "allPriorities": "All Priorities",
+    "priorities": {
+      "urgent": "Urgent",
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    },
+    "taskCount": {
+      "one": "task",
+      "other": "tasks"
+    },
+    "moreTasks": "+{{count}} more",
+    "noTasksForDate": "No tasks for this date",
+    "addTask": "Add Task",
+    "deleteTask": "Delete Task",
+    "deleteConfirmation": "Are you sure you want to delete this task? This action cannot be undone.",
+    "editTask": "Edit task"
   },
   "tasks": {
     "title": "Title",
@@ -47,11 +199,169 @@
     "deleteTask": "Delete Task",
     "allTasks": "All Tasks",
     "myTasks": "My Tasks",
+    "delete": "Delete",
+    "deleteConfirmation": "Are you sure you want to delete \"{{title}}\"? This action cannot be undone.",
+    "cancel": "Cancel",
     "priorities": {
       "LOW": "Low",
       "MEDIUM": "Medium",
       "HIGH": "High",
       "URGENT": "Urgent"
+    }
+  },
+  "modals": {
+    "newTask": {
+      "title": "Create New Task",
+      "subtitle": "Add a new task to your workflow",
+      "titleLabel": "Title",
+      "titlePlaceholder": "Enter task title...",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "Add a description...",
+      "workspaceLabel": "Workspace",
+      "workspacePlaceholder": "Select workspace",
+      "statusLabel": "Status",
+      "statusPlaceholder": "Select status",
+      "priorityLabel": "Priority",
+      "dueDateLabel": "Due Date",
+      "estimatedHoursLabel": "Estimated Hours",
+      "estimatedHoursPlaceholder": "e.g., 4.5",
+      "actualHoursLabel": "Actual Hours",
+      "actualHoursPlaceholder": "e.g., 5",
+      "categoriesLabel": "Categories",
+      "newCategory": "+ New Category",
+      "newCategoryPlaceholder": "New category name...",
+      "addCategory": "Add",
+      "attachmentsLabel": "Attachments",
+      "uploadFiles": "Click to upload files",
+      "maxFileSize": "Max 10MB each",
+      "loadingCategories": "Loading categories...",
+      "createButton": "Create Task",
+      "creating": "Creating...",
+      "cancelButton": "Cancel",
+      "errors": {
+        "titleRequired": "Title is required",
+        "workspaceRequired": "Workspace is required",
+        "statusRequired": "Status is required"
+      }
+    },
+    "taskDetails": {
+      "title": "Task Details",
+      "saved": "Saved {{time}}",
+      "saving": "Saving...",
+      "tabs": {
+        "details": "Details",
+        "notes": "Notes",
+        "timeTracking": "Time Tracking"
+      },
+      "fields": {
+        "title": "Title",
+        "titlePlaceholder": "Enter task title...",
+        "description": "Description",
+        "descriptionPlaceholder": "Describe the task...",
+        "noDescription": "No description provided",
+        "status": "Status",
+        "priority": "Priority",
+        "dueDate": "Due Date",
+        "noDueDate": "No due date set",
+        "workspace": "Workspace",
+        "noWorkspace": "No workspace assigned",
+        "estimatedHours": "Estimated Hours",
+        "estimatedHoursPlaceholder": "Hours",
+        "noEstimation": "{{hours}}h estimated",
+        "actualHours": "Actual Hours",
+        "actualHoursPlaceholder": "Hours",
+        "noTimeLogged": "{{hours}}h actual",
+        "assignedTo": "Assigned To",
+        "unassigned": "Unassigned",
+        "attachments": "Attachments ({{count}})",
+        "uploadingFiles": "Uploading files...",
+        "dropFilesHere": "Drop files here or",
+        "browse": "browse",
+        "maxFileSize": "Maximum file size: 10MB"
+      },
+      "statuses": {
+        "new": "New",
+        "inProgress": "In Progress",
+        "completed": "Completed",
+        "cancelled": "Cancelled"
+      },
+      "priorities": {
+        "low": "Low",
+        "medium": "Medium",
+        "high": "High",
+        "urgent": "Urgent"
+      },
+      "notes": {
+        "title": "Notes",
+        "placeholder": "Start writing your notes here...\nDocument your thoughts, research, and progress",
+        "characterCount": "{{count}} characters",
+        "emptyTitle": "Your digital notebook awaits",
+        "emptyMessage": "Click above to start documenting thoughts, research, progress updates, or anything related to this task."
+      },
+      "footer": {
+        "autoSaveEnabled": "Auto-save enabled",
+        "unsavedChanges": "Unsaved changes"
+      }
+    },
+    "newWorkspace": {
+      "title": "Create New Workspace",
+      "subtitle": "Add a new workspace to your organization",
+      "nameLabel": "Workspace Name",
+      "namePlaceholder": "Enter workspace name...",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "Describe your task...",
+      "cancelButton": "Cancel",
+      "createButton": "Create Workspace"
+    },
+    "joinWorkspace": {
+      "title": "Join Workspace",
+      "subtitle": "Enter an invite code to join a workspace",
+      "inviteCodeLabel": "Invite Code",
+      "inviteCodePlaceholder": "Enter 8-character invite code...",
+      "inviteCodeHint": "Invite codes are 8 characters long and case-insensitive",
+      "howToGetCode": "How to get an invite code:",
+      "steps": {
+        "step1": "Ask a workspace owner or admin to share the invite code",
+        "step2": "They can find it in their workspace sharing settings",
+        "step3": "Codes are unique to each workspace and can be regenerated"
+      },
+      "cancelButton": "Cancel",
+      "joinButton": "Join Workspace",
+      "joining": "Joining..."
+    },
+    "shareWorkspace": {
+      "title": "Share Workspace",
+      "subtitle": "Invite people to collaborate on \"{{name}}\"",
+      "tabs": {
+        "invite": "Invite People",
+        "inviteMobile": "Invite",
+        "members": "Members ({{count}})"
+      },
+      "inviteCode": {
+        "title": "Share Invite Code",
+        "description": "Anyone with this code can join your workspace as a member.",
+        "loading": "Loading...",
+        "copy": "Copy",
+        "copied": "Copied!",
+        "regenerate": "Regenerate"
+      },
+      "inviteByEmail": {
+        "title": "Invite by Email",
+        "description": "Send direct invitations to specific users.",
+        "emailPlaceholder": "Enter email address...",
+        "roleLabel": "Role",
+        "roles": {
+          "member": "Member",
+          "admin": "Admin"
+        },
+        "sendButton": "Send Invite",
+        "sending": "Sending..."
+      },
+      "members": {
+        "noMembers": "No members found",
+        "owner": "Owner",
+        "joined": "Joined {{date}}"
+      }
     }
   },
   "workspace": {
@@ -64,7 +374,87 @@
     "editWorkspace": "Edit Workspace",
     "deleteWorkspace": "Delete Workspace",
     "inviteMember": "Invite Member",
-    "allWorkspaces": "All Workspaces"
+    "allWorkspaces": "All Workspaces",
+    "management": {
+      "title": "Workspace Management",
+      "subtitle": "Manage your workspaces, members, and settings",
+      "newWorkspace": "New Workspace",
+      "searchPlaceholder": "Search workspaces...",
+      "stats": {
+        "members": "Members",
+        "tasks": "Tasks",
+        "created": "Created"
+      },
+      "actions": {
+        "editWorkspace": "Edit Workspace",
+        "deleteWorkspace": "Delete Workspace"
+      },
+      "deleteConfirmation": {
+        "title": "Delete Workspace",
+        "message": "Are you sure you want to delete this workspace? This action cannot be undone and will permanently delete all tasks and data.",
+        "cancel": "Cancel",
+        "delete": "Delete"
+      },
+      "pagination": {
+        "previous": "Previous",
+        "next": "Next",
+        "page": "Page {{current}} of {{total}}"
+      },
+      "empty": {
+        "title": "No workspaces found",
+        "searchMessage": "Try adjusting your search terms",
+        "createMessage": "Create your first workspace to get started",
+        "createButton": "Create Workspace"
+      },
+      "toast": {
+        "deleted": "Workspace deleted",
+        "deletedMessage": "The workspace \"{{name}}\" has been deleted successfully.",
+        "noPermission": "No permission",
+        "noPermissionMessage": "You are not authorized to delete this workspace.",
+        "notFound": "Workspace not found",
+        "notFoundMessage": "The workspace may have already been deleted.",
+        "error": "Unexpected error",
+        "errorMessage": "Failed to delete \"{{name}}\"."
+      }
+    }
+  },
+  "profile": {
+    "title": "Profile Settings",
+    "subtitle": "Manage your account settings and preferences",
+    "tabs": {
+      "general": "General",
+      "security": "Security"
+    },
+    "general": {
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "email": "Email",
+      "username": "Username",
+      "location": "Location",
+      "website": "Website",
+      "bio": "Bio",
+      "bioPlaceholder": "Tell us about yourself...",
+      "editProfile": "Edit Profile",
+      "saveChanges": "Save Changes",
+      "cancel": "Cancel"
+    },
+    "security": {
+      "changePassword": "Change Password",
+      "currentPassword": "Current Password",
+      "currentPasswordPlaceholder": "Enter current password",
+      "newPassword": "New Password",
+      "newPasswordPlaceholder": "Enter new password (min 6 characters)",
+      "confirmPassword": "Confirm New Password",
+      "confirmPasswordPlaceholder": "Confirm new password",
+      "updatePassword": "Update Password",
+      "updating": "Updating...",
+      "errors": {
+        "fillAll": "Please fill in all password fields",
+        "noMatch": "New passwords don't match",
+        "minLength": "New password must be at least 6 characters long"
+      },
+      "success": "Password changed successfully!"
+    }
   },
   "settings": {
     "title": "Settings",
@@ -104,5 +494,12 @@
     "signOut": "Sign out",
     "changesSaved": "Changes are saved automatically",
     "saved": "Saved"
+  },
+  "errors": {
+    "genericError": "An error occurred",
+    "networkError": "Network error. Please check your connection.",
+    "unauthorized": "Unauthorized access",
+    "notFound": "Resource not found",
+    "serverError": "Server error. Please try again later."
   }
 }

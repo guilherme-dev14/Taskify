@@ -10,13 +10,10 @@ import LightRays from "../../../components/Background/lightRays";
 import type { ILoginRequest } from "../../../types/auth.types";
 import { useAuthStore } from "../../../services/auth.store";
 import { useToast } from "../../../hooks/useToast";
-
-const validationSchema = yup.object().shape({
-  email: yup.string().required("Username is required"),
-  password: yup.string().required("Password is required"),
-});
+import { useTranslation } from 'react-i18next';
 
 export const Login = () => {
+  const { t } = useTranslation();
   const [currentStep, setCurrentStep] = useState(1);
   const [showErrors, setShowErrors] = useState(false);
   const [, setHasTriedToAdvance] = useState(false);
@@ -26,6 +23,12 @@ export const Login = () => {
   const navigate = useNavigate();
   const { login, isLoading } = useAuthStore();
   const { toast } = useToast();
+
+  const validationSchema = yup.object().shape({
+    email: yup.string().required(t('auth.validation.usernameRequired')),
+    password: yup.string().required(t('auth.validation.passwordRequired')),
+  });
+
   const {
     register,
     formState: { errors },
@@ -47,14 +50,14 @@ export const Login = () => {
     } catch (error: any) {
       const errorMessage =
         error.response?.data?.message ||
-        "Invalid email or password. Please try again.";
+        t('auth.login.invalidCredentials');
       setLoginError(errorMessage);
-      toast.error("Login Failed", errorMessage);
+      toast.error(t('auth.login.loginFailed'), errorMessage);
       setShowErrors(true);
       setIsLoginSuccessful(false);
       return false;
     }
-  }, [getValues, login, toast]);
+  }, [getValues, login, toast, t]);
 
   const handleBeforeStepChange = useCallback(
     async (currentStep: number, nextStep: number): Promise<boolean> => {
@@ -137,8 +140,8 @@ export const Login = () => {
               initialStep={1}
               onStepChange={setCurrentStep}
               onBeforeStepChange={handleBeforeStepChange}
-              backButtonText="Previous"
-              nextButtonText="Next"
+              backButtonText={t('auth.stepper.previous')}
+              nextButtonText={t('auth.stepper.next')}
               stepCircleContainerClassName="bg-gray-800/50 backdrop-blur-sm border-gray-700"
               contentClassName="min-h-[400px]"
               nextButtonProps={{
@@ -150,7 +153,7 @@ export const Login = () => {
                     to="/register"
                     className="px-6 py-3 bg-none border border-blue-500/30 text-blue-400 hover:bg-blue-500/20 rounded-lg hover:text-white font-semibold transition-all duration-300 hover:scale-105 shadow-2xl backdrop-blur-sm"
                   >
-                    Don't have an account? Sign up
+                    {t('auth.login.dontHaveAccount')}
                   </Link>
                 )
               }
@@ -159,13 +162,13 @@ export const Login = () => {
                 <div className="text-center space-y-8 py-8">
                   <div className="space-y-4">
                     <h2 className="text-4xl font-bold text-white">
-                      Welcome back to Taskify!
+                      {t('auth.login.title')}
                     </h2>
                   </div>
 
                   <div className="space-y-4">
                     <p className="text-gray-400">
-                      We're glad to see you again! Let's get you logged in.
+                      {t('auth.login.subtitle')}
                     </p>
                   </div>
                 </div>
@@ -175,10 +178,10 @@ export const Login = () => {
                 <div className="space-y-6 py-8">
                   <div className="text-center mb-8">
                     <h3 className="text-2xl font-bold text-white mb-2">
-                      Sign In
+                      {t('auth.login.signIn')}
                     </h3>
                     <p className="text-gray-400">
-                      Enter your credentials to continue
+                      {t('auth.login.enterCredentials')}
                     </p>
                   </div>
 
@@ -207,7 +210,7 @@ export const Login = () => {
                   <div className="space-y-6">
                     <div className="space-y-2">
                       <label className="block text-sm font-medium text-gray-300">
-                        Email *
+                        {t('auth.login.emailLabel')} *
                       </label>
                       <input
                         {...register("email")}
@@ -216,7 +219,7 @@ export const Login = () => {
                           handleInputChange("email")(e);
                         }}
                         type="email"
-                        placeholder="Enter your email"
+                        placeholder={t('auth.login.emailPlaceholder')}
                         disabled={isLoading}
                         className={`w-full px-4 py-3 bg-gray-800 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 transition-colors disabled:opacity-50 ${
                           showErrors && errors.email
@@ -246,7 +249,7 @@ export const Login = () => {
 
                     <div className="space-y-2">
                       <label className="block text-sm font-medium text-gray-300">
-                        Password *
+                        {t('auth.login.passwordLabel')} *
                       </label>
                       <input
                         {...register("password")}
@@ -255,7 +258,7 @@ export const Login = () => {
                           handleInputChange("password")(e);
                         }}
                         type="password"
-                        placeholder="Enter your password"
+                        placeholder={t('auth.login.passwordPlaceholder')}
                         disabled={isLoading}
                         className={`w-full px-4 py-3 bg-gray-800 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 transition-colors disabled:opacity-50 ${
                           showErrors && errors.password
@@ -295,14 +298,14 @@ export const Login = () => {
                           htmlFor="rememberMe"
                           className="text-sm text-gray-300"
                         >
-                          Remember me
+                          {t('auth.login.rememberMe')}
                         </label>
                       </div>
                       <Link
                         to="/forgot-password"
                         className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
                       >
-                        Forgot password?
+                        {t('auth.login.forgotPassword')}
                       </Link>
                     </div>
                   </div>
@@ -331,7 +334,7 @@ export const Login = () => {
                             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                           ></path>
                         </svg>
-                        <span>Validating credentials...</span>
+                        <span>{t('auth.login.validatingCredentials')}</span>
                       </div>
                     </div>
                   )}
@@ -342,34 +345,34 @@ export const Login = () => {
                 <div className="text-center space-y-8 py-8">
                   <div className="space-y-4">
                     <h3 className="text-3xl font-bold text-green-400">
-                      Welcome back!
+                      {t('auth.login.welcomeBack')}
                     </h3>
                     <p className="text-xl text-gray-300">
-                      You have successfully logged in!
+                      {t('auth.login.successMessage')}
                     </p>
                   </div>
 
                   <div className="bg-gray-800/50 backdrop-blur-sm p-6 rounded-lg border border-gray-700">
                     <h4 className="text-lg font-semibold mb-4 text-white">
-                      Login Details:
+                      {t('auth.login.loginDetails')}
                     </h4>
                     <div className="space-y-3 text-left">
                       <div className="flex items-center justify-between">
-                        <span className="text-gray-400">Email:</span>
+                        <span className="text-gray-400">{t('auth.login.emailLabel')}:</span>
                         <span className="text-blue-400 font-medium">
                           {getValues("email")}
                         </span>
                       </div>
 
                       <div className="flex items-center justify-between">
-                        <span className="text-gray-400">Login time:</span>
+                        <span className="text-gray-400">{t('auth.login.loginTime')}</span>
                         <span className="text-white font-medium">
                           {new Date().toLocaleTimeString()}
                         </span>
                       </div>
 
                       <div className="flex items-center justify-between">
-                        <span className="text-gray-400">Status:</span>
+                        <span className="text-gray-400">{t('auth.login.status')}</span>
                         <span className="text-green-400 font-medium flex items-center gap-1">
                           <svg
                             className="w-4 h-4"
@@ -384,7 +387,7 @@ export const Login = () => {
                               d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                             />
                           </svg>
-                          Authenticated
+                          {t('auth.login.authenticated')}
                         </span>
                       </div>
                     </div>
@@ -396,7 +399,7 @@ export const Login = () => {
                       onClick={handleDashboardRedirect}
                       className="w-full px-8 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg font-semibold transition-all duration-300 hover:scale-105 shadow-xl text-center"
                     >
-                      Go to Dashboard
+                      {t('auth.login.goToDashboard')}
                     </button>
                   </div>
                 </div>

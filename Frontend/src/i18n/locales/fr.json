@@ -8,7 +8,17 @@
     "search": "Rechercher",
     "loading": "Chargement...",
     "error": "Erreur",
-    "success": "Succès"
+    "success": "Succès",
+    "close": "Fermer",
+    "filter": "Filtrer",
+    "update": "Mettre à jour",
+    "submit": "Soumettre",
+    "back": "Retour",
+    "next": "Suivant",
+    "previous": "Précédent",
+    "yes": "Oui",
+    "no": "Non",
+    "confirm": "Confirmer"
   },
   "nav": {
     "home": "Accueil",
@@ -22,17 +32,159 @@
     "logout": "Se déconnecter"
   },
   "auth": {
-    "login": "Se connecter",
-    "register": "S'inscrire",
-    "email": "E-mail",
-    "password": "Mot de passe",
-    "confirmPassword": "Confirmer le mot de passe",
-    "firstName": "Prénom",
-    "lastName": "Nom de famille",
-    "forgotPassword": "Mot de passe oublié ?",
-    "resetPassword": "Réinitialiser le mot de passe",
-    "alreadyHaveAccount": "Vous avez déjà un compte ?",
-    "dontHaveAccount": "Vous n'avez pas de compte ?"
+    "login": {
+      "title": "Bienvenue sur Taskify !",
+      "subtitle": "Nous sommes heureux de vous revoir ! Connectons-vous.",
+      "signIn": "Se connecter",
+      "enterCredentials": "Entrez vos identifiants pour continuer",
+      "emailLabel": "E-mail",
+      "emailPlaceholder": "Entrez votre e-mail",
+      "passwordLabel": "Mot de passe",
+      "passwordPlaceholder": "Entrez votre mot de passe",
+      "rememberMe": "Se souvenir de moi",
+      "forgotPassword": "Mot de passe oublié ?",
+      "validatingCredentials": "Validation des identifiants...",
+      "welcomeBack": "Bienvenue !",
+      "successMessage": "Vous vous êtes connecté avec succès !",
+      "loginDetails": "Détails de la connexion :",
+      "loginTime": "Heure de connexion :",
+      "status": "Statut :",
+      "authenticated": "Authentifié",
+      "goToDashboard": "Aller au tableau de bord",
+      "dontHaveAccount": "Vous n'avez pas de compte ? Inscrivez-vous",
+      "invalidCredentials": "E-mail ou mot de passe invalide. Veuillez réessayer.",
+      "loginFailed": "Échec de la connexion"
+    },
+    "register": {
+      "title": "Bienvenue sur Taskify !",
+      "subtitle": "Commençons par quelques étapes pour créer votre compte !",
+      "personalInformation": "Informations personnelles",
+      "tellAboutYourself": "Parlez-nous un peu de vous",
+      "firstNameLabel": "Prénom",
+      "firstNamePlaceholder": "Entrez votre prénom",
+      "lastNameLabel": "Nom de famille",
+      "lastNamePlaceholder": "Entrez votre nom de famille (optionnel)",
+      "accountDetails": "Détails du compte",
+      "setupCredentials": "Configurez vos identifiants de connexion",
+      "emailLabel": "E-mail",
+      "emailPlaceholder": "Entrez votre e-mail",
+      "usernameLabel": "Nom d'utilisateur",
+      "usernamePlaceholder": "Choisissez un nom d'utilisateur",
+      "passwordLabel": "Mot de passe",
+      "passwordPlaceholder": "Créez un mot de passe fort",
+      "creatingAccount": "Création du compte...",
+      "congratulations": "Félicitations !",
+      "accountCreated": "Votre compte a été créé avec succès !",
+      "accountSummary": "Résumé du compte :",
+      "name": "Nom :",
+      "username": "Nom d'utilisateur :",
+      "accountCreatedStatus": "Compte créé",
+      "goToLogin": "Aller à la connexion",
+      "alreadyHaveAccount": "Vous avez déjà un compte ?",
+      "registrationFailed": "L'inscription a échoué. Veuillez réessayer."
+    },
+    "validation": {
+      "usernameRequired": "Le nom d'utilisateur est requis",
+      "passwordRequired": "Le mot de passe est requis",
+      "emailRequired": "L'e-mail est requis",
+      "emailInvalid": "E-mail invalide",
+      "usernameMinLength": "Le nom d'utilisateur doit comporter au moins trois caractères",
+      "usernameMaxLength": "Le nom d'utilisateur doit comporter au maximum 30 caractères",
+      "passwordMinLength": "Le mot de passe doit comporter au moins 6 caractères",
+      "firstNameRequired": "Le prénom est requis"
+    },
+    "stepper": {
+      "previous": "Précédent",
+      "next": "Suivant"
+    }
+  },
+  "dashboard": {
+    "welcome": "Bienvenue sur",
+    "appName": "Taskify",
+    "title": "Tableau de bord",
+    "subtitle": "Bienvenue ! Voici ce qui se passe avec vos tâches.",
+    "stats": {
+      "totalTasks": "Total des tâches",
+      "toDoToday": "À faire aujourd'hui",
+      "inProgress": "En cours",
+      "overdue": "En retard"
+    },
+    "quickActions": "Actions rapides",
+    "actions": {
+      "createTask": {
+        "title": "Créer une nouvelle tâche",
+        "description": "Ajoutez une nouvelle tâche à votre flux de travail"
+      },
+      "newWorkspace": {
+        "title": "Nouvel espace de travail",
+        "description": "Créez un espace de travail pour la collaboration en équipe"
+      },
+      "joinWorkspace": {
+        "title": "Rejoindre un espace de travail",
+        "description": "Rejoignez un espace de travail existant avec un code d'invitation"
+      },
+      "viewCalendar": {
+        "title": "Voir le calendrier",
+        "description": "Vérifiez vos échéances à venir"
+      }
+    },
+    "typingText": {
+      "organize": "Organisez vos tâches efficacement",
+      "collaborate": "Collaborez avec votre équipe",
+      "track": "Suivez votre progression",
+      "achieve": "Atteignez vos objectifs"
+    }
+  },
+  "kanban": {
+    "title": "Tableau Kanban dynamique",
+    "subtitle": "Personnalisez votre flux de travail avec des colonnes de statut dynamiques",
+    "searchPlaceholder": "Rechercher des tâches...",
+    "selectWorkspace": "Sélectionner un espace de travail",
+    "loadingTasks": "Chargement des tâches...",
+    "addTask": "Ajouter une tâche",
+    "addNewStatus": "+ Nouveau statut",
+    "statusNamePlaceholder": "Nom du statut...",
+    "colorLabel": "Couleur :",
+    "untitled": "Sans titre",
+    "cannotDeleteStatus": "Impossible de supprimer un statut avec des tâches ou dans la vue 'Tous les espaces de travail'",
+    "confirmDeleteStatus": "Êtes-vous sûr de vouloir supprimer ce statut ?"
+  },
+  "calendar": {
+    "title": "Calendrier",
+    "subtitle": "Visualisez et gérez vos tâches par date",
+    "filters": "Filtres",
+    "newTask": "Nouvelle tâche",
+    "weekdays": {
+      "sunday": "Dimanche",
+      "monday": "Lundi",
+      "tuesday": "Mardi",
+      "wednesday": "Mercredi",
+      "thursday": "Jeudi",
+      "friday": "Vendredi",
+      "saturday": "Samedi"
+    },
+    "workspace": "Espace de travail",
+    "allWorkspaces": "Tous les espaces de travail",
+    "status": "Statut",
+    "allStatus": "Tous les statuts",
+    "priority": "Priorité",
+    "allPriorities": "Toutes les priorités",
+    "priorities": {
+      "urgent": "Urgent",
+      "high": "Haute",
+      "medium": "Moyenne",
+      "low": "Basse"
+    },
+    "taskCount": {
+      "one": "tâche",
+      "other": "tâches"
+    },
+    "moreTasks": "+{{count}} de plus",
+    "noTasksForDate": "Aucune tâche pour cette date",
+    "addTask": "Ajouter une tâche",
+    "deleteTask": "Supprimer la tâche",
+    "deleteConfirmation": "Êtes-vous sûr de vouloir supprimer cette tâche ? Cette action ne peut pas être annulée.",
+    "editTask": "Modifier la tâche"
   },
   "tasks": {
     "title": "Titre",
@@ -47,11 +199,169 @@
     "deleteTask": "Supprimer la tâche",
     "allTasks": "Toutes les tâches",
     "myTasks": "Mes tâches",
+    "delete": "Supprimer",
+    "deleteConfirmation": "Êtes-vous sûr de vouloir supprimer \"{{title}}\" ? Cette action ne peut pas être annulée.",
+    "cancel": "Annuler",
     "priorities": {
       "LOW": "Basse",
       "MEDIUM": "Moyenne",
       "HIGH": "Haute",
       "URGENT": "Urgente"
+    }
+  },
+  "modals": {
+    "newTask": {
+      "title": "Créer une nouvelle tâche",
+      "subtitle": "Ajoutez une nouvelle tâche à votre flux de travail",
+      "titleLabel": "Titre",
+      "titlePlaceholder": "Entrez le titre de la tâche...",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "Ajoutez une description...",
+      "workspaceLabel": "Espace de travail",
+      "workspacePlaceholder": "Sélectionner l'espace de travail",
+      "statusLabel": "Statut",
+      "statusPlaceholder": "Sélectionner le statut",
+      "priorityLabel": "Priorité",
+      "dueDateLabel": "Date d'échéance",
+      "estimatedHoursLabel": "Heures estimées",
+      "estimatedHoursPlaceholder": "ex : 4.5",
+      "actualHoursLabel": "Heures réelles",
+      "actualHoursPlaceholder": "ex : 5",
+      "categoriesLabel": "Catégories",
+      "newCategory": "+ Nouvelle catégorie",
+      "newCategoryPlaceholder": "Nom de la nouvelle catégorie...",
+      "addCategory": "Ajouter",
+      "attachmentsLabel": "Pièces jointes",
+      "uploadFiles": "Cliquez pour télécharger des fichiers",
+      "maxFileSize": "Maximum 10 Mo chacun",
+      "loadingCategories": "Chargement des catégories...",
+      "createButton": "Créer la tâche",
+      "creating": "Création...",
+      "cancelButton": "Annuler",
+      "errors": {
+        "titleRequired": "Le titre est requis",
+        "workspaceRequired": "L'espace de travail est requis",
+        "statusRequired": "Le statut est requis"
+      }
+    },
+    "taskDetails": {
+      "title": "Détails de la tâche",
+      "saved": "Enregistré {{time}}",
+      "saving": "Enregistrement...",
+      "tabs": {
+        "details": "Détails",
+        "notes": "Notes",
+        "timeTracking": "Suivi du temps"
+      },
+      "fields": {
+        "title": "Titre",
+        "titlePlaceholder": "Entrez le titre de la tâche...",
+        "description": "Description",
+        "descriptionPlaceholder": "Décrivez la tâche...",
+        "noDescription": "Aucune description fournie",
+        "status": "Statut",
+        "priority": "Priorité",
+        "dueDate": "Date d'échéance",
+        "noDueDate": "Aucune date d'échéance définie",
+        "workspace": "Espace de travail",
+        "noWorkspace": "Aucun espace de travail attribué",
+        "estimatedHours": "Heures estimées",
+        "estimatedHoursPlaceholder": "Heures",
+        "noEstimation": "{{hours}}h estimées",
+        "actualHours": "Heures réelles",
+        "actualHoursPlaceholder": "Heures",
+        "noTimeLogged": "{{hours}}h réelles",
+        "assignedTo": "Assigné à",
+        "unassigned": "Non assigné",
+        "attachments": "Pièces jointes ({{count}})",
+        "uploadingFiles": "Téléchargement des fichiers...",
+        "dropFilesHere": "Déposez les fichiers ici ou",
+        "browse": "parcourir",
+        "maxFileSize": "Taille maximale du fichier : 10 Mo"
+      },
+      "statuses": {
+        "new": "Nouveau",
+        "inProgress": "En cours",
+        "completed": "Terminé",
+        "cancelled": "Annulé"
+      },
+      "priorities": {
+        "low": "Basse",
+        "medium": "Moyenne",
+        "high": "Haute",
+        "urgent": "Urgent"
+      },
+      "notes": {
+        "title": "Notes",
+        "placeholder": "Commencez à écrire vos notes ici...\nDocumentez vos pensées, recherches et progrès",
+        "characterCount": "{{count}} caractères",
+        "emptyTitle": "Votre carnet numérique vous attend",
+        "emptyMessage": "Cliquez ci-dessus pour commencer à documenter vos pensées, recherches, mises à jour de progression ou tout ce qui concerne cette tâche."
+      },
+      "footer": {
+        "autoSaveEnabled": "Sauvegarde automatique activée",
+        "unsavedChanges": "Modifications non enregistrées"
+      }
+    },
+    "newWorkspace": {
+      "title": "Créer un nouvel espace de travail",
+      "subtitle": "Ajoutez un nouvel espace de travail à votre organisation",
+      "nameLabel": "Nom de l'espace de travail",
+      "namePlaceholder": "Entrez le nom de l'espace de travail...",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "Décrivez votre tâche...",
+      "cancelButton": "Annuler",
+      "createButton": "Créer l'espace de travail"
+    },
+    "joinWorkspace": {
+      "title": "Rejoindre un espace de travail",
+      "subtitle": "Entrez un code d'invitation pour rejoindre un espace de travail",
+      "inviteCodeLabel": "Code d'invitation",
+      "inviteCodePlaceholder": "Entrez le code d'invitation à 8 caractères...",
+      "inviteCodeHint": "Les codes d'invitation comportent 8 caractères et ne sont pas sensibles à la casse",
+      "howToGetCode": "Comment obtenir un code d'invitation :",
+      "steps": {
+        "step1": "Demandez au propriétaire ou à l'administrateur de l'espace de travail de partager le code d'invitation",
+        "step2": "Ils peuvent le trouver dans les paramètres de partage de leur espace de travail",
+        "step3": "Les codes sont uniques à chaque espace de travail et peuvent être régénérés"
+      },
+      "cancelButton": "Annuler",
+      "joinButton": "Rejoindre l'espace de travail",
+      "joining": "Rejoindre..."
+    },
+    "shareWorkspace": {
+      "title": "Partager l'espace de travail",
+      "subtitle": "Invitez des personnes à collaborer sur \"{{name}}\"",
+      "tabs": {
+        "invite": "Inviter des personnes",
+        "inviteMobile": "Inviter",
+        "members": "Membres ({{count}})"
+      },
+      "inviteCode": {
+        "title": "Partager le code d'invitation",
+        "description": "Toute personne possédant ce code peut rejoindre votre espace de travail en tant que membre.",
+        "loading": "Chargement...",
+        "copy": "Copier",
+        "copied": "Copié !",
+        "regenerate": "Régénérer"
+      },
+      "inviteByEmail": {
+        "title": "Inviter par e-mail",
+        "description": "Envoyez des invitations directes à des utilisateurs spécifiques.",
+        "emailPlaceholder": "Entrez l'adresse e-mail...",
+        "roleLabel": "Rôle",
+        "roles": {
+          "member": "Membre",
+          "admin": "Administrateur"
+        },
+        "sendButton": "Envoyer l'invitation",
+        "sending": "Envoi..."
+      },
+      "members": {
+        "noMembers": "Aucun membre trouvé",
+        "owner": "Propriétaire",
+        "joined": "Rejoint le {{date}}"
+      }
     }
   },
   "workspace": {
@@ -64,7 +374,87 @@
     "editWorkspace": "Modifier l'espace de travail",
     "deleteWorkspace": "Supprimer l'espace de travail",
     "inviteMember": "Inviter un membre",
-    "allWorkspaces": "Tous les espaces de travail"
+    "allWorkspaces": "Tous les espaces de travail",
+    "management": {
+      "title": "Gestion des espaces de travail",
+      "subtitle": "Gérez vos espaces de travail, membres et paramètres",
+      "newWorkspace": "Nouvel espace de travail",
+      "searchPlaceholder": "Rechercher des espaces de travail...",
+      "stats": {
+        "members": "Membres",
+        "tasks": "Tâches",
+        "created": "Créé"
+      },
+      "actions": {
+        "editWorkspace": "Modifier l'espace de travail",
+        "deleteWorkspace": "Supprimer l'espace de travail"
+      },
+      "deleteConfirmation": {
+        "title": "Supprimer l'espace de travail",
+        "message": "Êtes-vous sûr de vouloir supprimer cet espace de travail ? Cette action ne peut pas être annulée et supprimera définitivement toutes les tâches et données.",
+        "cancel": "Annuler",
+        "delete": "Supprimer"
+      },
+      "pagination": {
+        "previous": "Précédent",
+        "next": "Suivant",
+        "page": "Page {{current}} sur {{total}}"
+      },
+      "empty": {
+        "title": "Aucun espace de travail trouvé",
+        "searchMessage": "Essayez d'ajuster vos termes de recherche",
+        "createMessage": "Créez votre premier espace de travail pour commencer",
+        "createButton": "Créer un espace de travail"
+      },
+      "toast": {
+        "deleted": "Espace de travail supprimé",
+        "deletedMessage": "L'espace de travail \"{{name}}\" a été supprimé avec succès.",
+        "noPermission": "Aucune autorisation",
+        "noPermissionMessage": "Vous n'êtes pas autorisé à supprimer cet espace de travail.",
+        "notFound": "Espace de travail introuvable",
+        "notFoundMessage": "L'espace de travail a peut-être déjà été supprimé.",
+        "error": "Erreur inattendue",
+        "errorMessage": "Échec de la suppression de \"{{name}}\"."
+      }
+    }
+  },
+  "profile": {
+    "title": "Paramètres du profil",
+    "subtitle": "Gérez les paramètres et les préférences de votre compte",
+    "tabs": {
+      "general": "Général",
+      "security": "Sécurité"
+    },
+    "general": {
+      "firstName": "Prénom",
+      "lastName": "Nom de famille",
+      "email": "E-mail",
+      "username": "Nom d'utilisateur",
+      "location": "Localisation",
+      "website": "Site web",
+      "bio": "Biographie",
+      "bioPlaceholder": "Parlez-nous de vous...",
+      "editProfile": "Modifier le profil",
+      "saveChanges": "Enregistrer les modifications",
+      "cancel": "Annuler"
+    },
+    "security": {
+      "changePassword": "Changer le mot de passe",
+      "currentPassword": "Mot de passe actuel",
+      "currentPasswordPlaceholder": "Entrez le mot de passe actuel",
+      "newPassword": "Nouveau mot de passe",
+      "newPasswordPlaceholder": "Entrez le nouveau mot de passe (min 6 caractères)",
+      "confirmPassword": "Confirmer le nouveau mot de passe",
+      "confirmPasswordPlaceholder": "Confirmez le nouveau mot de passe",
+      "updatePassword": "Mettre à jour le mot de passe",
+      "updating": "Mise à jour...",
+      "errors": {
+        "fillAll": "Veuillez remplir tous les champs de mot de passe",
+        "noMatch": "Les nouveaux mots de passe ne correspondent pas",
+        "minLength": "Le nouveau mot de passe doit comporter au moins 6 caractères"
+      },
+      "success": "Mot de passe modifié avec succès !"
+    }
   },
   "settings": {
     "title": "Paramètres",
@@ -81,28 +471,35 @@
     "system": "Système",
     "light": "Clair",
     "dark": "Sombre",
-    "emailNotifications": "Notifications par E-mail",
+    "emailNotifications": "Notifications par e-mail",
     "emailNotificationsDescription": "Recevoir des notifications par e-mail",
     "pushNotifications": "Notifications Push",
     "pushNotificationsDescription": "Recevoir des notifications push du navigateur",
-    "taskReminders": "Rappels de Tâches",
+    "taskReminders": "Rappels de tâches",
     "taskRemindersDescription": "Recevoir des rappels sur les échéances à venir",
-    "teamUpdates": "Mises à Jour de l'Équipe",
+    "teamUpdates": "Mises à jour de l'équipe",
     "teamUpdatesDescription": "Notifications sur l'activité de l'équipe",
-    "weeklyReports": "Rapports Hebdomadaires",
+    "weeklyReports": "Rapports hebdomadaires",
     "weeklyReportsDescription": "Recevoir des résumés hebdomadaires de productivité",
-    "generalSettings": "Paramètres Généraux",
-    "appearanceSettings": "Paramètres d'Apparence",
-    "notificationSettings": "Paramètres de Notification",
-    "dangerZone": "Zone de Danger",
-    "deleteAccount": "Supprimer le Compte",
-    "deleteAccountDescription": "Supprimer définitivement votre compte et toutes les données associées. Cette action ne peut pas être annulée.",
-    "deleteAccountButton": "Supprimer le Compte",
-    "deleteConfirmation": "Tapez \"DELETE\" pour confirmer:",
-    "confirmDelete": "Confirmer la Suppression",
-    "quickActions": "Actions Rapides",
+    "generalSettings": "Paramètres généraux",
+    "appearanceSettings": "Paramètres d'apparence",
+    "notificationSettings": "Paramètres de notification",
+    "dangerZone": "Zone de danger",
+    "deleteAccount": "Supprimer le compte",
+    "deleteAccountDescription": "Supprimez définitivement votre compte et toutes les données associées. Cette action ne peut pas être annulée.",
+    "deleteAccountButton": "Supprimer le compte",
+    "deleteConfirmation": "Tapez \"DELETE\" pour confirmer :",
+    "confirmDelete": "Confirmer la suppression",
+    "quickActions": "Actions rapides",
     "signOut": "Se déconnecter",
     "changesSaved": "Les modifications sont enregistrées automatiquement",
     "saved": "Enregistré"
+  },
+  "errors": {
+    "genericError": "Une erreur s'est produite",
+    "networkError": "Erreur réseau. Veuillez vérifier votre connexion.",
+    "unauthorized": "Accès non autorisé",
+    "notFound": "Ressource introuvable",
+    "serverError": "Erreur du serveur. Veuillez réessayer plus tard."
   }
 }

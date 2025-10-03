@@ -8,7 +8,17 @@
     "search": "Pesquisar",
     "loading": "Carregando...",
     "error": "Erro",
-    "success": "Sucesso"
+    "success": "Sucesso",
+    "close": "Fechar",
+    "filter": "Filtrar",
+    "update": "Atualizar",
+    "submit": "Enviar",
+    "back": "Voltar",
+    "next": "Próximo",
+    "previous": "Anterior",
+    "yes": "Sim",
+    "no": "Não",
+    "confirm": "Confirmar"
   },
   "nav": {
     "home": "Início",
@@ -22,17 +32,159 @@
     "logout": "Sair"
   },
   "auth": {
-    "login": "Entrar",
-    "register": "Cadastrar",
-    "email": "E-mail",
-    "password": "Senha",
-    "confirmPassword": "Confirmar Senha",
-    "firstName": "Nome",
-    "lastName": "Sobrenome",
-    "forgotPassword": "Esqueceu a senha?",
-    "resetPassword": "Redefinir Senha",
-    "alreadyHaveAccount": "Já tem uma conta?",
-    "dontHaveAccount": "Não tem uma conta?"
+    "login": {
+      "title": "Bem-vindo de volta ao Taskify!",
+      "subtitle": "Estamos felizes em vê-lo novamente! Vamos fazer seu login.",
+      "signIn": "Entrar",
+      "enterCredentials": "Digite suas credenciais para continuar",
+      "emailLabel": "E-mail",
+      "emailPlaceholder": "Digite seu e-mail",
+      "passwordLabel": "Senha",
+      "passwordPlaceholder": "Digite sua senha",
+      "rememberMe": "Lembrar de mim",
+      "forgotPassword": "Esqueceu a senha?",
+      "validatingCredentials": "Validando credenciais...",
+      "welcomeBack": "Bem-vindo de volta!",
+      "successMessage": "Você fez login com sucesso!",
+      "loginDetails": "Detalhes do Login:",
+      "loginTime": "Horário de login:",
+      "status": "Status:",
+      "authenticated": "Autenticado",
+      "goToDashboard": "Ir para o Dashboard",
+      "dontHaveAccount": "Não tem uma conta? Cadastre-se",
+      "invalidCredentials": "E-mail ou senha inválidos. Por favor, tente novamente.",
+      "loginFailed": "Falha no Login"
+    },
+    "register": {
+      "title": "Bem-vindo ao Taskify!",
+      "subtitle": "Vamos começar com alguns passos para registrar sua conta!",
+      "personalInformation": "Informações Pessoais",
+      "tellAboutYourself": "Conte-nos um pouco sobre você",
+      "firstNameLabel": "Nome",
+      "firstNamePlaceholder": "Digite seu nome",
+      "lastNameLabel": "Sobrenome",
+      "lastNamePlaceholder": "Digite seu sobrenome (opcional)",
+      "accountDetails": "Detalhes da Conta",
+      "setupCredentials": "Configure suas credenciais de login",
+      "emailLabel": "E-mail",
+      "emailPlaceholder": "Digite seu e-mail",
+      "usernameLabel": "Nome de usuário",
+      "usernamePlaceholder": "Escolha um nome de usuário",
+      "passwordLabel": "Senha",
+      "passwordPlaceholder": "Crie uma senha forte",
+      "creatingAccount": "Criando conta...",
+      "congratulations": "Parabéns!",
+      "accountCreated": "Sua conta foi criada com sucesso!",
+      "accountSummary": "Resumo da Conta:",
+      "name": "Nome:",
+      "username": "Nome de usuário:",
+      "accountCreatedStatus": "Conta Criada",
+      "goToLogin": "Ir para o Login",
+      "alreadyHaveAccount": "Já tem uma conta?",
+      "registrationFailed": "Falha no registro. Por favor, tente novamente."
+    },
+    "validation": {
+      "usernameRequired": "Nome de usuário é obrigatório",
+      "passwordRequired": "Senha é obrigatória",
+      "emailRequired": "E-mail é obrigatório",
+      "emailInvalid": "E-mail inválido",
+      "usernameMinLength": "Nome de usuário precisa de pelo menos três caracteres",
+      "usernameMaxLength": "Nome de usuário deve ter no máximo 30 caracteres",
+      "passwordMinLength": "Senha precisa de pelo menos 6 caracteres",
+      "firstNameRequired": "Nome é obrigatório"
+    },
+    "stepper": {
+      "previous": "Anterior",
+      "next": "Próximo"
+    }
+  },
+  "dashboard": {
+    "welcome": "Bem-vindo ao",
+    "appName": "Taskify",
+    "title": "Dashboard",
+    "subtitle": "Bem-vindo de volta! Aqui está o que está acontecendo com suas tarefas.",
+    "stats": {
+      "totalTasks": "Total de Tarefas",
+      "toDoToday": "Para Fazer Hoje",
+      "inProgress": "Em Andamento",
+      "overdue": "Atrasadas"
+    },
+    "quickActions": "Ações Rápidas",
+    "actions": {
+      "createTask": {
+        "title": "Criar Nova Tarefa",
+        "description": "Adicione uma nova tarefa ao seu fluxo de trabalho"
+      },
+      "newWorkspace": {
+        "title": "Novo Workspace",
+        "description": "Crie um workspace para colaboração em equipe"
+      },
+      "joinWorkspace": {
+        "title": "Entrar no Workspace",
+        "description": "Entre em um workspace existente com código de convite"
+      },
+      "viewCalendar": {
+        "title": "Ver Calendário",
+        "description": "Verifique seus prazos futuros"
+      }
+    },
+    "typingText": {
+      "organize": "Organize suas tarefas eficientemente",
+      "collaborate": "Colabore com sua equipe",
+      "track": "Acompanhe seu progresso",
+      "achieve": "Alcance seus objetivos"
+    }
+  },
+  "kanban": {
+    "title": "Quadro Kanban Dinâmico",
+    "subtitle": "Personalize seu fluxo de trabalho com colunas de status dinâmicas",
+    "searchPlaceholder": "Pesquisar tarefas...",
+    "selectWorkspace": "Selecionar Workspace",
+    "loadingTasks": "Carregando tarefas...",
+    "addTask": "Adicionar tarefa",
+    "addNewStatus": "+ Novo Status",
+    "statusNamePlaceholder": "Nome do status...",
+    "colorLabel": "Cor:",
+    "untitled": "Sem título",
+    "cannotDeleteStatus": "Não é possível excluir status com tarefas ou na visualização 'Todos os Workspaces'",
+    "confirmDeleteStatus": "Tem certeza que deseja excluir este status?"
+  },
+  "calendar": {
+    "title": "Calendário",
+    "subtitle": "Visualize e gerencie suas tarefas por data",
+    "filters": "Filtros",
+    "newTask": "Nova Tarefa",
+    "weekdays": {
+      "sunday": "Domingo",
+      "monday": "Segunda",
+      "tuesday": "Terça",
+      "wednesday": "Quarta",
+      "thursday": "Quinta",
+      "friday": "Sexta",
+      "saturday": "Sábado"
+    },
+    "workspace": "Workspace",
+    "allWorkspaces": "Todos os Workspaces",
+    "status": "Status",
+    "allStatus": "Todos os Status",
+    "priority": "Prioridade",
+    "allPriorities": "Todas as Prioridades",
+    "priorities": {
+      "urgent": "Urgente",
+      "high": "Alta",
+      "medium": "Média",
+      "low": "Baixa"
+    },
+    "taskCount": {
+      "one": "tarefa",
+      "other": "tarefas"
+    },
+    "moreTasks": "+{{count}} mais",
+    "noTasksForDate": "Nenhuma tarefa para esta data",
+    "addTask": "Adicionar Tarefa",
+    "deleteTask": "Excluir Tarefa",
+    "deleteConfirmation": "Tem certeza que deseja excluir esta tarefa? Esta ação não pode ser desfeita.",
+    "editTask": "Editar tarefa"
   },
   "tasks": {
     "title": "Título",
@@ -47,11 +199,169 @@
     "deleteTask": "Excluir Tarefa",
     "allTasks": "Todas as Tarefas",
     "myTasks": "Minhas Tarefas",
+    "delete": "Excluir",
+    "deleteConfirmation": "Tem certeza que deseja excluir \"{{title}}\"? Esta ação não pode ser desfeita.",
+    "cancel": "Cancelar",
     "priorities": {
       "LOW": "Baixa",
       "MEDIUM": "Média",
       "HIGH": "Alta",
       "URGENT": "Urgente"
+    }
+  },
+  "modals": {
+    "newTask": {
+      "title": "Criar Nova Tarefa",
+      "subtitle": "Adicione uma nova tarefa ao seu fluxo de trabalho",
+      "titleLabel": "Título",
+      "titlePlaceholder": "Digite o título da tarefa...",
+      "descriptionLabel": "Descrição",
+      "descriptionPlaceholder": "Adicione uma descrição...",
+      "workspaceLabel": "Workspace",
+      "workspacePlaceholder": "Selecione o workspace",
+      "statusLabel": "Status",
+      "statusPlaceholder": "Selecione o status",
+      "priorityLabel": "Prioridade",
+      "dueDateLabel": "Data de Vencimento",
+      "estimatedHoursLabel": "Horas Estimadas",
+      "estimatedHoursPlaceholder": "ex: 4.5",
+      "actualHoursLabel": "Horas Reais",
+      "actualHoursPlaceholder": "ex: 5",
+      "categoriesLabel": "Categorias",
+      "newCategory": "+ Nova Categoria",
+      "newCategoryPlaceholder": "Nome da nova categoria...",
+      "addCategory": "Adicionar",
+      "attachmentsLabel": "Anexos",
+      "uploadFiles": "Clique para fazer upload de arquivos",
+      "maxFileSize": "Máximo de 10MB cada",
+      "loadingCategories": "Carregando categorias...",
+      "createButton": "Criar Tarefa",
+      "creating": "Criando...",
+      "cancelButton": "Cancelar",
+      "errors": {
+        "titleRequired": "Título é obrigatório",
+        "workspaceRequired": "Workspace é obrigatório",
+        "statusRequired": "Status é obrigatório"
+      }
+    },
+    "taskDetails": {
+      "title": "Detalhes da Tarefa",
+      "saved": "Salvo {{time}}",
+      "saving": "Salvando...",
+      "tabs": {
+        "details": "Detalhes",
+        "notes": "Notas",
+        "timeTracking": "Controle de Tempo"
+      },
+      "fields": {
+        "title": "Título",
+        "titlePlaceholder": "Digite o título da tarefa...",
+        "description": "Descrição",
+        "descriptionPlaceholder": "Descreva a tarefa...",
+        "noDescription": "Nenhuma descrição fornecida",
+        "status": "Status",
+        "priority": "Prioridade",
+        "dueDate": "Data de Vencimento",
+        "noDueDate": "Nenhuma data de vencimento definida",
+        "workspace": "Workspace",
+        "noWorkspace": "Nenhum workspace atribuído",
+        "estimatedHours": "Horas Estimadas",
+        "estimatedHoursPlaceholder": "Horas",
+        "noEstimation": "{{hours}}h estimadas",
+        "actualHours": "Horas Reais",
+        "actualHoursPlaceholder": "Horas",
+        "noTimeLogged": "{{hours}}h reais",
+        "assignedTo": "Atribuído a",
+        "unassigned": "Não atribuído",
+        "attachments": "Anexos ({{count}})",
+        "uploadingFiles": "Fazendo upload de arquivos...",
+        "dropFilesHere": "Solte os arquivos aqui ou",
+        "browse": "procurar",
+        "maxFileSize": "Tamanho máximo do arquivo: 10MB"
+      },
+      "statuses": {
+        "new": "Novo",
+        "inProgress": "Em Andamento",
+        "completed": "Concluído",
+        "cancelled": "Cancelado"
+      },
+      "priorities": {
+        "low": "Baixa",
+        "medium": "Média",
+        "high": "Alta",
+        "urgent": "Urgente"
+      },
+      "notes": {
+        "title": "Notas",
+        "placeholder": "Comece a escrever suas notas aqui...\nDocumente seus pensamentos, pesquisas e progresso",
+        "characterCount": "{{count}} caracteres",
+        "emptyTitle": "Seu caderno digital aguarda",
+        "emptyMessage": "Clique acima para começar a documentar pensamentos, pesquisas, atualizações de progresso ou qualquer coisa relacionada a esta tarefa."
+      },
+      "footer": {
+        "autoSaveEnabled": "Salvamento automático ativado",
+        "unsavedChanges": "Alterações não salvas"
+      }
+    },
+    "newWorkspace": {
+      "title": "Criar Novo Workspace",
+      "subtitle": "Adicione um novo workspace à sua organização",
+      "nameLabel": "Nome do Workspace",
+      "namePlaceholder": "Digite o nome do workspace...",
+      "descriptionLabel": "Descrição",
+      "descriptionPlaceholder": "Descreva sua tarefa...",
+      "cancelButton": "Cancelar",
+      "createButton": "Criar Workspace"
+    },
+    "joinWorkspace": {
+      "title": "Entrar no Workspace",
+      "subtitle": "Digite um código de convite para entrar em um workspace",
+      "inviteCodeLabel": "Código de Convite",
+      "inviteCodePlaceholder": "Digite o código de convite de 8 caracteres...",
+      "inviteCodeHint": "Os códigos de convite têm 8 caracteres e não diferenciam maiúsculas de minúsculas",
+      "howToGetCode": "Como obter um código de convite:",
+      "steps": {
+        "step1": "Peça ao proprietário ou administrador do workspace para compartilhar o código de convite",
+        "step2": "Eles podem encontrá-lo nas configurações de compartilhamento do workspace",
+        "step3": "Os códigos são únicos para cada workspace e podem ser regenerados"
+      },
+      "cancelButton": "Cancelar",
+      "joinButton": "Entrar no Workspace",
+      "joining": "Entrando..."
+    },
+    "shareWorkspace": {
+      "title": "Compartilhar Workspace",
+      "subtitle": "Convide pessoas para colaborar em \"{{name}}\"",
+      "tabs": {
+        "invite": "Convidar Pessoas",
+        "inviteMobile": "Convidar",
+        "members": "Membros ({{count}})"
+      },
+      "inviteCode": {
+        "title": "Compartilhar Código de Convite",
+        "description": "Qualquer pessoa com este código pode entrar no seu workspace como membro.",
+        "loading": "Carregando...",
+        "copy": "Copiar",
+        "copied": "Copiado!",
+        "regenerate": "Regenerar"
+      },
+      "inviteByEmail": {
+        "title": "Convidar por E-mail",
+        "description": "Envie convites diretos para usuários específicos.",
+        "emailPlaceholder": "Digite o endereço de e-mail...",
+        "roleLabel": "Função",
+        "roles": {
+          "member": "Membro",
+          "admin": "Administrador"
+        },
+        "sendButton": "Enviar Convite",
+        "sending": "Enviando..."
+      },
+      "members": {
+        "noMembers": "Nenhum membro encontrado",
+        "owner": "Proprietário",
+        "joined": "Entrou em {{date}}"
+      }
     }
   },
   "workspace": {
@@ -64,7 +374,87 @@
     "editWorkspace": "Editar Workspace",
     "deleteWorkspace": "Excluir Workspace",
     "inviteMember": "Convidar Membro",
-    "allWorkspaces": "Todos os Workspaces"
+    "allWorkspaces": "Todos os Workspaces",
+    "management": {
+      "title": "Gerenciamento de Workspaces",
+      "subtitle": "Gerencie seus workspaces, membros e configurações",
+      "newWorkspace": "Novo Workspace",
+      "searchPlaceholder": "Pesquisar workspaces...",
+      "stats": {
+        "members": "Membros",
+        "tasks": "Tarefas",
+        "created": "Criado"
+      },
+      "actions": {
+        "editWorkspace": "Editar Workspace",
+        "deleteWorkspace": "Excluir Workspace"
+      },
+      "deleteConfirmation": {
+        "title": "Excluir Workspace",
+        "message": "Tem certeza que deseja excluir este workspace? Esta ação não pode ser desfeita e irá excluir permanentemente todas as tarefas e dados.",
+        "cancel": "Cancelar",
+        "delete": "Excluir"
+      },
+      "pagination": {
+        "previous": "Anterior",
+        "next": "Próximo",
+        "page": "Página {{current}} de {{total}}"
+      },
+      "empty": {
+        "title": "Nenhum workspace encontrado",
+        "searchMessage": "Tente ajustar seus termos de pesquisa",
+        "createMessage": "Crie seu primeiro workspace para começar",
+        "createButton": "Criar Workspace"
+      },
+      "toast": {
+        "deleted": "Workspace excluído",
+        "deletedMessage": "O workspace \"{{name}}\" foi excluído com sucesso.",
+        "noPermission": "Sem permissão",
+        "noPermissionMessage": "Você não tem autorização para excluir este workspace.",
+        "notFound": "Workspace não encontrado",
+        "notFoundMessage": "O workspace pode já ter sido excluído.",
+        "error": "Erro inesperado",
+        "errorMessage": "Falha ao excluir \"{{name}}\"."
+      }
+    }
+  },
+  "profile": {
+    "title": "Configurações do Perfil",
+    "subtitle": "Gerencie as configurações e preferências da sua conta",
+    "tabs": {
+      "general": "Geral",
+      "security": "Segurança"
+    },
+    "general": {
+      "firstName": "Nome",
+      "lastName": "Sobrenome",
+      "email": "E-mail",
+      "username": "Nome de usuário",
+      "location": "Localização",
+      "website": "Website",
+      "bio": "Biografia",
+      "bioPlaceholder": "Conte-nos sobre você...",
+      "editProfile": "Editar Perfil",
+      "saveChanges": "Salvar Alterações",
+      "cancel": "Cancelar"
+    },
+    "security": {
+      "changePassword": "Alterar Senha",
+      "currentPassword": "Senha Atual",
+      "currentPasswordPlaceholder": "Digite a senha atual",
+      "newPassword": "Nova Senha",
+      "newPasswordPlaceholder": "Digite a nova senha (mín 6 caracteres)",
+      "confirmPassword": "Confirmar Nova Senha",
+      "confirmPasswordPlaceholder": "Confirme a nova senha",
+      "updatePassword": "Atualizar Senha",
+      "updating": "Atualizando...",
+      "errors": {
+        "fillAll": "Por favor, preencha todos os campos de senha",
+        "noMatch": "As novas senhas não coincidem",
+        "minLength": "A nova senha deve ter pelo menos 6 caracteres"
+      },
+      "success": "Senha alterada com sucesso!"
+    }
   },
   "settings": {
     "title": "Configurações",
@@ -104,5 +494,12 @@
     "signOut": "Sair",
     "changesSaved": "As alterações são salvas automaticamente",
     "saved": "Salvo"
+  },
+  "errors": {
+    "genericError": "Ocorreu um erro",
+    "networkError": "Erro de rede. Por favor, verifique sua conexão.",
+    "unauthorized": "Acesso não autorizado",
+    "notFound": "Recurso não encontrado",
+    "serverError": "Erro do servidor. Por favor, tente novamente mais tarde."
   }
 }

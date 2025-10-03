@@ -9,25 +9,10 @@ import * as yup from "yup";
 import LightRays from "../../../components/Background/lightRays";
 import type { IRegisterRequest } from "../../../types/auth.types";
 import { useAuthStore } from "../../../services/auth.store";
-
-const validationSchema: yup.ObjectSchema<IRegisterRequest> = yup
-  .object()
-  .shape({
-    email: yup.string().email("Invalid Email").required("Email is required"),
-    username: yup
-      .string()
-      .min(3, "Username need at least three characters")
-      .max(30, "Username must be maximum 30 characters")
-      .required("Username is required"),
-    password: yup
-      .string()
-      .min(6, "Password need at least 6 characters")
-      .required("Password is required"),
-    firstName: yup.string().required("First name is required"),
-    lastName: yup.string().optional(),
-  });
+import { useTranslation } from 'react-i18next';
 
 export const Register = () => {
+  const { t } = useTranslation();
   const [currentStep, setCurrentStep] = useState(1);
   const [showErrors, setShowErrors] = useState(false);
   const [, setHasTriedToAdvance] = useState(false);
@@ -38,6 +23,23 @@ export const Register = () => {
 
   const { signup, isLoading } = useAuthStore();
   const navigate = useNavigate();
+
+  const validationSchema: yup.ObjectSchema<IRegisterRequest> = yup
+    .object()
+    .shape({
+      email: yup.string().email(t('auth.validation.emailInvalid')).required(t('auth.validation.emailRequired')),
+      username: yup
+        .string()
+        .min(3, t('auth.validation.usernameMinLength'))
+        .max(30, t('auth.validation.usernameMaxLength'))
+        .required(t('auth.validation.usernameRequired')),
+      password: yup
+        .string()
+        .min(6, t('auth.validation.passwordMinLength'))
+        .required(t('auth.validation.passwordRequired')),
+      firstName: yup.string().required(t('auth.validation.firstNameRequired')),
+      lastName: yup.string().optional(),
+    });
 
   const {
     register,
@@ -60,12 +62,12 @@ export const Register = () => {
     } catch (error: any) {
       const errorMessage =
         error.response?.data?.message ||
-        "Registration failed. Please try again.";
+        t('auth.register.registrationFailed');
       setRegistrationError(errorMessage);
       setIsRegistrationSuccessful(false);
       return false;
     }
-  }, [getValues, signup]);
+  }, [getValues, signup, t]);
 
   const handleBeforeStepChange = useCallback(
     async (currentStep: number, nextStep: number): Promise<boolean> => {
@@ -156,8 +158,8 @@ export const Register = () => {
               initialStep={1}
               onStepChange={setCurrentStep}
               onBeforeStepChange={handleBeforeStepChange}
-              backButtonText="Previous"
-              nextButtonText="Next"
+              backButtonText={t('auth.stepper.previous')}
+              nextButtonText={t('auth.stepper.next')}
               stepCircleContainerClassName="bg-gray-800/50 backdrop-blur-sm border-gray-700"
               contentClassName="min-h-[400px]"
               nextButtonProps={{
@@ -169,7 +171,7 @@ export const Register = () => {
                     to="/login"
                     className="px-6 py-3 bg-none border border-blue-500/30 text-blue-400 hover:bg-blue-500/20 rounded-lg hover:text-white font-semibold transition-all duration-300 hover:scale-105 shadow-2xl backdrop-blur-sm"
                   >
-                    Already have an account?
+                    {t('auth.register.alreadyHaveAccount')}
                   </Link>
                 )
               }
@@ -178,13 +180,13 @@ export const Register = () => {
                 <div className="text-center space-y-8 py-8">
                   <div className="space-y-4">
                     <h2 className="text-4xl font-bold text-white">
-                      Welcome to Taskify!
+                      {t('auth.register.title')}
                     </h2>
                   </div>
 
                   <div className="space-y-4">
                     <p className="text-gray-400">
-                      Let's start with a few steps to register your account!
+                      {t('auth.register.subtitle')}
                     </p>
                   </div>
                 </div>
@@ -194,17 +196,17 @@ export const Register = () => {
                 <div className="space-y-6 py-8">
                   <div className="text-center mb-8">
                     <h3 className="text-2xl font-bold text-white mb-2">
-                      Personal Information
+                      {t('auth.register.personalInformation')}
                     </h3>
                     <p className="text-gray-400">
-                      Tell us a little about yourself
+                      {t('auth.register.tellAboutYourself')}
                     </p>
                   </div>
 
                   <div className="space-y-6">
                     <div className="space-y-2">
                       <label className="block text-sm font-medium text-gray-300">
-                        First Name *
+                        {t('auth.register.firstNameLabel')} *
                       </label>
                       <input
                         {...register("firstName")}
@@ -213,7 +215,7 @@ export const Register = () => {
                           handleInputChange("firstName")(e);
                         }}
                         type="text"
-                        placeholder="Enter your first name"
+                        placeholder={t('auth.register.firstNamePlaceholder')}
                         disabled={isLoading}
                         className={`w-full px-4 py-3 bg-gray-800 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 transition-colors disabled:opacity-50 ${
                           showErrors && errors.firstName
@@ -243,7 +245,7 @@ export const Register = () => {
 
                     <div className="space-y-2">
                       <label className="block text-sm font-medium text-gray-300">
-                        Last Name
+                        {t('auth.register.lastNameLabel')}
                       </label>
                       <input
                         {...register("lastName")}
@@ -252,7 +254,7 @@ export const Register = () => {
                           handleInputChange("lastName")(e);
                         }}
                         type="text"
-                        placeholder="Enter your last name (optional)"
+                        placeholder={t('auth.register.lastNamePlaceholder')}
                         disabled={isLoading}
                         className={`w-full px-4 py-3 bg-gray-800 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 transition-colors disabled:opacity-50 ${
                           showErrors && errors.lastName
@@ -287,14 +289,13 @@ export const Register = () => {
                 <div className="space-y-6 py-8">
                   <div className="text-center mb-8">
                     <h3 className="text-2xl font-bold text-white mb-2">
-                      Account Details
+                      {t('auth.register.accountDetails')}
                     </h3>
                     <p className="text-gray-400">
-                      Set up your login credentials
+                      {t('auth.register.setupCredentials')}
                     </p>
                   </div>
 
-                  {/* Mensagem de erro de registro */}
                   {registrationError && (
                     <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-4 mb-6">
                       <div className="flex items-center gap-2">
@@ -321,7 +322,7 @@ export const Register = () => {
                   <div className="space-y-6">
                     <div className="space-y-2">
                       <label className="block text-sm font-medium text-gray-300">
-                        Email *
+                        {t('auth.register.emailLabel')} *
                       </label>
                       <input
                         {...register("email")}
@@ -330,7 +331,7 @@ export const Register = () => {
                           handleInputChange("email")(e);
                         }}
                         type="email"
-                        placeholder="Enter your email"
+                        placeholder={t('auth.register.emailPlaceholder')}
                         disabled={isLoading}
                         className={`w-full px-4 py-3 bg-gray-800 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 transition-colors disabled:opacity-50 ${
                           showErrors && errors.email
@@ -360,7 +361,7 @@ export const Register = () => {
 
                     <div className="space-y-2">
                       <label className="block text-sm font-medium text-gray-300">
-                        Username *
+                        {t('auth.register.usernameLabel')} *
                       </label>
                       <input
                         {...register("username")}
@@ -369,7 +370,7 @@ export const Register = () => {
                           handleInputChange("username")(e);
                         }}
                         type="text"
-                        placeholder="Choose a username"
+                        placeholder={t('auth.register.usernamePlaceholder')}
                         disabled={isLoading}
                         className={`w-full px-4 py-3 bg-gray-800 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 transition-colors disabled:opacity-50 ${
                           showErrors && errors.username
@@ -399,7 +400,7 @@ export const Register = () => {
 
                     <div className="space-y-2">
                       <label className="block text-sm font-medium text-gray-300">
-                        Password *
+                        {t('auth.register.passwordLabel')} *
                       </label>
                       <input
                         {...register("password")}
@@ -408,7 +409,7 @@ export const Register = () => {
                           handleInputChange("password")(e);
                         }}
                         type="password"
-                        placeholder="Create a strong password"
+                        placeholder={t('auth.register.passwordPlaceholder')}
                         disabled={isLoading}
                         className={`w-full px-4 py-3 bg-gray-800 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 transition-colors disabled:opacity-50 ${
                           showErrors && errors.password
@@ -437,7 +438,6 @@ export const Register = () => {
                     </div>
                   </div>
 
-                  {/* Indicador de carregamento */}
                   {isLoading && (
                     <div className="flex items-center justify-center pt-4">
                       <div className="flex items-center gap-2 text-blue-400">
@@ -461,7 +461,7 @@ export const Register = () => {
                             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                           ></path>
                         </svg>
-                        <span>Creating account...</span>
+                        <span>{t('auth.register.creatingAccount')}</span>
                       </div>
                     </div>
                   )}
@@ -473,38 +473,38 @@ export const Register = () => {
                   <div className="space-y-4">
                     <div className="text-6xl">🎉</div>
                     <h3 className="text-3xl font-bold text-green-400">
-                      Congratulations!
+                      {t('auth.register.congratulations')}
                     </h3>
                     <p className="text-xl text-gray-300">
-                      Your account was created successfully!
+                      {t('auth.register.accountCreated')}
                     </p>
                   </div>
 
                   <div className="bg-gray-800/50 backdrop-blur-sm p-6 rounded-lg border border-gray-700">
                     <h4 className="text-lg font-semibold mb-4 text-white">
-                      Account Summary:
+                      {t('auth.register.accountSummary')}
                     </h4>
                     <div className="space-y-3 text-left">
                       <div className="flex items-center justify-between">
-                        <span className="text-gray-400">Name:</span>
+                        <span className="text-gray-400">{t('auth.register.name')}</span>
                         <span className="text-white font-medium">
                           {getValues("firstName")} {getValues("lastName") || ""}
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-gray-400">Email:</span>
+                        <span className="text-gray-400">{t('auth.register.emailLabel')}:</span>
                         <span className="text-blue-400 font-medium">
                           {getValues("email")}
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-gray-400">Username:</span>
+                        <span className="text-gray-400">{t('auth.register.username')}</span>
                         <span className="text-green-400 font-medium">
                           {getValues("username")}
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-gray-400">Status:</span>
+                        <span className="text-gray-400">{t('auth.login.status')}</span>
                         <span className="text-green-400 font-medium flex items-center gap-1">
                           <svg
                             className="w-4 h-4"
@@ -519,7 +519,7 @@ export const Register = () => {
                               d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                             />
                           </svg>
-                          Account Created
+                          {t('auth.register.accountCreatedStatus')}
                         </span>
                       </div>
                     </div>
@@ -531,7 +531,7 @@ export const Register = () => {
                       onClick={handleLoginRedirect}
                       className="w-full px-8 py-3 bg-gradient-to-r from-blue-500 to-green-500 text-white rounded-lg font-semibold transition-all duration-300 hover:scale-105 shadow-xl"
                     >
-                      Go to Login
+                      {t('auth.register.goToLogin')}
                     </button>
                   </div>
                 </div>

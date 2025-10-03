@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import TextType from "../../components/TextType";
 import {
   taskService,
@@ -19,6 +20,7 @@ import DashboardContainer from "../../components/Dashboard/DashboardContainer";
 import { WorkspaceInvitations } from "../../components/Notifications/WorkspaceInvitations";
 
 const HomeView: React.FC = () => {
+  const { t } = useTranslation();
   const [stats, setStats] = useState<IDashboardStats | null>(null);
   const [isLoadingStats, setIsLoadingStats] = useState(true);
   const [, setError] = useState<string | null>(null);
@@ -53,20 +55,19 @@ const HomeView: React.FC = () => {
           className="text-center mb-12"
         >
           <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-4">
-            Welcome to{" "}
+            {t("dashboard.welcome")}{" "}
             <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Taskify
+              {t("dashboard.appName")}
             </span>
           </h1>
 
           <div className="text-xl md:text-2xl text-gray-600 dark:text-gray-400 h-8">
             <TextType
               text={[
-                "Organize your tasks efficiently",
-                "Collaborate with your team",
-                "Track your progress",
-                "Achieve your goals",
-                "Bellini 14",
+                t("dashboard.typingText.organize"),
+                t("dashboard.typingText.collaborate"),
+                t("dashboard.typingText.track"),
+                t("dashboard.typingText.achieve"),
               ]}
               typingSpeed={80}
               pauseDuration={2000}
@@ -79,21 +80,21 @@ const HomeView: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
           {[
             {
-              label: "Total Tasks",
+              label: t("dashboard.stats.totalTasks"),
               value: stats?.totalTasks || 0,
               color: "blue",
             },
             {
-              label: "To do Today",
+              label: t("dashboard.stats.toDoToday"),
               value: stats?.toDoToday || 0,
               color: "green",
             },
             {
-              label: "In Progress",
+              label: t("dashboard.stats.inProgress"),
               value: stats?.inProgress || 0,
               color: "yellow",
             },
-            { label: "Overdue", value: stats?.overdue || 0, color: "red" },
+            { label: t("dashboard.stats.overdue"), value: stats?.overdue || 0, color: "red" },
           ].map((stat, index) => (
             <motion.div
               key={stat.label}
@@ -134,35 +135,35 @@ const HomeView: React.FC = () => {
           className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl p-8 border border-gray-200/50 dark:border-gray-700/50 shadow-lg"
         >
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-            Quick Actions
+            {t("dashboard.quickActions")}
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {[
               {
-                title: "Create New Task",
-                description: "Add a new task to your workflow",
+                title: t("dashboard.actions.createTask.title"),
+                description: t("dashboard.actions.createTask.description"),
                 icon: "📝",
                 color: "blue",
                 action: () => setIsNewTaskModalOpen(true),
               },
               {
-                title: "New Workspace",
-                description: "Create a workspace for team collaboration",
+                title: t("dashboard.actions.newWorkspace.title"),
+                description: t("dashboard.actions.newWorkspace.description"),
                 icon: "🏢",
                 color: "purple",
                 action: () => setIsNewWorkspaceModalOpen(true),
               },
               {
-                title: "Join Workspace",
-                description: "Join an existing workspace with invite code",
+                title: t("dashboard.actions.joinWorkspace.title"),
+                description: t("dashboard.actions.joinWorkspace.description"),
                 icon: "👥",
                 color: "emerald",
                 action: () => setIsJoinWorkspaceModalOpen(true),
               },
               {
-                title: "View Calendar",
-                description: "Check your upcoming deadlines",
+                title: t("dashboard.actions.viewCalendar.title"),
+                description: t("dashboard.actions.viewCalendar.description"),
                 icon: "📅",
                 color: "green",
                 action: () => setCurrentView("calendar"),
