@@ -65,7 +65,7 @@ public class EmailService {
 
                     // Wait before retry (exponential backoff)
                     try {
-                        Thread.sleep(1000 * attempt); // 1s, 2s, 3s delays
+                        Thread.sleep(1000L * attempt); // 1s, 2s, 3s delays
                     } catch (InterruptedException ie) {
                         Thread.currentThread().interrupt();
                         return false;
@@ -81,23 +81,43 @@ public class EmailService {
         });
     }
 
-    // --- MÉTODOS PÚBLICOS PARA CADA TIPO DE EMAIL ---
-
     public void sendWelcomeEmail(String to, String name) {
+        System.out.println("=== SENDING WELCOME EMAIL ===");
+        System.out.println("To: " + to);
+        System.out.println("Name: " + name);
+        System.out.println("From: " + mailFrom);
         sendHtmlEmail(to,
                 "Bem-vindo ao Taskify!",
                 "welcome-email",
                 Map.of("name", name)
-        );
+        ).thenAccept(success -> {
+            if (success) {
+                System.out.println("✓ Welcome email sent successfully to " + to);
+            } else {
+                System.err.println("✗ Failed to send welcome email to " + to);
+            }
+        });
     }
 
     public void sendPasswordResetEmail(String to, String name, String token) {
+        System.out.println("=== SENDING PASSWORD RESET EMAIL ===");
+        System.out.println("To: " + to);
+        System.out.println("Name: " + name);
+        System.out.println("Token: " + token);
+        System.out.println("Frontend URL: " + frontendBaseUrl);
         String resetLink = frontendBaseUrl + "/reset-password?token=" + token;
+        System.out.println("Reset Link: " + resetLink);
         sendHtmlEmail(to,
                 "Taskify - Redefinição de Senha",
                 "password-reset-email",
                 Map.of("name", name, "resetLink", resetLink)
-        );
+        ).thenAccept(success -> {
+            if (success) {
+                System.out.println("✓ Password reset email sent successfully to " + to);
+            } else {
+                System.err.println("✗ Failed to send password reset email to " + to);
+            }
+        });
     }
 
     public void sendWorkspaceInviteEmail(String to, String inviterName, String workspaceName, String inviteLink) {

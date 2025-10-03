@@ -9,7 +9,6 @@ import com.taskifyApplication.repository.*;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -95,16 +94,14 @@ public class AttachmentService {
                 .orElseThrow(() -> new ResourceNotFoundException("Attachment not found with id: " + id));
 
        Task task = attachment.getTask();
+        boolean isMember;
         if (task != null) {
-            boolean isMember = workspaceRepository.isUserMemberOfWorkspace(task.getWorkspace().getId(), username);
-            if (!isMember) {
-                throw new ForbiddenException("User does not have permission to delete this attachment.");
-            }
+            isMember = workspaceRepository.isUserMemberOfWorkspace(task.getWorkspace().getId(), username);
         } else {
-            boolean isMember = workspaceRepository.isUserMemberOfWorkspace(attachment.getWorkspace().getId(), username);
-            if (!isMember) {
-                throw new ForbiddenException("User does not have permission to delete this attachment.");
-            }
+            isMember = workspaceRepository.isUserMemberOfWorkspace(attachment.getWorkspace().getId(), username);
+        }
+        if (!isMember) {
+            throw new ForbiddenException("User does not have permission to delete this attachment.");
         }
 
 
@@ -126,21 +123,6 @@ public class AttachmentService {
             return null;
         }
         return fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
-    }
-
-    public Page<Attachment> getAttachments(AttachmentFilters filters, Pageable pageable) {
-        return attachmentRepository.findWithFilters(
-                filters.getTaskId(),
-                filters.getMimeType(),
-                filters.getFromDate(),
-                filters.getToDate(),
-                pageable
-        );
-    }
-
-    public Attachment getAttachment(Long id) {
-        return attachmentRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Attachment not found"));
     }
 
     private void validateFile(MultipartFile file) {
@@ -198,18 +180,6 @@ public class AttachmentService {
                     bytes[8] == 'W' && bytes[9] == 'E' && bytes[10] == 'B' && bytes[11] == 'P';
             default -> false;
         };
-    }
-
-    private boolean canUserDeleteAttachment(Attachment attachment, User user) {
-        if (attachment.getUploadedBy().equals(user)) {
-            return true;
-        }
-        Workspace workspace = attachment.getWorkspace();
-        if (workspace != null) {
-            RoleEnum userRole = workspace.getUserRole(user);
-            return userRole == RoleEnum.ADMIN || userRole == RoleEnum.OWNER;
-        }
-        return false;
     }
 
     @Setter

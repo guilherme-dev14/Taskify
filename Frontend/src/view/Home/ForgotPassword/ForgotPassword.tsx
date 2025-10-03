@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import * as yup from "yup";
 import LightRays from "../../../components/Background/lightRays";
+import authService from "../../../services/Auth/auth.service";
 
 interface ForgotPasswordForm {
   email: string;
@@ -30,15 +31,17 @@ export const ForgotPassword: React.FC = () => {
     mode: "onChange",
   });
 
-  const onSubmit: SubmitHandler<ForgotPasswordForm> = useCallback(async () => {
+  const onSubmit: SubmitHandler<ForgotPasswordForm> = useCallback(async (data) => {
     setIsLoading(true);
     setError(null);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
+      console.log("Sending forgot password request for:", data.email);
+      await authService.forgotPassword(data.email);
+      console.log("Forgot password request successful");
       setIsSuccess(true);
     } catch (err: any) {
+      console.error("Forgot password error:", err);
       setError(
         err.response?.data?.message || "Something went wrong. Please try again."
       );
@@ -89,7 +92,10 @@ export const ForgotPassword: React.FC = () => {
 
               <div className="flex flex-col space-y-3">
                 <button
-                  onClick={() => window.location.reload()}
+                  onClick={async () => {
+                    const email = getValues("email");
+                    await authService.forgotPassword(email);
+                  }}
                   className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-all duration-300"
                 >
                   Resend Email

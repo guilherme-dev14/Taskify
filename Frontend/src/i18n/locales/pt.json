@@ -32,6 +32,9 @@
     "logout": "Sair"
   },
   "auth": {
+    "resetPassword": "Redefinir Senha",
+    "password": "Senha",
+    "confirmPassword": "Confirmar Senha",
     "login": {
       "title": "Bem-vindo de volta ao Taskify!",
       "subtitle": "Estamos felizes em vê-lo novamente! Vamos fazer seu login.",
@@ -273,6 +276,12 @@
         "noTimeLogged": "{{hours}}h reais",
         "assignedTo": "Atribuído a",
         "unassigned": "Não atribuído",
+        "selectWorkspace": "Selecionar Workspace",
+        "noEstimationAlt": "Sem estimativa",
+        "noTimeLoggedAlt": "Sem tempo registrado",
+        "attachmentsLabel": "Anexos",
+        "download": "Baixar",
+        "deleteAttachment": "Excluir",
         "attachments": "Anexos ({{count}})",
         "uploadingFiles": "Fazendo upload de arquivos...",
         "dropFilesHere": "Solte os arquivos aqui ou",
@@ -333,6 +342,7 @@
       "title": "Compartilhar Workspace",
       "subtitle": "Convide pessoas para colaborar em \"{{name}}\"",
       "tabs": {
+        "invitePeople": "Convidar Pessoas",
         "invite": "Convidar Pessoas",
         "inviteMobile": "Convidar",
         "members": "Membros ({{count}})"
@@ -360,7 +370,10 @@
       "members": {
         "noMembers": "Nenhum membro encontrado",
         "owner": "Proprietário",
-        "joined": "Entrou em {{date}}"
+        "member": "Membro",
+        "admin": "Administrador",
+        "joined": "Entrou em {{date}}",
+        "removeMemberConfirm": "Tem certeza que deseja remover este membro?"
       }
     }
   },
@@ -494,6 +507,61 @@
     "signOut": "Sair",
     "changesSaved": "As alterações são salvas automaticamente",
     "saved": "Salvo"
+  },
+  "dashboardComponents": {
+    "productivityMetrics": {
+      "title": "Métricas de Produtividade",
+      "liveLabel": "Ao Vivo",
+      "refreshButton": "Atualizar",
+      "dailyProgress": "Progresso Diário",
+      "tasksCompleted": "tarefas concluídas",
+      "onTrack": "No caminho certo",
+      "onFire": "🔥 Em chamas!",
+      "keepGoing": "Continue assim!",
+      "weeklyStreak": "Sequência Semanal",
+      "daysProductive": "dias produtivos",
+      "focusTime": "Tempo de Foco",
+      "deepWorkToday": "trabalho focado hoje",
+      "efficiency": "Eficiência",
+      "taskCompletion": "conclusão de tarefas",
+      "thisWeek": "+5% esta semana",
+      "weeklyGoal": "Meta Semanal",
+      "progress": "progresso",
+      "aheadOfSchedule": "Adiantado",
+      "progressLabel": "Progresso",
+      "weekSummary": "Resumo da Semana",
+      "tasksCompletedLabel": "Tarefas Concluídas",
+      "totalFocusTime": "Tempo Total de Foco",
+      "viewAnalytics": "Ver Análises Detalhadas →",
+      "failedToLoad": "Falha ao carregar métricas de produtividade",
+      "tryAgain": "Tentar novamente"
+    },
+    "activityFeed": {
+      "title": "Feed de Atividades",
+      "liveUpdates": "Atualizações ao Vivo",
+      "clearButton": "Limpar",
+      "clearing": "Limpando...",
+      "noActivity": "Nenhuma atividade recente",
+      "refreshActivities": "Atualizar atividades",
+      "failedToLoad": "Falha ao carregar atividades",
+      "tryAgain": "Tentar novamente"
+    },
+    "overdueTasksAlert": {
+      "overdueTask": "Tarefa Atrasada",
+      "overdueTasks": "Tarefas Atrasadas",
+      "criticalOne": "tarefa de prioridade crítica",
+      "criticalMany": "tarefas de prioridade crítica",
+      "needAttention": "precisam de atenção imediata",
+      "pastDue": "Estas tarefas estão atrasadas e precisam de atenção",
+      "due": "Vencimento",
+      "day": "dia",
+      "days": "dias",
+      "overdue": "atrasado",
+      "viewAll": "Ver todas",
+      "overdueTasks2": "tarefas atrasadas",
+      "reviewButton": "Revisar Tarefas Atrasadas",
+      "rescheduleAll": "Reagendar Todas"
+    }
   },
   "errors": {
     "genericError": "Ocorreu um erro",

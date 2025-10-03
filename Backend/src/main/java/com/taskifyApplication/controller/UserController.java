@@ -47,6 +47,12 @@ public class UserController {
             return ResponseEntity.ok(updatedSettings);
     }
 
+    @PutMapping("/change-password")
+    public ResponseEntity<?> changePassword(@Valid @RequestBody com.taskifyApplication.dto.UserDto.ChangePasswordDTO changePasswordDTO) {
+            userService.changeCurrentUserPassword(changePasswordDTO);
+            return ResponseEntity.ok().build();
+    }
+
     @DeleteMapping("/deleteProfile")
     public ResponseEntity<?> deleteCurrentUser() {
             userService.deleteCurrentUserProfile();

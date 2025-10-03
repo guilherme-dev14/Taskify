@@ -156,7 +156,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           </div>
 
           {/* Assigned User */}
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2" onClick={(e) => e.stopPropagation()}>
             {task.assignedTo && (
               <UserAvatarBubble user={task.assignedTo} size="sm" showTooltip />
             )}

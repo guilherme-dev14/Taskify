@@ -98,39 +98,42 @@ export const UserAvatarBubble: React.FC<UserAvatarBubbleProps & { ownerInfo?: st
 
   if (showTooltip && !showName) {
     return (
-      <div className="group relative" title={ownerInfo ? `${fullName} - ${ownerInfo}` : `${fullName} (${user.email})`}>
-        {content}
+      <div className="avatar-bubble-wrapper relative">
+        <div className="group/avatar relative">
+          {avatarElement}
 
-        {/* Tooltip */}
-        <div
-          className="
-          invisible group-hover:visible
-          absolute z-50
-          bg-gray-900 dark:bg-gray-700
-          text-white text-xs
-          rounded-lg py-2 px-3
-          -top-12 left-1/2
-          transform -translate-x-1/2
-          whitespace-nowrap
-          shadow-lg
-          transition-opacity duration-200
-          before:content-['']
-          before:absolute
-          before:top-full
-          before:left-1/2
-          before:transform
-          before:-translate-x-1/2
-          before:border-4
-          before:border-transparent
-          before:border-t-gray-900
-          dark:before:border-t-gray-700
-        "
-        >
-          <div className="font-medium">{fullName}</div>
-          {ownerInfo && (
-            <div className="text-yellow-400 font-semibold mt-1">{ownerInfo}</div>
-          )}
-          <div className="text-gray-300 dark:text-gray-400">{user.email}</div>
+          {/* Tooltip */}
+          <div
+            className="
+            invisible group-hover/avatar:visible
+            absolute z-50
+            bg-gray-900 dark:bg-gray-700
+            text-white text-xs
+            rounded-lg py-2 px-3
+            -top-12 left-1/2
+            transform -translate-x-1/2
+            whitespace-nowrap
+            shadow-lg
+            transition-opacity duration-200
+            pointer-events-none
+            before:content-['']
+            before:absolute
+            before:top-full
+            before:left-1/2
+            before:transform
+            before:-translate-x-1/2
+            before:border-4
+            before:border-transparent
+            before:border-t-gray-900
+            dark:before:border-t-gray-700
+          "
+          >
+            <div className="font-medium">{fullName}</div>
+            {ownerInfo && (
+              <div className="text-yellow-400 font-semibold mt-1">{ownerInfo}</div>
+            )}
+            <div className="text-gray-300 dark:text-gray-400">{user.email}</div>
+          </div>
         </div>
       </div>
     );

@@ -1,5 +1,7 @@
 package com.taskifyApplication.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -13,6 +15,7 @@ import java.util.Map;
 @AllArgsConstructor
 @Builder
 @Getter @Setter
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Notification {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -28,6 +31,7 @@ public class Notification {
     @Column(columnDefinition = "TEXT", nullable = false)
     private String message;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
@@ -39,10 +43,12 @@ public class Notification {
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "workspace_id")
     private Workspace workspace;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "task_id")
     private Task task;

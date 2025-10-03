@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { BellIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { BellIcon, XMarkIcon, TrashIcon, CheckIcon } from "@heroicons/react/24/outline";
 import { BellIcon as BellIconSolid } from "@heroicons/react/24/solid";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { notificationService } from "../../services/Notifications/notification.service";
@@ -34,6 +34,9 @@ export function NotificationCenter() {
     },
   });
 
+  // Safe check for notifications content
+  const notificationsList = notifications?.content || [];
+
   const markAllAsReadMutation = useMutation({
     mutationFn: notificationService.markAllAsRead,
     onSuccess: () => {
@@ -42,6 +45,16 @@ export function NotificationCenter() {
         queryKey: ["notifications", "unread-count"],
       });
       setUnreadCount(0);
+    },
+  });
+
+  const deleteNotificationMutation = useMutation({
+    mutationFn: notificationService.deleteNotification,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      queryClient.invalidateQueries({
+        queryKey: ["notifications", "unread-count"],
+      });
     },
   });
 
@@ -67,6 +80,14 @@ export function NotificationCenter() {
   ) => {
     event.stopPropagation();
     markAsReadMutation.mutate(notificationId);
+  };
+
+  const handleDelete = (
+    notificationId: string,
+    event: React.MouseEvent
+  ) => {
+    event.stopPropagation();
+    deleteNotificationMutation.mutate(notificationId);
   };
 
   const handleNotificationClick = (notification: INotification) => {
@@ -168,14 +189,14 @@ export function NotificationCenter() {
               <div className="flex items-center justify-center p-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
               </div>
-            ) : notifications?.content.length === 0 ? (
+            ) : notificationsList.length === 0 ? (
               <div className="text-center p-8 text-gray-500">
                 <BellIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p>No notifications yet</p>
               </div>
             ) : (
               <div className="divide-y divide-gray-100">
-                {notifications?.content.map((notification) => (
+                {notificationsList.map((notification) => (
                   <div
                     key={notification.id}
                     onClick={() => handleNotificationClick(notification)}
@@ -196,16 +217,26 @@ export function NotificationCenter() {
                           >
                             {notification.title}
                           </h4>
-                          {!notification.read && (
+                          <div className="flex items-center space-x-1 ml-2">
+                            {!notification.read && (
+                              <button
+                                onClick={(e) =>
+                                  handleMarkAsRead(notification.id, e)
+                                }
+                                className="p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-100 rounded transition-colors"
+                                title="Mark as read"
+                              >
+                                <CheckIcon className="w-4 h-4" />
+                              </button>
+                            )}
                             <button
-                              onClick={(e) =>
-                                handleMarkAsRead(notification.id, e)
-                              }
-                              className="text-xs text-blue-600 hover:text-blue-800 ml-2"
+                              onClick={(e) => handleDelete(notification.id, e)}
+                              className="p-1 text-red-600 hover:text-red-800 hover:bg-red-100 rounded transition-colors"
+                              title="Delete notification"
                             >
-                              ✓
+                              <TrashIcon className="w-4 h-4" />
                             </button>
-                          )}
+                          </div>
                         </div>
                         <p className="text-sm text-gray-600 mt-1">
                           {notification.message}
@@ -222,7 +253,7 @@ export function NotificationCenter() {
           </div>
 
           {/* Footer */}
-          {notifications?.content && notifications.content.length > 0 && (
+          {notificationsList.length > 0 && (
             <div className="border-t border-gray-200 p-3">
               <button className="w-full text-center text-sm text-blue-600 hover:text-blue-800">
                 View all notifications

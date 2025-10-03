@@ -67,8 +67,8 @@ public class PasswordResetService {
         entity.setExpiresAt(Instant.now().plusSeconds(tokenTtlMinutes * 60L));
         tokens.save(entity);
 
-        String link = frontendBaseUrl + "/reset-password?token=" + rawToken;
-        sendEmail(user.getEmail(), link);
+        // Use the EmailService for HTML template-based email
+        emailService.sendPasswordResetEmail(user.getEmail(), user.getFirstName(), rawToken);
     }
 
     public void finishReset(String rawToken, String newPassword) {

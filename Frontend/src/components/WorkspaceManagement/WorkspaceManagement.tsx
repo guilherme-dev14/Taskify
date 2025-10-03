@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // src/components/WorkspaceManagement/WorkspaceManagement.tsx
-
+import { useI18nTranslation } from "../../context/LanguageContext";
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -51,7 +51,7 @@ export const WorkspaceManagement: React.FC = () => {
   const [activeDropdown, setActiveDropdown] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const { toast } = useToast();
-
+  const { t } = useI18nTranslation();
   const workspaces = workspacesResponse?.content || [];
 
   useEffect(() => {
@@ -142,10 +142,10 @@ export const WorkspaceManagement: React.FC = () => {
 
       await workspaceService.deleteWorkspace(workspaceId.toString());
       toast.success(
-        "Workspace deletado",
-        `O workspace "${
-          workspace?.name || `ID: ${workspaceId}`
-        }" foi deletado com sucesso.`
+        t("workspace.management.toast.deleted"),
+        t("workspace.management.toast.deletedMessage", {
+          name: workspace?.name || `ID: ${workspaceId}`,
+        })
       );
 
       await loadWorkspaces();
@@ -158,17 +158,20 @@ export const WorkspaceManagement: React.FC = () => {
 
       if (error.response?.status === 403) {
         toast.error(
-          "Sem permissão",
-          "Você não tem autorização para deletar este workspace."
+          t("workspace.management.toast.noPermission"),
+          t("workspace.management.toast.noPermissionMessage")
         );
       } else if (error.response?.status === 404) {
         toast.warning(
-          "Workspace não encontrado",
-          "O workspace pode já ter sido deletado."
+          t("workspace.management.toast.notFound"),
+          t("workspace.management.toast.notFoundMessage")
         );
         setTimeout(() => loadWorkspaces(), 2000);
       } else {
-        toast.error("Erro inesperado", `Falha ao deletar "${workspaceName}".`);
+        toast.error(
+          t("workspace.management.toast.unexpectedError"),
+          t("workspace.management.toast.deleteFailed", { name: workspaceName })
+        );
       }
     }
   };
@@ -213,10 +216,10 @@ export const WorkspaceManagement: React.FC = () => {
           <div>
             <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent flex items-center gap-3">
               <BuildingOfficeIcon className="w-10 h-10 text-blue-600 dark:text-blue-400" />
-              Workspace Management
+              {t("workspace.management.title")}
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mt-2">
-              Manage your workspaces, members, and settings
+              {t("workspace.management.subtitle")}
             </p>
           </div>
 
@@ -227,7 +230,7 @@ export const WorkspaceManagement: React.FC = () => {
             className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
           >
             <PlusIcon className="w-5 h-5" />
-            New Workspace
+            {t("workspace.management.newWorkspace")}
           </motion.button>
         </motion.div>
 
@@ -241,7 +244,7 @@ export const WorkspaceManagement: React.FC = () => {
             <MagnifyingGlassIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Search workspaces..."
+              placeholder={t("workspace.management.searchPlaceholder")}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-12 pr-4 py-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border border-gray-200/50 dark:border-gray-600/50 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200"
@@ -324,7 +327,9 @@ export const WorkspaceManagement: React.FC = () => {
                                 className="flex items-center gap-3 w-full px-4 py-2 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                               >
                                 <PencilIcon className="w-4 h-4" />
-                                Edit Workspace
+                                {t(
+                                  "workspace.management.actions.editWorkspace"
+                                )}
                               </button>
                               <button
                                 onClick={(e) => {
@@ -335,7 +340,9 @@ export const WorkspaceManagement: React.FC = () => {
                                 className="flex items-center gap-3 w-full px-4 py-2 text-left text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                               >
                                 <TrashIcon className="w-4 h-4" />
-                                Delete Workspace
+                                {t(
+                                  "workspace.management.actions.deleteWorkspace"
+                                )}
                               </button>
                             </motion.div>
                           </>
@@ -349,7 +356,7 @@ export const WorkspaceManagement: React.FC = () => {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                         <UserGroupIcon className="w-4 h-4" />
-                        <span>Members</span>
+                        <span>{t("workspace.management.stats.members")}</span>
                       </div>
                       <span className="font-semibold text-gray-900 dark:text-white">
                         {workspaceMembers.length}
@@ -359,7 +366,7 @@ export const WorkspaceManagement: React.FC = () => {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                         <ClipboardDocumentListIcon className="w-4 h-4" />
-                        <span>Tasks</span>
+                        <span>{t("workspace.management.stats.tasks")}</span>
                       </div>
                       <span className="font-semibold text-gray-900 dark:text-white">
                         {details?.taskCount || 0}
@@ -370,7 +377,7 @@ export const WorkspaceManagement: React.FC = () => {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                           <CalendarDaysIcon className="w-4 h-4" />
-                          <span>Created</span>
+                          <span>{t("workspace.management.stats.created")}</span>
                         </div>
                         <span className="text-sm font-medium text-gray-900 dark:text-white">
                           {new Date(details.createdAt).toLocaleDateString(
@@ -380,7 +387,6 @@ export const WorkspaceManagement: React.FC = () => {
                       </div>
                     )}
                   </div>
-
                 </motion.div>
               );
             })}
@@ -396,17 +402,20 @@ export const WorkspaceManagement: React.FC = () => {
               className="flex items-center gap-2 px-4 py-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border border-gray-200/50 dark:border-gray-600/50 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <ChevronLeftIcon className="w-4 h-4" />
-              Previous
+              {t("workspace.management.pagination.previous")}
             </button>
             <span className="font-medium text-gray-700 dark:text-gray-300">
-              Page {currentPage + 1} of {totalPages}
+              {t("workspace.management.pagination.page", {
+                current: currentPage + 1,
+                total: totalPages,
+              })}
             </span>
             <button
               onClick={() => setCurrentPage((p) => p + 1)}
               disabled={currentPage >= totalPages - 1}
               className="flex items-center gap-2 px-4 py-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border border-gray-200/50 dark:border-gray-600/50 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Next
+              {t("workspace.management.pagination.next")}
               <ChevronRightIcon className="w-4 h-4" />
             </button>
           </div>
@@ -420,12 +429,12 @@ export const WorkspaceManagement: React.FC = () => {
           >
             <BuildingOfficeIcon className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-gray-600 dark:text-gray-400 mb-2">
-              No workspaces found
+              {t("workspace.management.empty.title")}
             </h3>
             <p className="text-gray-500 dark:text-gray-500 mb-6">
               {searchTerm
-                ? "Try adjusting your search terms"
-                : "Create your first workspace to get started"}
+                ? t("workspace.management.empty.searchMessage")
+                : t("workspace.management.empty.createMessage")}
             </p>
             {!searchTerm && (
               <button
@@ -433,7 +442,7 @@ export const WorkspaceManagement: React.FC = () => {
                 className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
               >
                 <PlusIcon className="w-5 h-5" />
-                Create Workspace
+                {t("workspace.management.empty.createWorkspace")}
               </button>
             )}
           </motion.div>
